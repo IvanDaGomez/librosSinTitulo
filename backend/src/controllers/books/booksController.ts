@@ -248,7 +248,8 @@ export class BooksController {
       await sendEmail(
         `${data.vendedor} ${correo.correo}`,
         'Libro publicado con éxito',
-        createEmail({ book }, 'bookPublished')
+        createEmail({ book }, 'bookPublished'),
+        'no-reply'
       )
 
       res.json(book)
@@ -319,7 +320,8 @@ export class BooksController {
                 }
               },
               'messageResponse'
-            )
+            ),
+            'no-reply'
           ),
           sendNotification(
             createNotification(
@@ -351,7 +353,8 @@ export class BooksController {
                 }
               },
               'messageQuestion'
-            )
+            ),
+            'no-reply'
           ),
           sendNotification(
             createNotification(
@@ -374,7 +377,6 @@ export class BooksController {
         mensajes: messagesArray
       }
       const book = await this.BooksModel.updateBook(data.book_id, dataToUpdate)
-      console.log('Updated')
       res.json(book)
     } catch (err) {
       next(err)

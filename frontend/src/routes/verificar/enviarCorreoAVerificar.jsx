@@ -1,26 +1,29 @@
-import { useEffect, useState, useRef, useContext } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import axios from 'axios'
 import Verificar from './verificar'
 import { toast, ToastContainer } from 'react-toastify'
 import { UserContext } from '../../context/userContext'
 import './verify.css'
 import { BACKEND_URL } from '../../assets/config'
-export default function EnviarCorreoAVerificar () {
+import { useNavigate } from 'react-router-dom'
+export default function EnviarCorreoAVerificar() {
+  const navigate = useNavigate()
   const { user, setUser, loading } = useContext(UserContext)
   const [sending, setSending] = useState(true)
   const [code, setCode] = useState(null)
   const [token, setToken] = useState(null)
   const [errors, setErrors] = useState('')
   const [verifying, setVerifying] = useState(true)
-  const [inputCode, setInputCode] = useState(new Array(6).fill('')) // Estado para almacenar el código ingresado
-  const inputRefs = useRef([]) // Referencias a los inputs
+  const [inputCode, setInputCode] = useState('') // Estado para almacenar el código ingresado
 
 
   // Fetch user email if not already set
   useEffect(() => {
-    console.log('user', user, loading)
     if (!user || user?.correo || loading) return
-
+    if (user.validated) {
+      navigate('/')
+      return
+    }
     async function fetchUserEmail () {
       try {
         const response = await axios.get(
@@ -29,8 +32,11 @@ export default function EnviarCorreoAVerificar () {
             withCredentials: true // Ensures cookies are sent with the request
           } 
         )
-
-        if (response.status === 200 && response.data) {
+        if (response.data.error) {
+          console.error('Error fetching user email:', response.data.error)
+          return
+        }
+        if (response.data) {
           setUser({
             ...user,
             correo: response.data.correo
@@ -73,31 +79,6 @@ export default function EnviarCorreoAVerificar () {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  // Manejar cambio de inputs
-  const handleInputChange = (e, index) => {
-    const value = e.target.value
-    if (!/^\d?$/.test(value)) return // Solo aceptar dígitos
-
-    const newInputCode = [...inputCode]
-    newInputCode[index] = value
-    setInputCode(newInputCode)
-
-    // Mover foco al siguiente input
-    if (value && index < inputRefs.current.length - 1) {
-      inputRefs.current[index + 1].focus()
-    }
-  }
-
-  // Manejar navegación con flechas
-  const handleKeyDown = (e, index) => {
-    if (e.key === 'Backspace' && !inputCode[index] && index > 0) {
-      inputRefs.current[index - 1].focus()
-    } else if (e.key === 'ArrowLeft' && index > 0) {
-      inputRefs.current[index - 1].focus()
-    } else if (e.key === 'ArrowRight' && index < inputRefs.current.length - 1) {
-      inputRefs.current[index + 1].focus()
-    }
-  }
 
   // Verificar código ingresado
   function verifyCode () {
@@ -105,7 +86,7 @@ export default function EnviarCorreoAVerificar () {
       setErrors('Token no válido. Por favor, intenta de nuevo.')
       return
     }
-    const completeInputCode = parseInt(inputCode.join('')) // Combinar código ingresado
+    const completeInputCode = parseInt(inputCode) // Combinar código ingresado
     if (code !== completeInputCode) {
       setErrors('El código no coincide.')
       return
@@ -131,21 +112,15 @@ export default function EnviarCorreoAVerificar () {
                 <p>{user && user?.correo}</p>
 
                 <div className='imageDiv'>
-                  <img src='/imagenEmail.jpg' alt='Email image' title='Email image'/>
+                  <img src='/olvidasteContra.png' alt='Email image' loading='lazy' title='Email image'/>
                 </div>
                 <div className='codeInputContainer'>
-                  {inputCode.map((_, index) => (
                     <input
-                      type='number'
+                      type="number"
                       className='codeInput'
-                      key={index}
-                      maxLength={1} // Permitir solo un carácter
-                      ref={(el) => (inputRefs.current[index] = el)} // Guardar referencia al input
-                      value={inputCode[index]}
-                      onChange={(e) => handleInputChange(e, index)}
-                      onKeyDown={(e) => handleKeyDown(e, index)}
+                      placeholder='Ingresa el código'
+                    onChange={(e)=>setInputCode(e.target.value)}
                     />
-                  ))}
                 </div>
                 <div>
                   <p>Si no recibiste el correo</p>

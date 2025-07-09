@@ -23,17 +23,18 @@ export default function Perfil ({ user, navigate }) {
   //   href: '/cuenta/mis-compras',
   //   description: 'Encuentra el historial de compras'
   // }, 
-  {
-    name: 'Mis ventas',
-    icon: <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width={svgHeight} height={svgHeight} color='#000000' fill='none'>
-      <path d='M19.7453 13C20.5362 11.8662 21 10.4872 21 9C21 5.13401 17.866 2 14 2C10.134 2 7 5.134 7 9C7 10.0736 7.24169 11.0907 7.67363 12' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
-      <path d='M14 6C12.8954 6 12 6.67157 12 7.5C12 8.32843 12.8954 9 14 9C15.1046 9 16 9.67157 16 10.5C16 11.3284 15.1046 12 14 12M14 6C14.8708 6 15.6116 6.4174 15.8862 7M14 6V5M14 12C13.1292 12 12.3884 11.5826 12.1138 11M14 12V13' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
-      <path d='M3 14H5.39482C5.68897 14 5.97908 14.0663 6.24217 14.1936L8.28415 15.1816C8.54724 15.3089 8.83735 15.3751 9.1315 15.3751H10.1741C11.1825 15.3751 12 16.1662 12 17.142C12 17.1814 11.973 17.2161 11.9338 17.2269L9.39287 17.9295C8.93707 18.0555 8.449 18.0116 8.025 17.8064L5.84211 16.7503M12 16.5L16.5928 15.0889C17.407 14.8352 18.2871 15.136 18.7971 15.8423C19.1659 16.3529 19.0157 17.0842 18.4785 17.3942L10.9629 21.7305C10.4849 22.0063 9.92094 22.0736 9.39516 21.9176L3 20.0199' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
-          </svg>,
-    href: '/cuenta/mis-ventas',
-    description: 'Encuentra el historial de ventas',
-    condition: user?.rol !== 'vendedor'
-  }, {
+  // {
+  //   name: 'Mis ventas',
+  //   icon: <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width={svgHeight} height={svgHeight} color='#000000' fill='none'>
+  //     <path d='M19.7453 13C20.5362 11.8662 21 10.4872 21 9C21 5.13401 17.866 2 14 2C10.134 2 7 5.134 7 9C7 10.0736 7.24169 11.0907 7.67363 12' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
+  //     <path d='M14 6C12.8954 6 12 6.67157 12 7.5C12 8.32843 12.8954 9 14 9C15.1046 9 16 9.67157 16 10.5C16 11.3284 15.1046 12 14 12M14 6C14.8708 6 15.6116 6.4174 15.8862 7M14 6V5M14 12C13.1292 12 12.3884 11.5826 12.1138 11M14 12V13' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' />
+  //     <path d='M3 14H5.39482C5.68897 14 5.97908 14.0663 6.24217 14.1936L8.28415 15.1816C8.54724 15.3089 8.83735 15.3751 9.1315 15.3751H10.1741C11.1825 15.3751 12 16.1662 12 17.142C12 17.1814 11.973 17.2161 11.9338 17.2269L9.39287 17.9295C8.93707 18.0555 8.449 18.0116 8.025 17.8064L5.84211 16.7503M12 16.5L16.5928 15.0889C17.407 14.8352 18.2871 15.136 18.7971 15.8423C19.1659 16.3529 19.0157 17.0842 18.4785 17.3942L10.9629 21.7305C10.4849 22.0063 9.92094 22.0736 9.39516 21.9176L3 20.0199' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
+  //         </svg>,
+  //   href: '/cuenta/mis-ventas',
+  //   description: 'Encuentra el historial de ventas',
+  //   condition: user?.rol !== 'usuario'
+  //   },
+    {
     name: 'Mi balance',
     icon: <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width={svgHeight} height={svgHeight} color='#000000' fill='none'>
       <path d='M13 5C17.9706 5 22 8.35786 22 12.5C22 14.5586 21.0047 16.4235 19.3933 17.7787C19.1517 17.9819 19 18.2762 19 18.5919V21H17L16.2062 19.8674C16.083 19.6916 15.8616 19.6153 15.6537 19.6687C13.9248 20.1132 12.0752 20.1132 10.3463 19.6687C10.1384 19.6153 9.91703 19.6916 9.79384 19.8674L9 21H7V18.6154C7 18.2866 6.83835 17.9788 6.56764 17.7922C5.49285 17.0511 2 15.6014 2 14.0582V12.5C2 11.9083 2.44771 11.4286 3 11.4286C3.60665 11.4286 4.10188 11.1929 4.30205 10.5661C5.32552 7.36121 8.83187 5 13 5Z' stroke='currentColor' strokeWidth='1.5' strokeLinejoin='round' />
@@ -43,7 +44,19 @@ export default function Perfil ({ user, navigate }) {
           </svg>,
     href: '/cuenta/balance',
     description: 'Encuentra tu dinero y el historial de transacciones'
-  }, /* {
+    },
+    {
+      name: 'Funcionalidades de administrador',
+      href: '/cuenta/funcionalidades-admin',
+      description: 'Accede a las funcionalidades exclusivas de administrador',
+      condition: user.rol === 'admin',
+      icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#000000" fill="none">
+      <path d="M20 22.0002V17.0002C20 15.1146 20 14.1718 19.4142 13.586C18.8284 13.0002 17.8856 13.0002 16 13.0002L12 22.0002L8 13.0002C6.11438 13.0002 5.17157 13.0002 4.58579 13.586C4 14.1718 4 15.1146 4 17.0002V22.0002" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M12 15L11.5 19L12 20.5L12.5 19L12 15ZM12 15L11 13H13L12 15Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+      <path d="M15.5 6.50012V5.50012C15.5 3.56713 13.933 2.00012 12 2.00012C10.067 2.00012 8.5 3.56713 8.5 5.50012V6.50012C8.5 8.43312 10.067 10.0001 12 10.0001C13.933 10.0001 15.5 8.43312 15.5 6.50012Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+  </svg>,
+    }
+    /* {
         name: 'Preferencias del comprador',
         href: '/cuenta/preferencias-comprador',
         icon: <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={svgHeight} height={svgHeight} color={"#000000"} fill={"none"}>
@@ -89,7 +102,12 @@ export default function Perfil ({ user, navigate }) {
         </div>
       </div>
       <div className='userExtraInfo'>
-        {options.filter(option => !option?.condition).map((option, index) => (
+        {options.filter(option => {
+          if (!Object.keys(option).find(key => key === 'condition')) return true
+          // si no existe condition incluirlo siempre
+          return option.condition
+          // si existe condition, incluirlo solo si se cumple
+        }).map((option, index) => (
           <a href={option.href} key={index} style={{ width: '100%' }}>
             <div className='box' key={index}>
               <div className='iconContainer'>

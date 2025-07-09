@@ -45,7 +45,8 @@ export async function sendProcessPaymentEmails (data: {
             // order: data.order
           },
           'efectyPendingPayment'
-        )
+        ),
+        'billing'
       )
     }
 
@@ -60,17 +61,20 @@ export async function sendProcessPaymentEmails (data: {
       sendEmail(
         `${user.nombre} ${userEmail.correo}`,
         '¡Gracias por tu compra!',
-        createEmail(data, 'paymentDoneThank')
+        createEmail(data, 'paymentDoneThank'),
+        'billing'
       ),
       sendEmail(
         `${seller.nombre} ${sellerEmail.correo}`,
         '¡Tu libro ha sido vendido con éxito!',
-        createEmail(data, 'bookSold')
+        createEmail(data, 'bookSold'),
+        'billing'
       ),
       sendEmail(
         `${user.nombre} ${userEmail.correo}`,
         'Comprobante de pago en Meridian',
-        createEmail(data, 'paymentDoneBill')
+        createEmail(data, 'paymentDoneBill'),
+        'billing'
       ),
       sendEmail(
         `${seller.nombre} ${sellerEmail.correo}`,
@@ -81,7 +85,8 @@ export async function sendProcessPaymentEmails (data: {
             user: seller
           },
           'paymentDoneBill'
-        )
+        ),
+        'billing'
       ),
       sendNotification(
         createNotification(

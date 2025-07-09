@@ -9,13 +9,21 @@ export function seeEmailTemplate (
 ) {
   try {
     const { template } = req.params
+
+    if (template === 'fetchTemplates') {
+      const templateNames = templates.map(t => t.name)
+      res.json(templateNames)
+      return
+    }
     if (!template) {
-      throw new Error('Template name is required')
+      res.status(400).json({ error: 'Template name is required' })
+      return
     }
     const templateFound = templates.find(t => t.name === template)
 
     if (!templateFound) {
-      throw new Error('Template not found')
+      res.status(404).json({ error: 'Template not found' })
+      return
     }
     const templateContent = templateFound(
       mockEmailData as Required<DataType>,

@@ -19,6 +19,7 @@ import { UserContext } from '../../context/userContext.jsx'
 import { useReturnIfNoUser } from '../../assets/useReturnIfNoUser.js'
 import './cuenta.css'
 import { BACKEND_URL } from '../../assets/config.js'
+import FuncionalidadesAdmin from './funcionalidades-admin.jsx'
 export default function Cuenta () {
   const navigate = useNavigate()
   const [actualOption, setActualOption] = useState(null)
@@ -66,7 +67,8 @@ export default function Cuenta () {
     { title: 'Mis pedidos', href: '/cuenta/pedidos' },
     { title: 'Mis compras', href: '/cuenta/mis-compras', },
     { title: 'Mis ventas', href: '/cuenta/mis-ventas', condition: user?.rol === 'vendedor' || user?.rol === 'admin' },
-    { title: 'Direcciones', href: '/cuenta/direcciones', includeInHeader: false }
+    { title: 'Direcciones', href: '/cuenta/direcciones', includeInHeader: false },
+    { title: 'Funcionalidades administrador', href: '/cuenta/funcionalidades-admin', includeInHeader: false, condition: user?.rol === 'admin' }
   ], [user?.rol, user?.id])
 
 
@@ -103,6 +105,11 @@ export default function Cuenta () {
         return <NotificacionesPreferencias user={user} />
       case 'Direcciones':
         return <Direcciones user={user} />
+      case 'Funcionalidades administrador':
+        if (user.rol !== 'admin') {
+          return <Perfil user={user} />
+        }
+        return <FuncionalidadesAdmin user={user} />
       default:
         return <Perfil user={user} />
     }

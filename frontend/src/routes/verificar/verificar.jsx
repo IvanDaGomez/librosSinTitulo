@@ -31,7 +31,8 @@ export default function Verificar ({ user, token }) {
         if (response.data.error) {
           return
         }
-        if (response?.data?.verified || response?.data?.status) {
+        console.log('response', response.data)
+        if (response?.data?.validated) {
           setVerified(true)
           // Iniciar el contador y redirección después de verificar
         }
@@ -58,13 +59,14 @@ export default function Verificar ({ user, token }) {
         : (
           <>
             <div className='imageDiv'>
-              <img src='/verifiedPhoto.jpg' alt='' />
+              <img src='/verifiedPhoto.png' alt='' />
             </div>
             <h2>
-              {verified || user?.validated
-                ? 'Cuenta verificada'
-                : 'Cuenta no verificada'}
-
+              {
+                verified
+                  ? '¡Tu cuenta ha sido verificada exitosamente!'
+                  : 'No se pudo verificar tu cuenta. Por favor, intenta de nuevo más tarde.'
+              }
             </h2>
             <div style={{ width: 'auto' }}>
               <a href='/'><button>Regresar a inicio</button></a>

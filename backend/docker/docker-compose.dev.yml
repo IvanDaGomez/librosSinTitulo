@@ -1,15 +1,15 @@
 version: '3'
 services:
   backend:
-    image: 571152876653.dkr.ecr.sa-east-1.amazonaws.com/meridian:1.0
+    build:
+      context: ..
+      dockerfile: Dockerfile
     ports:
       - "3030:3030"
     restart: always
-
-    platform: linux/amd64
     volumes:
-      - ./backend:/usr/src/app 
-      - /usr/src/app/node_modules
+      - ../:/usr/src/app       # <-- Aquí montas tu código local en el contenedor(path hacia el package.json)
+      - /usr/src/app/node_modules # <-- Para evitar que node_modules del host sobrescriba
     depends_on:
       - db
 
@@ -33,6 +33,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
     depends_on:
       - db
 
@@ -44,4 +46,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  pgadmin-data:
     driver: local

@@ -238,7 +238,8 @@ export class UsersController {
       await sendEmail(
         `${data.nombre} ${data.correo}`,
         'Bienvenido a Meridian!',
-        createEmail({ user }, 'thankEmail')
+        createEmail({ user }, 'thankEmail'),
+        'no-reply'
       )
       // Enviar notificación de bienvenida
       await sendNotification(
@@ -415,7 +416,8 @@ export class UsersController {
       await sendEmail(
         `${data.nombre} <${data.correo}>`,
         'Correo de validación en Meridian',
-        emailContent
+        emailContent,
+        'no-reply'
       )
 
       res.json({
@@ -467,7 +469,7 @@ export class UsersController {
 
       jwtPipeline(user, res)
       // Set the new cookie
-      res.json({ message: 'User successfully validated' })
+      res.json({ validated: true })
     } catch (err) {
       next(err)
     }
@@ -498,7 +500,12 @@ export class UsersController {
         'changePassword'
       )
 
-      await sendEmail(email, 'Correo de reinicio de contraseña', emailContent)
+      await sendEmail(
+        email,
+        'Correo de reinicio de contraseña',
+        emailContent,
+        'no-reply'
+      )
 
       return res.json({ ok: true, message: 'Correo enviado con éxito' })
     } catch (err) {

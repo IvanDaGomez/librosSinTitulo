@@ -27,22 +27,21 @@
 }
 .verifyContainer .codeInputContainer{
   width: 100%;
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: var(--margin-xsmall);
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .verifyContainer .codeInputContainer .codeInput{
-  height: calc(var(--font-size-xlarge) * 2);
-  width: 3ch;
+  height: calc(var(--font-size-large));
+  width: 100%;
   min-width: 40px;
   border: 1px solid var(--using2);
   margin: 0;
   border-radius: var(--border-radius);
   background: white;
   color: var(--using3);
-  font-size: var(--font-size-xlarge);
+  font-size: var(--font-size-large);
   text-align: center;
 }
 .verifyContainer p{
