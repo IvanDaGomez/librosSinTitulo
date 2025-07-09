@@ -14,4 +14,4 @@ node_modules/
 dist/
 # data
 data/
-/data/ say
+/data/ say.env
