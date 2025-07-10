@@ -255,9 +255,9 @@ const changePasswordTemplate = (data: DataType, seeEmailTemplate = false) => {
                 <p>Hola <strong>${data.user?.nombre ?? ''}</strong>,</p>
                 <p>Hemos recibido una solicitud para cambiar la contraseña de tu cuenta en Meridian Bookstore.</p>
                 <p>Por favor, pulsa el siguiente botón para completar el proceso de cambio de contraseña:</p>
-                <a href='${
+                <a href="${
                   data.metadata?.validation_link
-                }'><div class='button'>Cambiar Contraseña</div></a>
+                }"><div class='button'>Cambiar Contraseña</div></a>
                 <p>Este código es válido por 15 minutos.</p>
                 <hr/>
                 <p>

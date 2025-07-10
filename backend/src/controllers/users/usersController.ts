@@ -228,7 +228,7 @@ export class UsersController {
         return res.status(400).json({ error: validated.error })
       }
       // Revisar si el correo ya está en uso
-      await checkEmailExists(data.correo)
+      await checkEmailExists(data.correo, this.UsersModel)
       // Inicializar los datos
       data = initializeDataCreateUser(data)
       // Crear usuario
@@ -290,7 +290,12 @@ export class UsersController {
         })
       }
 
-      const updatedData = await processUserUpdate(data, userId, req)
+      const updatedData = await processUserUpdate(
+        data,
+        userId,
+        req,
+        this.UsersModel
+      )
 
       // Actualizar usuario
       console.log('Updating user...')
@@ -317,13 +322,14 @@ export class UsersController {
       if (!accion) {
         return res.status(400).json({ error: 'Acción no proporcionada' })
       }
-
+      console.log('Updating favorites...')
       const updatedFavorites = await updateUserFavorites(
         userId,
         book_id,
-        accion
+        accion,
+        this.UsersModel
       )
-
+      console.log('Updated favorites:', updatedFavorites)
       await this.UsersModel.updateUser(userId, {
         favoritos: updatedFavorites
       })

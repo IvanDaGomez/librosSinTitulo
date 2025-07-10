@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import './protectedWithdraw.css';
+import './protected.css';
 import axios from "axios";
 import { renderProfilePhoto } from '../../assets/renderProfilePhoto.js';
 import { formatPrice } from "../../assets/formatPrice.js";

@@ -187,6 +187,17 @@ input {
 input:focus{
   border: var(--border-width) solid var(--using4);
 }
+select{
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: var(--using1);
+  color: var(--using3);
+}
+option{
+  background: var(--using1);
+  color: var(--using3);
+}
 .error{
   margin: auto;
   margin-bottom: var(--margin-medium);

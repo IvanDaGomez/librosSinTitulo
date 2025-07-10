@@ -1,7 +1,7 @@
 import { useContext, useState, useRef, useEffect } from "react"
 import { useReturnIfNoUser } from "../../assets/useReturnIfNoUser"
 import { UserContext } from "../../context/userContext"
-import "./protectedSeeEmailTemplate.css"
+import "./protected.css"
 import { BACKEND_URL } from "../../assets/config"
 import axios from "axios"
 export default function ProtectedSeeEmailTemplate () {

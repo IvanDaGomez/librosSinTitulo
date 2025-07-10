@@ -1,4 +1,3 @@
-import { UsersModel } from '../../models/users/local/usersLocal.js'
 import crypto from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { AuthToken } from '../../types/authToken.js'
@@ -9,8 +8,9 @@ import path from 'node:path'
 import { Multer } from 'multer'
 import saveOptimizedImages from '../../assets/saveOptimizedImages.js'
 import { userObject } from '../../models/users/userObject.js'
+import { IUsersModel } from '../../types/models.js'
 
-async function checkEmailExists (email: string) {
+async function checkEmailExists (email: string, UsersModel: IUsersModel) {
   const correo = await UsersModel.getUserByEmail(email)
 
   if (correo?.correo) {
@@ -32,16 +32,19 @@ function initializeDataCreateUser (data: UserInfoType) {
 async function processUserUpdate (
   data: Partial<UserInfoType> & { accion?: string },
   userId: ID,
-  req: express.Request
+  req: express.Request,
+  UsersModel: IUsersModel
 ) {
-  const file: Express.MulterS3.File | undefined = req.file as Express.MulterS3.File | undefined
+  const file: Express.MulterS3.File | undefined = req.file as
+    | Express.MulterS3.File
+    | undefined
   if (file) {
     data.foto_perfil = file.location as ImageType
     await saveOptimizedImages([data.foto_perfil])
   }
 
   if (data.correo) {
-    await checkEmailExists(data.correo)
+    await checkEmailExists(data.correo, UsersModel)
     data.validated = false
   }
 
@@ -51,9 +54,11 @@ async function processUserUpdate (
 async function updateUserFavorites (
   userId: ID,
   bookId: ID,
-  accion: string
+  accion: string,
+  UsersModel: IUsersModel
 ): Promise<ID[]> {
   const user = await UsersModel.getUserById(userId)
+  console.log('User found:', user)
   if (!user) throw new Error('Usuario no encontrado')
 
   let updatedFavorites = user.favoritos || []

@@ -36,6 +36,8 @@ import ProtectedWithdraw from './routes/protected/protectedWithdraw.jsx'
 import ListaCostes from './routes/extraFooterInfo/listaCostes.jsx'
 import ProtectedBan from './routes/protected/protectedBan.jsx'
 import ProtectedSeeEmailTemplate from './routes/protected/protectedSeeEmailTemplate.jsx'
+import ProtectedManageShipping from './routes/protected/protectedManageShipping.jsx'
+import ProtectedManageMessages from './routes/protected/protectedManageMessages.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -77,6 +79,8 @@ createRoot(document.getElementById('root')).render(
           <Route path="/protected/ban" element={<ProtectedBan />} />
           <Route path="/lista-costes" element={<ListaCostes />} />
           <Route path="/protected/seeEmailTemplate" element={<ProtectedSeeEmailTemplate />} />
+          <Route path="/protected/manageShipping" element={<ProtectedManageShipping />} />
+          <Route path="/protected/manageMessages" element={<ProtectedManageMessages />} />
           <Route path="*" element={<ErrorPage />} />
         </Routes>
         <ToastContainer

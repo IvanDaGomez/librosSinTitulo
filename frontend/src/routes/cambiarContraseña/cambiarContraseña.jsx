@@ -81,11 +81,11 @@ export default function CambiarContraseña () {
             <input
               type='password'
               id='password'
+              placeholder='Ingresa tu nueva contraseña'
               value={password}
               onChange={handlePasswordChange}
               required
             />
-            <label htmlFor='password'>Nueva Contraseña:</label>
           </div>
 
           <div className='input-field'>
@@ -93,11 +93,12 @@ export default function CambiarContraseña () {
             <input
               type='password'
               id='confirmPassword'
+              placeholder='Confirma tu nueva contraseña'
+              autoComplete='new-password'
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
-            <label htmlFor='confirmPassword'>Confirmar Contraseña:</label>
           </div>
           <div className='strengthMeter'>
             <span>Fortaleza:</span>

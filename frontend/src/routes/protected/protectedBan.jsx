@@ -1,5 +1,5 @@
 import { useState } from "react";
-import './protectedReview.css'
+import './protected.css'
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import { BACKEND_URL } from "../../assets/config";

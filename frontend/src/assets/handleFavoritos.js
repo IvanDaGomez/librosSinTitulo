@@ -10,12 +10,12 @@ const handleFavoritos = (event, id, userId) => {
       toast.error(necesitasIniciarSesion)
       return
     }
-
     const url = `${BACKEND_URL}/api/users/favorites/${userId}`
     // Select the <path> inside the SVG using its unique className
     const favoritoIconPath = document.querySelectorAll(`.favorito-${id}`)
 
     try {
+
       const response = await axios.patch(url, {
         book_id: id,
         accion: (favoritoIconPath.length > 0 && favoritoIconPath[0].classList.contains('favoritoActivo')) ? 'eliminar' : 'agregar'

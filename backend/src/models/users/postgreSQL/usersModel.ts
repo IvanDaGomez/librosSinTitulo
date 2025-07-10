@@ -42,16 +42,21 @@ class UsersModel {
 
   static async getUserById (id: ID): Promise<PartialUserInfoType> {
     // Esta función devuelve un usuario específico por su ID, pero sin información sensible como la contraseña
+    const query = `SELECT ${this.getEssencialFields().join(
+      ', '
+    )} FROM users WHERE id = ${id}`
+    console.log('Query to get user by ID:', query)
     const user: PartialUserInfoType = await executeSingleResultQuery(
       pool,
       () =>
         pool.query(
-          `SELECT ${this.getEssencialFields().join(', ')} FROM users WHERE id = $1;`,
+          `SELECT ${this.getEssencialFields().join(
+            ', '
+          )} FROM users WHERE id = $1;`,
           [id]
         ),
       'Error getting user'
     )
-    console.log(id)
     return user
   }
 
@@ -213,11 +218,7 @@ class UsersModel {
   static async getPassword (id: ID): Promise<string> {
     const user = await executeSingleResultQuery(
       pool,
-      () =>
-        pool.query(
-          `SELECT contraseña FROM users WHERE id = $1;`,
-          [id]
-        ),
+      () => pool.query(`SELECT contraseña FROM users WHERE id = $1;`, [id]),
       'Error getting user'
     )
     if (!user) {
@@ -303,13 +304,12 @@ class UsersModel {
       data.actualizado_en = new Date().toISOString() as ISOString
       const keys = Object.keys(data)
       const values = Object.values(data)
-      
+
       let updateString = ''
       for (const i of keys) {
         updateString += `${i} = $${keys.indexOf(i) + 1}, `
       }
       updateString = updateString.slice(0, -2) // Remove last comma and space
-
 
       const existingUser = await this.getEmailById(id)
       if (existingUser.correo === data.correo) {
@@ -359,56 +359,56 @@ class UsersModel {
     const user = await this.getUserById(id)
     return user.balance
   }
-  static async banUser(value: ID): Promise<{ message: string }> {
-    const user = await this.getUserById(value);
-    const userEmail = await this.getUserByEmail(value);
+  static async banUser (value: ID): Promise<{ message: string }> {
+    const user = await this.getUserById(value)
+    const userEmail = await this.getUserByEmail(value)
     if (!user && !userEmail) {
-      throw new Error('Usuario no encontrado');
+      throw new Error('Usuario no encontrado')
     }
-  
-    const client = await pool.connect();
+
+    const client = await pool.connect()
     try {
       // Start a transaction
-      await client.query('BEGIN');
-  
+      await client.query('BEGIN')
+
       // Update the user's account status
       await client.query(
         `UPDATE users SET estado_cuenta='Suspendido' WHERE correo = $1 OR nombre = $1;`,
         [value]
-      );
-  
+      )
+
       // Delete related books
       await client.query(
         `DELETE FROM books WHERE id_vendedor IN (SELECT id FROM users WHERE correo = $1);`,
         [value]
-      );
-  
+      )
+
       // Delete related notifications
       await client.query(
         `DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE correo = $1);`,
         [value]
-      );
-  
+      )
+
       // Commit the transaction
-      await client.query('COMMIT');
-  
-      return { message: 'Usuario suspendido y datos relacionados eliminados con éxito' };
-  
+      await client.query('COMMIT')
+
+      return {
+        message: 'Usuario suspendido y datos relacionados eliminados con éxito'
+      }
     } catch (error) {
       // If any error occurs, rollback the transaction
 
-      await client.query('ROLLBACK');
+      await client.query('ROLLBACK')
       if (error instanceof Error) {
-        console.error('Error al suspender el usuario:', error);
-        throw new Error('Error al suspender el usuario');
+        console.error('Error al suspender el usuario:', error)
+        throw new Error('Error al suspender el usuario')
       }
-      return { message: 'Error al suspender el usuario' };
+      return { message: 'Error al suspender el usuario' }
     } finally {
       // Release the client
-      client.release();
+      client.release()
     }
   }
-  
 }
 
 export { UsersModel }

@@ -1,17 +1,16 @@
 /* eslint-disable react/prop-types */
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { FaHome } from "react-icons/fa";
 import './sideBar.css'
 import { Link, useNavigate } from "react-router-dom";
 import { renderProfilePhoto } from "../../assets/renderProfilePhoto";
-import { cambiarEspacioAGuiones } from "../../assets/agregarMas";
+
 import { handleDropwdown } from "./handleDropdown";
-import SearchButton from "../header/searchButton";
+
 import { BsBook, BsCollection } from "react-icons/bs";
 export default function MenuSideBar({ callback, user, logoutFn }) {
   const navigate = useNavigate()
   const [showDropdown, setShowDropdown] = useState(false);
-  const queryInput = useRef(null)
   const mainInfo = [
     {
       title: "Inicio",
@@ -30,12 +29,6 @@ export default function MenuSideBar({ callback, user, logoutFn }) {
     }
   ]
 
-  function submitInputValue () {
-    if (!queryInput.current.value) return
-
-    window.location.href =`/buscar?q=${cambiarEspacioAGuiones(queryInput.current.value)}`
-    queryInput.current.value = ''
-  }
   return (
     <div className='menuSideBar' onMouseLeave={callback} >{/* */}
       {/* Profile Section */}
@@ -56,12 +49,7 @@ export default function MenuSideBar({ callback, user, logoutFn }) {
             </div>
           </Link>))}
       </div>
-      {/* Buscar */}
 
-      <SearchButton
-      submitInputValue={submitInputValue}
-      queryInput={queryInput}
-      setResults={null} />
       {/* User Dropdown Menu */}
       {user ? <>
         <div className="user-section" onClick={() => handleDropwdown(showDropdown, setShowDropdown)}>

@@ -34,7 +34,7 @@ export default function Header () {
   // Submits the input value when the search button is clicked
   function submitInputValue () {
     if (!queryInput.current.value) return
-
+    setResults([])
     navigate(`/buscar?q=${cambiarEspacioAGuiones(queryInput.current.value)}`)
     queryInput.current.value = ''
   }

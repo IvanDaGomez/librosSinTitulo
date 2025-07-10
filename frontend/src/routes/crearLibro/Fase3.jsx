@@ -6,7 +6,7 @@ import { formatPrice } from '../../assets/formatPrice'
 export default function Fase3 ({ form, setForm, fase, setFase, meanPrice }) {
   const [errors, setErrors] = useState([])
   const [keywords, setKeywords] = useState([])
-
+  const [currentEstimate, setCurrentEstimate] = useState(0)
   async function handleSubmit (e) {
     e.preventDefault()
 
@@ -38,11 +38,23 @@ export default function Fase3 ({ form, setForm, fase, setFase, meanPrice }) {
     })
     setFase(4)
   }
+  async function handleChange (e) {
+    e.preventDefault()
 
-  /* handleAtras(); */
+    const { precio, oferta } = e.target
 
-  // Icono de $ y formateo a 1.000
+    // Remover el formato de precio y oferta (eliminar "$" y los puntos)
+    const cleanPrecio = parseInt(precio.value.replace(/\./g, '').replace('$', ''), 10)
+    const cleanOferta = oferta.value ? parseInt(oferta.value.replace(/\./g, '').replace('$', ''), 10) : undefined // Asegúrate de que esté definido
 
+    setForm({
+      ...form,
+
+      precio: cleanPrecio,
+      keywords,
+      oferta: cleanOferta // Guardar sin formatear
+    })
+  }
   // Muestra solo "$" si no hay valor
   const formatPrecio = (e) => {
     const value = e.target.value.replace(/[^0-9]/g, '') // Eliminar caracteres que no sean números
@@ -51,6 +63,7 @@ export default function Fase3 ({ form, setForm, fase, setFase, meanPrice }) {
       // Convertir a número y formatear
       const formattedValue = parseFloat(value).toLocaleString('es')
       e.target.value = '$ ' + formattedValue // Actualizar con el símbolo de $
+      setCurrentEstimate(calculateComission(value)) // Actualizar la comisión estimada
     } else {
       e.target.value = '$' // Mostrar solo el símbolo $ si no hay valor
     }
@@ -78,6 +91,7 @@ export default function Fase3 ({ form, setForm, fase, setFase, meanPrice }) {
     const precioElement = document.querySelector('#precio')
     if (form.precio && !isNaN(form.precio)) {
       precioElement.value = '$ ' + parseFloat(form.precio).toLocaleString('es')
+      setCurrentEstimate(calculateComission(form.precio)) // Actualizar la comisión estimada
     } else {
       precioElement.value = '$ 0' // Valor por defecto si form.precio no es válido
     }
@@ -93,7 +107,7 @@ export default function Fase3 ({ form, setForm, fase, setFase, meanPrice }) {
   }, [form.precio, form.keywords, form.oferta])
   return (
     <>
-      <form action='' onSubmit={handleSubmit} noValidate>
+      <form action='' onSubmit={handleSubmit} onChange={handleChange} noValidate>
 
         <div className='inputCrear'>
           <label htmlFor='keywords'>Palabras clave (hasta 5)</label>
@@ -150,7 +164,7 @@ export default function Fase3 ({ form, setForm, fase, setFase, meanPrice }) {
           />
         </div>
         {(!isNaN(meanPrice) && meanPrice > 0) && <label>El precio promedio de este libro en internet es de: $ {meanPrice} pesos</label>}
-        {form.precio && <p>Comisión estimada: {formatPrice(calculateComission(form.precio))}</p>}
+        {form.precio && <p>Comisión estimada: <span className='comissionEstimate'>{formatPrice(currentEstimate)}</span></p>}
         {errors.length !== 0 && <div className='error'>{errors[0]}</div>}
         <div className='center'>
           <div className='atras' onClick={() => setFase(fase - 1)}>

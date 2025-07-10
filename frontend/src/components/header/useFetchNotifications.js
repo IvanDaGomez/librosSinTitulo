@@ -10,7 +10,6 @@ export default function useFetchNotifications(user) {
         if (!user || Object.keys(user).length === 0) return
         const url = `${BACKEND_URL}/api/notifications/getNotificationsByUser/${user.id}`
         const response = await axios.get(url)
-        console.log('Response:', response.data)
         setNotifications(response.data)
         setFilteredNotifications(response.data)
       }

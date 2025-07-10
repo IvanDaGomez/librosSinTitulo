@@ -1,0 +1,182 @@
+/*---------------------------------------------BOOK REVIEW-----------------------------------*/
+
+
+.book-review{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max(300px, 60vw);
+  border-radius: var(--border-radius);;
+  border: 2px solid var(--using2);
+  margin: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.book-review h2{
+  font-size: var(--font-size-xlarge);
+}
+.book-review p{
+  font-size: var(--font-size-medium);
+}
+.book-review .imageWrapper{
+  width: min(300px, 40vw);
+  aspect-ratio: 2 / 3;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-x: auto;
+}
+.book-review .imageWrapper img{
+  height: 100%;
+  margin-right: 5px;
+}
+.book-review .imageWrapper .beforeButton, .book-review .imageWrapper .afterButton{
+  position: absolute;
+  top: 50%;
+  background: var(--using2);
+  color: #000;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.book-review .imageWrapper .beforeButton{
+  left:0;
+}
+
+.book-review .imageWrapper .afterButton{
+  right:0;
+}
+
+.book-review input{
+  width: 80%;
+  background: white;
+  color: black;
+  padding: 5px;
+  padding-left: 10px;
+  margin: var(--margin-small);
+}
+
+.templateVisualization{
+  max-width: 500px;
+  width: 80vw;
+
+}
+
+.stats-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  place-items: center;
+  padding: var(--padding-xlarge);
+  gap: 1rem;
+  min-height: 100dvh;
+}
+.stats-section .stat-card{
+  width: 100%;
+  min-height: 30dvh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: var(--using1);
+  border: var(--border-width) solid var(--using4);
+}
+
+.stats-section .availableOptions{
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--margin-small);
+  & > button.active{
+    background: var(--using7);
+  }
+}
+.stats-section .topViewedContainer{
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--margin-small);
+}
+.stats-section .topViewed{
+  width: 30ch;
+  background: var(--using4);
+  border-radius: var(--border-radius);
+  padding: var(--padding-small);
+  margin: auto;
+  color: var(--using1);
+}
+.stat-card.trends{
+  grid-column: 1 / -1;
+}
+@media only screen and (max-width: 734px) {
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
+  .stats-section .stat-card{
+    min-height: 20dvh;
+  }
+
+  
+}
+
+.protectedContainer {
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  width: 100vw;
+  height: 100dvh;
+  .withdrawInfo{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    border: var(--border-width) solid var(--using4);
+    padding: var(--padding-large);
+    border-radius: var(--border-radius);
+    *:not(h1){
+      text-align: center;
+      font-size: var(--font-size-large);
+    }
+    img{
+      width: 200px;
+      height: 200px;
+      border-radius: var(--border-radius);
+    }
+    
+  }
+  .buttons{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: var(--margin-large);
+    button{
+      margin-left: var(--margin-medium);
+      padding: var(--padding-medium);
+      font-size: var(--font-size-large);
+      border-radius: var(--border-radius);
+      background-color: var(--using4);
+      color: var(--using1);
+      cursor: pointer;
+      &:hover{
+        background-color: var(--using3);
+      }
+    }
+  }
+}

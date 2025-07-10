@@ -4,7 +4,7 @@ import UserGraph from './graphs/UserGraph.jsx'; // Component to display customer
 // import BooksGraph from './BooksGraph'; // Component to show number of books published and viewed
 // import TransactionsGraph from './TransactionsGraph'; // Component to track transactions
 // import SalesGraph from './SalesGraph'; // Component to track earnings and sales
-import './protectedStats.css'
+import './protected.css'
 import axios from 'axios';
 import BooksGraph from './graphs/BooksGraph.jsx';
 import TransactionsGraph from './graphs/TransactionsGraph.jsx';
