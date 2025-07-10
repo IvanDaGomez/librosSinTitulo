@@ -129,6 +129,24 @@ class MessagesModel {
       throw new DatabaseError(`Error updating message with ID ${id}`, error)
     }
   }
+  static async getMessagesByQuery (query: string): Promise<MessageObjectType[]> {
+    try {
+      const messages = await executeQuery(
+        pool,
+        () =>
+          pool.query('SELECT * FROM messages WHERE message ILIKE $1;', [
+            `%${query}%`
+          ]),
+        'Failed to fetch messages by query from PostgreSQL'
+      )
+      return messages
+    } catch (error) {
+      if (error instanceof DatabaseError) {
+        throw error
+      }
+      throw new DatabaseError('Error retrieving messages by query', error)
+    }
+  }
 }
 
 export { MessagesModel }

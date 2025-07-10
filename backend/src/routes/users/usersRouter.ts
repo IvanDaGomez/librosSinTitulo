@@ -1,7 +1,11 @@
 import { RequestHandler, Router } from 'express'
 import { UsersController } from '../../controllers/users/usersController.js'
 import { upload } from '../../assets/config.js'
-import { IBooksModel, ITransactionsModel, IUsersModel } from '../../types/models.js'
+import {
+  IBooksModel,
+  ITransactionsModel,
+  IUsersModel
+} from '../../types/models.js'
 
 export const createUsersRouter = ({
   UsersModel,
@@ -12,7 +16,11 @@ export const createUsersRouter = ({
   TransactionsModel: ITransactionsModel
   BooksModel: IBooksModel
 }) => {
-  const usersController = new UsersController({ UsersModel, TransactionsModel, BooksModel })
+  const usersController = new UsersController({
+    UsersModel,
+    TransactionsModel,
+    BooksModel
+  })
   const usersRouter = Router()
 
   usersRouter.get('/', usersController.getAllUsersSafe as RequestHandler) // R
@@ -41,6 +49,10 @@ export const createUsersRouter = ({
   )
 
   usersRouter.get('/query', usersController.getUserByQuery as RequestHandler)
+  usersRouter.get(
+    '/idList/:ids',
+    usersController.getUsersByIdList as RequestHandler
+  ) // R
 
   usersRouter.post(
     '/newCollection',
@@ -52,7 +64,6 @@ export const createUsersRouter = ({
   )
   usersRouter.post('/ban', usersController.banUser as RequestHandler)
   usersRouter.post('/follow', usersController.followUser as RequestHandler)
-
 
   usersRouter.post(
     '/sendValidationEmail',
@@ -73,7 +84,10 @@ export const createUsersRouter = ({
     usersController.getPhotoAndNameUser as RequestHandler
   ) // R
   usersRouter.get('/:user_id', usersController.getUserById as RequestHandler) // R
-  usersRouter.patch('/favorites/:user_id', usersController.updateFavorites as RequestHandler) // U
+  usersRouter.patch(
+    '/favorites/:user_id',
+    usersController.updateFavorites as RequestHandler
+  ) // U
   usersRouter.patch(
     '/:user_id',
     upload.single('images'),

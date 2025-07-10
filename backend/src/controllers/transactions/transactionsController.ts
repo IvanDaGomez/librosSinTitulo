@@ -14,10 +14,7 @@ import { createMercadoPagoPayment } from '../users/createMercadoPagoPayment.js'
 import { payment, preference } from '../../assets/config.js'
 import { MercadoPagoInput } from '../../types/mercadoPagoInput.js'
 import { ShippingDetailsType } from '../../types/shippingDetails.js'
-import { sendEmail } from '../../assets/email/sendEmail.js'
-import { createEmail } from '../../assets/email/htmlEmails.js'
-import { parse } from 'node:path'
-// TODO
+
 export class TransactionsController {
   private TransactionsModel: ITransactionsModel
   private UsersModel: IUsersModel
@@ -108,8 +105,7 @@ export class TransactionsController {
     }
     // TODO: No se si el id es necesario, ya que se genera en mercadoPago
     // data.id = crypto.randomUUID()
-    const transaction =
-      await this.TransactionsModel.createSuccessfullTransaction(data)
+    const transaction = await this.TransactionsModel.createTransaction(data)
 
     res.json(transaction)
   }
@@ -262,14 +258,13 @@ export class TransactionsController {
       // Crear la transacción
       // TODO
       // Registrar la transacción (éxito o fracaso)
-      const transaction =
-        await this.TransactionsModel.createSuccessfullTransaction({
-          user_id: userId,
-          book_id: book.id,
-          shipping_details: shippingDetails,
-          response,
-          order
-        })
+      const transaction = await this.TransactionsModel.createTransaction({
+        user_id: userId,
+        book_id: book.id,
+        shipping_details: shippingDetails,
+        response,
+        order
+      })
 
       // Enviar notificaciones y correos al vendedor y comprador
       await sendProcessPaymentEmails({
@@ -290,6 +285,87 @@ export class TransactionsController {
       })
     }
   }
+  processPaymentManual = async (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ): Promise<express.Response | void> => {
+    /*
+    TODO: Sequelize transaction
+    Steps
+    1. Registrar el pago en la base de datos
+    2. Actualizar el saldo del usuario y vendedor
+    3. Cambiar la disponibilidad del libro a vendido
+    4. Crear la orden de envío
+    4. Crear la transacción
+    5. Enviar notificación al vendedor y comprador
+    6. Enviar correo al vendedor y comprador
+    7. Devolver el resultado
+    */
+    try {
+      const { form_data, partial_data, payment_method } =
+        req.body as MercadoPagoInput
+      const sellerId = partial_data.seller_id
+      const userId = partial_data.user_id
+      const bookId = partial_data.book_id
+      const shippingDetails = partial_data.shipping_details
+      if (!sellerId || !userId || !bookId || !shippingDetails) {
+        return res
+          .status(400)
+          .json({ error: 'Faltan datos requeridos en la solicitud' })
+      }
+
+      const [user, seller, book] = await Promise.all([
+        this.UsersModel.getUserById(userId),
+        this.UsersModel.getUserById(sellerId),
+        this.BooksModel.getBookById(bookId)
+      ])
+
+      // Configuración del pago con split payments
+      const info = createMercadoPagoPayment({
+        form_data,
+        partial_data,
+        payment_method,
+        book,
+        user
+      })
+
+      // Crear el pago en MercadoPago
+      const response = await payment.create(info)
+
+      // Actualizar el saldo del usuario y vendedor
+      // I dont update the user balance because if the payment is with mercadopago, the user balance is not updated
+      await Promise.all([
+        this.UsersModel.updateUser(sellerId, {
+          balance: {
+            por_llegar:
+              (seller.balance.por_llegar ?? 0) + form_data.transaction_amount
+          }
+        }),
+        this.BooksModel.updateBook(bookId, {
+          disponibilidad: 'Vendido'
+        })
+      ])
+      // Crear la transacción
+      // TODO
+      // Registrar la transacción (éxito o fracaso)
+      const transaction = await this.TransactionsModel.createTransaction({
+        user_id: userId,
+        book_id: book.id,
+        shipping_details: shippingDetails,
+        response
+      })
+
+      res.json({ message: 'Pago exitoso', response })
+    } catch (err) {
+      console.error('Error al procesar el pago:', err)
+      res.status(500).json({
+        error: 'Error al procesar el pago',
+        details: err
+      })
+    }
+  }
+
   payWithBalance = async (
     req: express.Request,
     res: express.Response,
@@ -362,14 +438,13 @@ export class TransactionsController {
       })
       // Crear la transacción
       // TODO
-      const transaction =
-        await this.TransactionsModel.createSuccessfullTransaction({
-          user_id,
-          book_id,
-          shipping_details,
-          transaction_amount,
-          status: 'approved'
-        })
+      const transaction = await this.TransactionsModel.createTransaction({
+        user_id,
+        book_id,
+        shipping_details,
+        transaction_amount,
+        status: 'approved'
+      })
       // Enviar notificaciones y correos al vendedor y comprador
       await sendProcessPaymentEmails({
         user: updatedUser,
@@ -450,14 +525,13 @@ export class TransactionsController {
             })
           ])
           // Crear la transacción
-          const transaction =
-            await this.TransactionsModel.createSuccessfullTransaction({
-              user_id: existingTransaction.user_id,
-              book_id: existingTransaction.book_id,
-              shipping_details: existingTransaction.shipping_details,
-              response,
-              order: existingTransaction.order
-            })
+          const transaction = await this.TransactionsModel.createTransaction({
+            user_id: existingTransaction.user_id,
+            book_id: existingTransaction.book_id,
+            shipping_details: existingTransaction.shipping_details,
+            response,
+            order: existingTransaction.order
+          })
           // Enviar notificaciones y correos al vendedor y comprador
           await sendProcessPaymentEmails({
             user,

@@ -486,7 +486,11 @@ class BooksModel {
 
   static async getBooksByIdList (list: ID[]): Promise<BookObjectType[]> {
     try {
-      const books = await Promise.all(list.map(id => this.getBookById(id)))
+      const books = await executeQuery(
+        pool,
+        () => pool.query('SELECT * FROM books WHERE id = ANY($1);', [list]),
+        'Failed to fetch books by ID list'
+      )
       return books
     } catch (error) {
       if (error instanceof DatabaseError) {

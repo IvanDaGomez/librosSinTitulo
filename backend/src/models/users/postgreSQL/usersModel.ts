@@ -59,6 +59,27 @@ class UsersModel {
     )
     return user
   }
+  static async getUsersByIdList (list: ID[]): Promise<PartialUserInfoType[]> {
+    try {
+      const users = await executeQuery(
+        pool,
+        () =>
+          pool.query(
+            `SELECT ${this.getEssencialFields().join(
+              ', '
+            )} FROM users WHERE id = ANY($1);`,
+            [list]
+          ),
+        'Failed to fetch users by ID list'
+      )
+      return users
+    } catch (error) {
+      if (error instanceof DatabaseError) {
+        throw error
+      }
+      throw new DatabaseError('Error fetching users by ID list', error)
+    }
+  }
 
   static async getPhotoAndNameUser (id: ID): Promise<{
     id: ID

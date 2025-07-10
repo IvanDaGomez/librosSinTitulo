@@ -73,6 +73,32 @@ export class UsersController {
     }
   }
 
+  getUsersByIdList = async (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ): Promise<express.Response | void> => {
+    /*
+      Aquí se obtiene libros específicos por su ID y se envía como respuesta.
+      Si no se encuentra el libro, se envía un error 404.
+    */
+    try {
+      const ids = req.params.ids
+
+      const idsArray = ids.split(',').map(id => id.trim()) as ID[]
+      if (!ids || ids.length === 0) {
+        return res.status(400).json({ error: 'No se proporcionaron IDs' })
+      }
+
+      const users = await this.UsersModel.getUsersByIdList(
+        idsArray,
+        idsArray.length
+      )
+      return res.json(users)
+    } catch (err) {
+      next(err)
+    }
+  }
   getUserById = async (
     req: express.Request,
     res: express.Response,

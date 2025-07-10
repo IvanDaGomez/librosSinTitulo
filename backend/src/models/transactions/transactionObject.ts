@@ -32,7 +32,12 @@ const transactionObject = (
       phone: {
         area_code: data?.shipping_details?.phone?.area_code || '',
         number: data?.shipping_details?.phone?.number || ''
-      }
+      },
+      status: data?.shipping_details?.status || 'not_delivered'
+    },
+    payment_method: {
+      id: data.response?.payment_method?.id || '',
+      type: data.response?.payment_method?.type || ''
     },
     response: {
       id: data.response?.id || 0,

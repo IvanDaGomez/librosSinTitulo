@@ -198,6 +198,53 @@ option{
   background: var(--using1);
   color: var(--using3);
 }
+table {
+  width: calc(100% - var(--margin-medium) * 2);
+  height: 400px; /* Fixed height */
+  max-height: 40vh;
+  border-collapse: collapse;
+  margin: var(--margin-medium) 0;
+  background: var(--using1);
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  display: block; /* Needed for fixed height + scroll */
+  overflow-y: auto;
+}
+
+table th, table td {
+  padding: var(--padding-small) var(--padding-medium);
+  text-align: left;
+  border-bottom: 1px solid var(--using2);
+  font-size: var(--font-size-medium);
+  min-width: 120px;
+  box-sizing: border-box;
+}
+
+table th {
+  background: var(--using4);
+  color: var(--using1);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* Remove bottom border and padding if table has only header and no rows */
+table:empty,
+table:not(:has(tbody tr)) th {
+  width: 100%;
+  padding-bottom: 0;
+}
+
+table tr:last-child td {
+  border-bottom: none;
+}
+
+table tr:hover {
+  background: var(--using5);
+  transition: background 0.2s;
+}
 .error{
   margin: auto;
   margin-bottom: var(--margin-medium);
@@ -205,7 +252,7 @@ option{
   background-color: var(--using6) !important;
   padding: var(--padding-small);
   color:white !important;
-  border-radius: var(--border-radius);;
+  border-radius: var(--border-radius);
 }
 
 .red {

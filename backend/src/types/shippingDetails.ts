@@ -16,4 +16,5 @@ export type ShippingDetailsType = {
     area_code: string
     number: string
   }
+  status: 'pending' | 'sent' | 'received' | 'not_delivered' | 'cancelled'
 }

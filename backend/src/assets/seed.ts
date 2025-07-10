@@ -23,7 +23,7 @@ async function dropTables () {
   const dropEmailsTable = `DROP TABLE IF EXISTS emails CASCADE;`
   const dropNotificationsTable = `DROP TABLE IF EXISTS notifications CASCADE;`
   const dropTransactionsTable = `DROP TABLE IF EXISTS transactions CASCADE;`
-
+  const dropOrdersTable = `DROP TABLE IF EXISTS orders CASCADE;`
   await Promise.all([
     pool.query(dropUsersTable),
     pool.query(dropBooksTable),
@@ -35,7 +35,8 @@ async function dropTables () {
     pool.query(dropTransactionsTable),
     pool.query(dropBooksBackstageTable),
     pool.query(dropWithdrawalsTable),
-    pool.query(dropTrendsTable)
+    pool.query(dropTrendsTable),
+    pool.query(dropOrdersTable)
   ])
 
   console.log('Tables dropped successfully')
@@ -215,6 +216,20 @@ async function createTables () {
       orden JSONB
     );
   `
+  const createOrdersTable = `
+    CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      user_id VARCHAR NOT NULL,
+      book_id VARCHAR NOT NULL,
+      seller_id VARCHAR NOT NULL,
+      status VARCHAR(50) NOT NULL,
+      shipping_details JSONB,
+      response JSONB,
+      orden JSONB,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `
 
   await Promise.all([
     pool.query(createUsersTable),
@@ -227,7 +242,8 @@ async function createTables () {
     pool.query(createTransactionsTable),
     pool.query(createBooksBackstageTable),
     pool.query(createWithdrawalsTable),
-    pool.query(createTrendsTable)
+    pool.query(createTrendsTable),
+    pool.query(createOrdersTable)
   ])
 
   console.log('Tables created successfully')

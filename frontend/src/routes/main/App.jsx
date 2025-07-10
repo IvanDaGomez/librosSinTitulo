@@ -67,14 +67,14 @@ function App () {
       <Header />
       <BigPhoto />
       {/* <GoogleOneTapLogin /> */}
-      <Carousel data={slides} />
+      {/* <Carousel data={slides} /> */}
 
       <Sections filter='Para ti' />
 
-      <img src='/customPlantilla3.png' style={{ width: '100vw' }} alt='' />
+      {/* <img src='/customPlantilla3.png' style={{ width: '100vw' }} alt='' /> */}
       <Sections filter='Nuevo' />
-      <CustomDesigns plantillas={plantillas} />
-
+      {/* <CustomDesigns plantillas={plantillas} /> */}
+      {/* <Sections filter='Explorar' /> */}
       <SideInfo />
       {/* <ChatBot/> */}
 

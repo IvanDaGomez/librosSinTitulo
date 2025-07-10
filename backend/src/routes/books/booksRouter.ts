@@ -33,24 +33,27 @@ export const createBooksRouter = ({
   booksRouter.post(
     '/ai/aiMode',
     upload.single('image'),
-    AIMode as RequestHandler 
+    AIMode as RequestHandler
   )
   booksRouter.post('/generateDescription', generateResponse as RequestHandler)
   booksRouter.post(
     '/getBooksByCollection',
     booksController.getBooksByCollection as RequestHandler
   )
-  booksRouter.post('/questionBook', booksController.questionBook as RequestHandler)
+  booksRouter.post(
+    '/questionBook',
+    booksController.questionBook as RequestHandler
+  )
   booksRouter.get('/fyp', booksController.forYouPage as RequestHandler)
   booksRouter.get('/query', booksController.getBookByQuery as RequestHandler)
   booksRouter.get(
     '/query/filters',
     booksController.getBooksByQueryWithFilters as RequestHandler
   )
-  booksRouter.get(
-    '/search/:book_title',
-    booksController.searchByBookTitle as RequestHandler
-  )
+  // booksRouter.get(
+  //   '/search/:book_title',
+  //   booksController.searchByBookTitle as RequestHandler
+  // )
   booksRouter.get(
     '/getFavoritesByUser/:user_id',
     booksController.getFavoritesByUser as RequestHandler

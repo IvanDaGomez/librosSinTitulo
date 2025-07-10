@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 
 import { ShippingDetailsType } from '../types/shippingDetails'
+import { executeQuery } from '../utils/dbUtils'
 
 async function crear_orden_interrapidisimo (orden_data: {
   remitente_nombre: string
@@ -66,9 +67,25 @@ async function create_orden_de_envio_envia (
     },
     body: JSON.stringify({})
   })
+  if (response.ok) {
+    orden_data.status = 'pending'
+  } else {
+    orden_data.status = 'not_delivered'
+    console.error('Error al crear la orden:', response.statusText)
+    throw new Error(`Error al crear la orden: ${response.statusText}`)
+  }
   const data = await response.json()
   console.log('Orden creada:', data)
   return data
 }
 
-export { create_orden_de_envio_envia as CreateOrdenDeEnvío }
+async function create_manual_order (
+  orden_data: ShippingDetailsType
+): Promise<any> {
+  // Implementar lógica para crear una orden manual.
+  return orden_data
+}
+export {
+  create_orden_de_envio_envia,
+  create_manual_order as CreateOrdenDeEnvío
+}

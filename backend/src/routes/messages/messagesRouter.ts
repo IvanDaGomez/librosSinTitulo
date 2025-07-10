@@ -19,6 +19,10 @@ export const createMessagesRouter = ({
   // Rutas de mensajes
   messagesRouter.get('/', messagesController.getAllMessages as RequestHandler) // Obtener todos los mensajes
   messagesRouter.get(
+    '/query/:query',
+    messagesController.getMessagesByQuery as RequestHandler
+  ) // Obtener mensajes por consulta
+  messagesRouter.get(
     '/messageByConversation/:conversation_id',
     messagesController.getAllMessagesByConversation as RequestHandler
   )

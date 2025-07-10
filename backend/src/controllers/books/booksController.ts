@@ -4,10 +4,6 @@ import crypto from 'node:crypto'
 import { validateBook, validatePartialBook } from '../../assets/validate.js'
 import { cambiarGuionesAEspacio } from '../../assets/agregarMas.js'
 import { chromium } from 'playwright'
-import {
-  ScrapeResponseType,
-  scrapingFunctions
-} from '../../assets/scrappingConfig.js'
 import { sendEmail } from '../../assets/email/sendEmail.js'
 import { createEmail } from '../../assets/email/htmlEmails.js'
 import { sendNotification } from '../../assets/notifications/sendNotification.js'
@@ -440,31 +436,31 @@ export class BooksController {
     }
   }
 
-  searchByBookTitle = async (
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ): Promise<express.Response | void> => {
-    const browser = await chromium.launch({ headless: true })
-    try {
-      const bookTitle = req.params.book_title as string
-      const context = await browser.newContext()
-      const page = await context.newPage()
+  // searchByBookTitle = async (
+  //   req: express.Request,
+  //   res: express.Response,
+  //   next: express.NextFunction
+  // ): Promise<express.Response | void> => {
+  //   const browser = await chromium.launch({ headless: true })
+  //   try {
+  //     const bookTitle = req.params.book_title as string
+  //     const context = await browser.newContext()
+  //     const page = await context.newPage()
 
-      let results: ScrapeResponseType[] = []
+  //     let results: ScrapeResponseType[] = []
 
-      for (const scrapeFunction of scrapingFunctions) {
-        const result = await scrapeFunction(page, bookTitle)
-        results.push(...result)
-      }
+  //     for (const scrapeFunction of scrapingFunctions) {
+  //       const result = await scrapeFunction(page, bookTitle)
+  //       results.push(...result)
+  //     }
 
-      await browser.close()
-      return res.json(results)
-    } catch (err) {
-      await browser.close()
-      next(err)
-    }
-  }
+  //     await browser.close()
+  //     return res.json(results)
+  //   } catch (err) {
+  //     await browser.close()
+  //     next(err)
+  //   }
+  // }
 
   getAllReviewBooks = async (
     req: express.Request,

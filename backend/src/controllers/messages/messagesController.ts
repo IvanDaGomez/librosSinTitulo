@@ -78,7 +78,7 @@ export class MessagesController {
     try {
       const validated = validateMessage(data)
       if (!validated.success) {
-        console.dir(validated.error, { depth: null})
+        console.dir(validated.error, { depth: null })
         return res.status(400).json({ error: validated.error })
       }
 
@@ -139,6 +139,22 @@ export class MessagesController {
       await this.MessagesModel.updateMessage(messageId, { read: true })
 
       res.json({ message: 'Mensaje actualizado con éxito' })
+    } catch (err) {
+      next(err)
+    }
+  }
+  getMessagesByQuery = async (
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    try {
+      const query = req.params.query as string | undefined
+      if (!query) {
+        return res.status(400).json({ error: 'Consulta no proporcionada' })
+      }
+      const messages = await this.MessagesModel.getMessagesByQuery(query)
+      res.json(messages)
     } catch (err) {
       next(err)
     }

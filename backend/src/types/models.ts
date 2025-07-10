@@ -25,7 +25,7 @@ export interface IUsersModel {
   getEmailById(id: ID): Promise<{ correo: string; nombre: string }>
   getUserByQuery(query: string): Promise<PartialUserInfoType[]>
   login(correo: string, contraseña: string): Promise<PartialUserInfoType>
-  getPassword (id: ID): Promise<string>
+  getPassword(id: ID): Promise<string>
   googleLogin(data: {
     nombre: string
     correo: string
@@ -36,6 +36,7 @@ export interface IUsersModel {
     foto_perfil: ImageType
   }): Promise<PartialUserInfoType>
   getUserByEmail(correo: string): Promise<UserInfoType>
+  getUsersByIdList(list: ID[], l: number): Promise<PartialUserInfoType[]>
   banUser(value: ID): Promise<{ message: string }>
   createUser(data: {
     nombre: string
@@ -155,6 +156,7 @@ export interface IMessagesModel {
     id: ID,
     data: Partial<MessageObjectType>
   ): Promise<MessageObjectType>
+  getMessagesByQuery(query: string): Promise<MessageObjectType[]>
 }
 
 export interface INotificationsModel {
@@ -175,11 +177,11 @@ export interface ITransactionsModel {
   getAllTransactions(): Promise<TransactionObjectType[]>
   getAllTransactionsByUser(id: ID): Promise<TransactionObjectType[]>
   getTransactionById(id: number): Promise<TransactionObjectType>
-  createSuccessfullTransaction(
+  createTransaction(
     data: Partial<TransactionInputType>
   ): Promise<TransactionObjectType>
   deleteTransaction(id: number): Promise<{ message: string }>
-  updateSuccessfullTransaction(
+  updateTransaction(
     id: number,
     data: Partial<TransactionInputType>
   ): Promise<TransactionObjectType>
