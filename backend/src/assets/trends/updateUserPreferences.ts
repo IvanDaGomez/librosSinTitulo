@@ -1,7 +1,7 @@
 import { getBookKeyInfo } from '../../models/books/local/getBookKeyInfo.js'
 import { UsersModel } from '../../models/users/local/usersLocal.js'
-import { AuthToken } from '../../types/authToken.js'
-import { BookObjectType } from '../../types/book.js'
+import { AuthToken } from '../../domain/types/authToken.js'
+import { BookObjectType } from '../../domain/types/book.js'
 export async function updateUserPreferences (userObj: AuthToken, book: Partial<BookObjectType>, action: 'query' | 'openedBook') {
   /**
    * 🔹 Función para actualizar las preferencias del usuario en función de la acción realizada

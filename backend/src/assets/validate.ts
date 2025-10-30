@@ -8,9 +8,9 @@ import {
   genresArr,
   languagesArr,
   statesArr
-} from '../types/bookCategories.js'
-import { estadoCuentaArr, roleArr } from '../types/userCategories.js'
-import { notificationTypeArr } from '../types/notificationCategories.js'
+} from '../domain/types/bookCategories.js'
+import { estadoCuentaArr, roleArr } from '../domain/types/userCategories.js'
+import { notificationTypeArr } from '../domain/types/notificationCategories.js'
 // PENDIENTE EL PATCH
 
 const userSchema = z.object({

@@ -1,9 +1,9 @@
 import dotenv from 'dotenv'
-import { BookObjectType } from '../../types/book'
-import { NotificationType } from '../../types/notification'
-import { TypeType } from '../../types/notificationCategories'
-import { ID, ImageType, ISOString } from '../../types/objects'
-import { PartialUserInfoType } from '../../types/user'
+import { BookObjectType } from '../../domain/types/book'
+import { NotificationType } from '../../domain/types/notification'
+import { TypeType } from '../../domain/types/notificationCategories'
+import { ID, ImageType, ISOString } from '../../domain/types/objects'
+import { PartialUserInfoType } from '../../domain/types/user'
 dotenv.config()
 // PROBLEMS I HAVE WITH THE TYPE OF NOTIFICATION
 export type NotificationInfoNeeded = Partial<{

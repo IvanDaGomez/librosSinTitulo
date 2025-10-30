@@ -14,8 +14,6 @@ function Fase3 ({ form, setForm, setFase, libro, preferenceId, user }) {
   return (
     <>
       <div className='paymentMethodsContainer'>
-        {console.log('libro', libro)}
-        {console.log('preferenceId', preferenceId)}
         {libro && preferenceId ? (
           <>
             {!statusScreen

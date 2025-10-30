@@ -1,10 +1,10 @@
 import dotenv from 'dotenv'
 
-import { BookObjectType } from '../../types/book'
-import { UserInfoType } from '../../types/user'
-import { TransactionObjectType } from '../../types/transaction'
+import { BookObjectType } from '../../domain/types/book'
+import { UserInfoType } from '../../domain/types/user'
+import { TransactionObjectType } from '../../domain/types/transaction'
 import { Barcode } from 'mercadopago/dist/clients/payment/commonTypes'
-import { ShippingDetailsType } from '../../types/shippingDetails'
+import { ShippingDetailsType } from '../../domain/types/shippingDetails'
 import { thankEmailTemplate, bookPublishedTemplate, validationEmailTemplate, changePasswordTemplate, paymentDoneBillTemplate, paymentDoneThankTemplate, bookSoldTemplate, efectyPendingPaymentTemplate, DataType, messageResponseTemplate, messageQuestionTemplate } from './htmlTemplates.js'
 dotenv.config()
 

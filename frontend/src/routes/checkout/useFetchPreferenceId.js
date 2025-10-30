@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
 import { BACKEND_URL } from "../../assets/config"
+import axios from "axios"
 
 export default function useFetchPreferenceId(libro) {
   const [preferenceId, setPreferenceId] = useState(null) // State to store the preference ID
   useEffect(() => {
     // Fetch preferenceId only when `libro` changes
     const fetchPreferenceId = async () => {
-      console.log('Fetching preference ID...') // Debugging log
-      console.log(libro) // Debugging log
+
       if (libro) {
         try {
           const url = `${BACKEND_URL}/api/transactions/getBookPreferenceId`
@@ -20,19 +20,13 @@ export default function useFetchPreferenceId(libro) {
           }
 
           // Make the API call
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(body),
-            credentials: 'include' // Include credentials if necessary
+          const response = await axios.post(url, body, {
+            withCredentials: true // Include credentials if necessary
           })
-
+          console.log('Response', response.data)
           // Parse the response JSON
           if (!response.error) {
-            const data = await response.json()
-            console.log('data:', data)
+            const data = response.data
             setPreferenceId(data.id) // Assuming response includes `preferenceId`
           } else {
             console.error('Error fetching preference ID:', response.statusText)

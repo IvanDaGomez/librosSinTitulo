@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import { getBookKeyInfo } from '../../models/books/local/getBookKeyInfo.js'
-import { BookObjectType } from '../../types/book.js'
+import { BookObjectType } from '../../domain/types/book.js'
 import path from 'node:path'
 import { __dirname } from '../config.js'
 export async function updateTrends (book: Partial<BookObjectType>, action: 'query' | 'openedBook') {

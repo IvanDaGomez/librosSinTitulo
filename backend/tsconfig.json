@@ -1,21 +1,27 @@
 {
   "compilerOptions": {
-    "target": "ES2020",                   // Compilación a ES2020
-    "module": "ESNext",                   // Usar módulos ES
-    "moduleResolution": "node",           // Resolución de módulos estilo Node.js
-    "outDir": "./dist",                   // Compilación en carpeta 'dist'
-    "rootDir": "./src",                       // Permite trabajar fuera de la carpeta 'src'
-    "esModuleInterop": true,              // Compatibilidad con CommonJS
-    "strict": true,                       // Habilitar comprobación estricta
-    "skipLibCheck": true,                 // Omite comprobaciones en archivos de definición
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,            // Permite importar archivos JSON
-    "allowJs": true                       // Permite incluir archivos JS
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"]
+    }
   },
   "include": [
-    "src/**/*.ts",                         // Archivos TS en la carpeta 'src'
-    "backend/**/*.ts"                      // Archivos TS en la carpeta 'backend'
-, "src/assets/swagger.js", "src/assets/email/sendTryEmail.ts"  ],
+    "src/**/*.ts",
+    "backend/**/*.ts",
+    "src/assets/swagger.js",
+    "src/assets/email/sendTryEmail.ts"
+  ],
   "exclude": [
     "node_modules"
   ]

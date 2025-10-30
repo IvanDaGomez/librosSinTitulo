@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { ShippingDetailsType } from '../types/shippingDetails'
+import { ShippingDetailsType } from '../domain/types/shippingDetails'
 import { executeQuery } from '../utils/dbUtils'
 
 async function crear_orden_interrapidisimo (orden_data: {

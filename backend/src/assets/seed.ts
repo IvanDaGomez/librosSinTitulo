@@ -1,5 +1,5 @@
 import { pool } from './config.js'
-import { IUsersModel } from '../types/models.js'
+import { IUsersModel } from '../domain/types/models.js'
 import { BooksModel } from '../models/books/local/booksLocal.js'
 import { CollectionsModel } from '../models/collections/local/collectionsModel.js'
 import { ConversationsModel } from '../models/conversations/local/conversationsModel.js'
@@ -24,21 +24,21 @@ async function dropTables () {
   const dropNotificationsTable = `DROP TABLE IF EXISTS notifications CASCADE;`
   const dropTransactionsTable = `DROP TABLE IF EXISTS transactions CASCADE;`
   const dropOrdersTable = `DROP TABLE IF EXISTS orders CASCADE;`
-  await Promise.all([
-    pool.query(dropUsersTable),
-    pool.query(dropBooksTable),
-    pool.query(dropCollectionsTable),
-    pool.query(dropConversationsTable),
-    pool.query(dropMessagesTable),
-    pool.query(dropEmailsTable),
-    pool.query(dropNotificationsTable),
-    pool.query(dropTransactionsTable),
-    pool.query(dropBooksBackstageTable),
-    pool.query(dropWithdrawalsTable),
-    pool.query(dropTrendsTable),
-    pool.query(dropOrdersTable)
-  ])
-
+  // await Promise.all([
+  //   pool.query(dropUsersTable),
+  //   pool.query(dropBooksTable),
+  //   pool.query(dropCollectionsTable),
+  //   pool.query(dropConversationsTable),
+  //   pool.query(dropMessagesTable),
+  //   pool.query(dropEmailsTable),
+  //   pool.query(dropNotificationsTable),
+  //   pool.query(dropTransactionsTable),
+  //   pool.query(dropBooksBackstageTable),
+  //   pool.query(dropWithdrawalsTable),
+  //   pool.query(dropTrendsTable),
+  //   pool.query(dropOrdersTable)
+  // ])
+  // Dont want to drop the tables in production
   console.log('Tables dropped successfully')
 }
 

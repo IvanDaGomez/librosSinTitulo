@@ -1,5 +1,5 @@
 import fetch from 'node-fetch'
-import { NotificationType } from '../../types/notification'
+import { NotificationType } from '../../domain/types/notification'
 
 export async function sendNotification (body: NotificationType) {
   // La url es definida en el backend

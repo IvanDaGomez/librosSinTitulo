@@ -18,7 +18,6 @@ export default async function getCities (selectedDepartment) {
           }
         })
         const citiesArray = Array.from(cities).sort((a, b) => a.localeCompare(b))
-        console.log(citiesArray)
         return citiesArray
 
 
