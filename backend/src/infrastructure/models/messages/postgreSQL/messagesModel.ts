@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises'
-import { messageObject } from '../messageObject.js'
+import { messageObject } from '../../../../domain/mappers/messageObject.js'
 import { MessageObjectType } from '../../../domain/types/message.js'
 import { ID } from '../../../domain/types/objects.js'
 import {

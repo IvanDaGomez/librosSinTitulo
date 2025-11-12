@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises'
-import { transactionObject } from '../transactionObject.js'
+import { transactionObject } from '../../../../domain/mappers/transactionObject.js'
 import { TransactionObjectType } from '../../../domain/types/transaction.js'
 import { ID } from '../../../domain/types/objects.js'
 import path from 'node:path'

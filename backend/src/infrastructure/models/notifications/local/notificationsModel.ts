@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises'
-import { notificationObject } from '../notificationObject.js'
+import { notificationObject } from '../../../../domain/mappers/notificationObject.js'
 import { NotificationType } from '../../../domain/types/notification.js'
 import { ID } from '../../../domain/types/objects.js'
 import { __dirname } from '../../../assets/config.js'

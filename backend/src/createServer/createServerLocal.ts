@@ -8,13 +8,22 @@ import { TransactionsModel } from '@/infrastructure/models/transactions/local/tr
 import { EmailsModel } from '@/infrastructure/models/emails/local/emailsModel.js'
 import { CollectionsModel } from '@/infrastructure/models/collections/local/collectionsModel.js'
 
+const usersModel = new UsersModel()
+const booksModel = new BooksModel(usersModel)
+const messagesModel = new MessagesModel()
+const conversationsModel = new ConversationsModel()
+const notificationsModel = new NotificationsModel()
+const transactionsModel = new TransactionsModel()
+const emailsModel = new EmailsModel()
+const collectionsModel = new CollectionsModel()
+
 createApp({
-  BooksModel,
-  UsersModel,
-  MessagesModel,
-  ConversationsModel,
-  NotificationsModel,
-  TransactionsModel,
-  EmailsModel,
-  CollectionsModel
+  booksModel,
+  usersModel,
+  messagesModel,
+  conversationsModel,
+  notificationsModel,
+  transactionsModel,
+  emailsModel,
+  collectionsModel
 })

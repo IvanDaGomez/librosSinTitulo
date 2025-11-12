@@ -1,4 +1,5 @@
-import { BookType } from '@/domain/entities/book'
+import { BookToReviewType, BookType } from '@/domain/entities/book'
+import { ISOString } from '@/shared/types'
 
 // Overload signatures
 function bookObject(
@@ -66,4 +67,33 @@ function bookObject (
   } as Partial<BookType>
 }
 
-export { bookObject }
+function bookToReview(
+  data: Partial<BookToReviewType> | Partial<BookType> = {}
+): BookToReviewType {
+  return {
+    title: data.title ?? '',
+    author: data.author ?? '',
+    price: data.price ?? 0,
+    offer: data.offer ?? null,
+    isbn: data.isbn ?? '',
+    images: data.images ?? [],
+    keywords: data.keywords ?? [],
+    id: (data.id ?? crypto.randomUUID()) as any,
+    description: data.description ?? '',
+    status: (data.status ?? 'Nuevo') as any,
+    genre: (data.genre ?? '') as any,
+    format: (data.format ?? '') as any,
+    seller: data.seller ?? '',
+    seller_id: (data.seller_id ?? '') as any,
+    edition: data.edition ?? undefined,
+    language: data.language ?? undefined,
+    location: data.location ?? { city: '', department: '', country: '' },
+    cover: data.cover ?? '',
+    age: data.age ?? '',
+    created_at: (data.created_at ?? new Date().toISOString()) as ISOString,
+    updated_at: (data.updated_at ?? new Date().toISOString()) as ISOString,
+    availability: 'En revisión'
+  }
+}
+
+export { bookObject, bookToReview }

@@ -1,8 +1,5 @@
 import { ID, ImageType, ISOString } from '@/shared/types'
-import UserCategories, {
-  EstadoCuentaType,
-  RoleType
-} from '@/domain/entities/valueObjects/userCategories'
+import UserCategories from '@/domain/valueObjects/userCategories'
 
 export type CollectionItem = {
   name: string
@@ -12,10 +9,10 @@ export type CollectionItem = {
 export type PartialUserType = {
   id: ID
   name: string
-  role: RoleType
+  role: UserCategories['roles'][number]
   profile_picture: ImageType
   books_ids: ID[]
-  account_status: EstadoCuentaType
+  account_status: UserCategories['accountStatus'][number]
   created_at: ISOString
   updated_at: ISOString
   bio: string
@@ -23,7 +20,7 @@ export type PartialUserType = {
   conversations_ids: ID[]
   notifications_ids: ID[]
   validated: boolean
-  login: UserCategories['loginMethods']
+  login: UserCategories['loginMethods'][number]
   location: LocationType
   followers: ID[]
   following: ID[]
@@ -45,13 +42,13 @@ export type PartialUserType = {
 export type UserType = {
   id: ID
   name: string
-  role: RoleType
+  role: UserCategories['roles'][number]
   profile_picture: ImageType
   email: string
   password: string
   shipping_address?: LocationType
   books_ids: ID[]
-  account_status: EstadoCuentaType
+  account_status: UserCategories['accountStatus'][number]
   created_at: ISOString
   updated_at: ISOString
   bio: string
@@ -59,7 +56,7 @@ export type UserType = {
   conversations_ids: ID[]
   notifications_ids: ID[]
   validated: boolean
-  login: UserCategories['loginMethods']
+  login: UserCategories['loginMethods'][number]
   location?: LocationType
   followers?: ID[]
   following?: ID[]
@@ -71,10 +68,10 @@ export type UserType = {
   search_history?: {
     [key: string]: number
   }
-  balance?: {
-    available?: number
-    incoming?: number
-    pending?: number
+  balance: {
+    available: number
+    incoming: number
+    pending: number
   }
 }
 
@@ -88,13 +85,13 @@ export type LocationType = {
 export class User {
   public readonly id: ID
   private _name: string
-  private _role: RoleType
+  private _role: UserCategories['roles'][number]
   private _profile_picture: ImageType
   private _email?: string
   private _password?: string
   private _shipping_address?: LocationType
   private _books_ids: ID[]
-  private _account_status: EstadoCuentaType
+  private _account_status: UserCategories['accountStatus'][number]
   private _created_at: ISOString
   private _updated_at: ISOString
   private _bio: string
@@ -102,7 +99,7 @@ export class User {
   private _conversations_ids: ID[]
   private _notifications_ids: ID[]
   private _validated: boolean
-  private _login: UserCategories['loginMethods']
+  private _login: UserCategories['loginMethods'][number]
   private _location?: LocationType
   private _followers: ID[]
   private _following: ID[]
@@ -169,7 +166,7 @@ export class User {
   get name (): string {
     return this._name
   }
-  get role (): RoleType {
+  get role (): UserCategories['roles'][number] {
     return this._role
   }
   get profile_picture (): ImageType {
@@ -184,7 +181,7 @@ export class User {
   get books_ids (): ID[] {
     return [...this._books_ids]
   }
-  get account_status (): EstadoCuentaType {
+  get account_status (): UserCategories['accountStatus'][number] {
     return this._account_status
   }
   get created_at (): ISOString {
@@ -208,7 +205,7 @@ export class User {
   get validated (): boolean {
     return this._validated
   }
-  get login (): UserCategories['loginMethods'] {
+  get login (): UserCategories['loginMethods'][number] {
     return this._login
   }
   get location (): LocationType | undefined {

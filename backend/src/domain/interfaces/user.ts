@@ -13,9 +13,12 @@ export interface UserInterface {
   }>
   getEmailById(id: ID): Promise<{ email: string; name: string }>
   getUserByQuery(query: string): Promise<PartialUserType[]>
-  login(data: { email: string; password: string }): Promise<UserType>
+  login(data: { email: string; password: string }): Promise<PartialUserType>
   getPassword(id: ID): Promise<string>
-  googleLogin(data: { name: string; email: string }): Promise<PartialUserType>
+  googleLogin(data: { 
+    name: string 
+    email: string
+    profile_picture: ImageType }): Promise<PartialUserType>
   facebookLogin(data: {
     name: string
     email: string

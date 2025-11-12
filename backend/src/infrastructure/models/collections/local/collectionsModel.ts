@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises'
-import { collectionObject } from '../collectionObject.js'
+import { collectionObject } from '../../../../domain/mappers/collectionObject.js'
 import { calculateMatchScore } from '../../../assets/calculateMatchScore.js'
 import { CollectionObjectType } from '../../../domain/types/collection.js'
 import { ID } from '../../../domain/types/objects.js'

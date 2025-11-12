@@ -1,53 +1,60 @@
 import fs from 'node:fs/promises'
 import bcrypt from 'bcrypt'
-import { SALT_ROUNDS } from '../../../assets/config.js'
-import { levenshteinDistance } from '../../../assets/levenshteinDistance.js'
+import { SALT_ROUNDS, __dirname } from '@/utils/config.js'
+import { levenshteinDistance } from '@/utils/levenshteinDistance'
 import crypto from 'node:crypto'
-import { userObject } from '../userObject.js'
-import { PartialUserInfoType, UserInfoType } from '../../../domain/types/user.js'
-import { ID, ImageType } from '../../../domain/types/objects.js'
-import { calculateMatchScore } from '../../../assets/calculateMatchScore.js'
-import { changeToArray } from '../../../assets/changeToArray.js'
+import { userObject } from '../../../../domain/mappers/userObject.js'
+import { PartialUserType, UserType } from '@/domain/entities/user'
+import { ID, ImageType } from '@/shared/types'
+import { calculateMatchScore } from '@/utils/calculateMatchScore'
+import { changeToArray } from '@/utils/changeToArray'
 import path from 'node:path'
-// __dirname is not available in ES modules, so we need to use import.meta.url
-import { __dirname } from '../../../assets/config.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { ModelError } from '@/domain/exceptions/modelError.js'
+import { StatusResponse, StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
+
+
 const usersPath = path.join(__dirname, 'data', 'users.json')
-class UsersModel {
-  static async getAllUsers (): Promise<UserInfoType[]> {
+class UsersModel implements UserInterface{
+  constructor () {
+  }
+  async getAllUsers (): Promise<UserType[]> {
     // Esta función devuelve todos los usuarios, incluyendo información sensible como la contraseña
     const data = await fs.readFile(usersPath, 'utf-8')
     if (!data) {
       throw new Error('No se encontraron usuarios')
     }
-    const users: UserInfoType[] = JSON.parse(data)
-    return users.map(user => userObject(user, true) as UserInfoType)
+    const users: UserType[] = JSON.parse(data)
+    return users.map(user => userObject(user, true))
   }
-
-  static async getAllUsersSafe (): Promise<PartialUserInfoType[]> {
+  async getUsersByIdList(list: ID[], l: number): Promise<UserType[]> {
+    const users = await this.getAllUsers()
+    return users.filter(user => list.includes(user.id)).slice(0, l)
+  }
+  async getAllUsersSafe (): Promise<PartialUserType[]> {
     // Esta función devuelve todos los usuarios, pero sin información sensible como la contraseña
     const data = await fs.readFile(usersPath, 'utf-8')
-    const users: PartialUserInfoType[] = JSON.parse(data)
+    const users: PartialUserType[] = JSON.parse(data)
     if (!data) {
       throw new Error('No se encontraron usuarios')
     }
-    return users.map(user => userObject(user, false) as PartialUserInfoType)
+    return users.map(user => userObject(user, false))
   }
 
-  static async getUserById (id: ID): Promise<PartialUserInfoType> {
+  async getUserById (id: ID): Promise<UserType> {
     // Esta función devuelve un usuario específico por su ID, pero sin información sensible como la contraseña
     const users = await this.getAllUsersSafe()
     const user = users.find(user => user.id === id)
     if (!user) {
       throw new Error('Usuario no encontrado')
     }
-    // Return user with limited public information
-    return userObject(user, false) as PartialUserInfoType
+    return userObject(user, true)
   }
 
-  static async getPhotoAndNameUser (id: ID): Promise<{
+  async getPhotoAndNameUser (id: ID): Promise<{
     id: ID
-    foto_perfil: ImageType
-    nombre: string
+    profile_picture: ImageType
+    name: string
   }> {
     const users = await this.getAllUsersSafe()
     const user = users.find(user => user.id === id)
@@ -57,25 +64,25 @@ class UsersModel {
     // Return user with limited public information
     return {
       id: user.id,
-      foto_perfil: user.foto_perfil,
-      nombre: user.nombre
+      profile_picture: user.profile_picture,
+      name: user.name
     }
   }
 
-  static async getEmailById (
+  async getEmailById (
     id: ID
-  ): Promise<{ correo: string; nombre: string }> {
+  ): Promise<{ email: string; name: string }> {
     const users = await this.getAllUsers()
     const user = users.find(user => user.id === id)
     if (!user) {
       throw new Error('Usuario no encontrado')
     }
     // Return user with limited public information
-    return { correo: user.correo, nombre: user.nombre }
+    return { email: user.email, name: user.name }
   }
 
   // Pendiente desarrollar, una buena query para buscar varios patrones
-  static async getUserByQuery (query: string): Promise<PartialUserInfoType[]> {
+  async getUserByQuery (query: string): Promise<PartialUserType[]> {
     const users = await this.getAllUsersSafe()
 
     // Funcion para calcular el nivel de coincidencia entre la query y los resultados
@@ -85,7 +92,7 @@ class UsersModel {
 
     // Recorremos todos los libros y calculamos el puntaje de coincidencia
     const usersWithScores = users
-      .map((user: PartialUserInfoType) => {
+      .map((user: PartialUserType) => {
         const score = calculateMatchScore(user, queryWords, query)
 
         // Validamos si el score es suficiente, por ejemplo si es menor a 2 no lo devolvemos
@@ -108,42 +115,41 @@ class UsersModel {
     return usersWithScores.map(item => item.user)
   }
 
-  static async login (
-    correo: string,
-    contraseña: string
-  ): Promise<PartialUserInfoType> {
+  async login (data: {
+    email: string, password: string
+  }): Promise<PartialUserType> {
     const users = await this.getAllUsers()
-    const user = users.find(usuario => usuario.correo === correo)
+    const user = users.find(usuario => usuario.email === data.email)
     if (!user) {
       throw new Error('El correo no existe')
     }
-    const validated = await bcrypt.compare(contraseña, user.contraseña)
+    const validated = await bcrypt.compare(data.password, user.password)
     // Validar que la contraseña sea
     if (!validated) {
       throw new Error('La contraseña es incorrecta')
     }
     // Return user info, but avoid password or sensitive data
-    return userObject(user, false) as PartialUserInfoType
+    return userObject(user, false)
   }
 
-  static async googleLogin (data: {
-    nombre: string
-    correo: string
-    fotoPerfil: ImageType
-  }): Promise<PartialUserInfoType> {
+  async googleLogin (data: {
+    name: string
+    email: string
+    profile_picture: ImageType
+  }): Promise<PartialUserType> {
     // Validate input data
-    if (!data.nombre || !data.correo) {
+    if (!data.name || !data.email) {
       throw new Error('Data inválida: El correo y el nombre son obligatorios')
     }
     const users = await this.getAllUsers()
     // Check if the user exists
-    const user = users.find(usuario => usuario.correo === data.correo)
+    const user = users.find(usuario => usuario.email === data.email)
     if (!user) {
       // Google sign-up flow
       const newUser = userObject(data, true) // Ensure `userObject` sanitizes and structures the input
       newUser.login = 'Google' // Mark this as a Google user
       // userObject() elimina el correo y la contraseña (que no hay)
-      newUser.correo = data.correo
+      newUser.email = data.email
       // La validación es por defecto true si se hace este método
       newUser.validated = true
       newUser.id = crypto.randomUUID()
@@ -155,20 +161,20 @@ class UsersModel {
     return userObject(user, false)
   }
 
-  static async facebookLogin (data: {
-    nombre: string
-    correo: string
-    fotoPerfil: ImageType
-  }): Promise<PartialUserInfoType> {
+  async facebookLogin (data: {
+    name: string
+    email: string
+    profile_picture: ImageType
+  }): Promise<PartialUserType> {
     const users = await this.getAllUsers()
     // Check if the user exists
-    const user = users.find(usuario => usuario.correo === data.correo)
+    const user = users.find(usuario => usuario.email === data.email)
     if (!user) {
       // Google sign-up flow
-      const newUser = userObject(data, true) as UserInfoType // Ensure `userObject` sanitizes and structures the input
+      const newUser = userObject(data, true)// Ensure `userObject` sanitizes and structures the input
       newUser.login = 'Facebook' // Mark this as a Facebook user
       // userObject() elimina el correo y la contraseña (que no hay)
-      newUser.correo = data.correo
+      newUser.email = data.email
       // La validación es por defecto true si se hace este método
       newUser.validated = true
       users.push(newUser)
@@ -180,34 +186,34 @@ class UsersModel {
     return userObject(user, false)
   }
 
-  static async getUserByEmail (correo: string): Promise<UserInfoType | null> {
+  async getUserByEmail (email: string): Promise<UserType> {
     const users = await this.getAllUsers()
-    const user = users.find(usuario => usuario.correo === correo)
+    const user = users.find(usuario => usuario.email === email)
     if (!user) {
-      return null
+      throw new ModelError('Usuario no encontrado')
     }
     // Return user info, but avoid password or sensitive data
-    return userObject(user, true) as UserInfoType
+    return userObject(user, true)
   }
 
-  static async createUser (data: {
-    nombre: string
-    correo: string
-    contraseña: string
-  }): Promise<UserInfoType> {
+  async createUser (data: {
+    name: string
+    email: string
+    password: string
+  }): Promise<UserType> {
     const users = await this.getAllUsers()
     // Crear valores por defecto
-    const newUser = userObject(data, true) as UserInfoType // Ensure `userObject` sanitizes and structures the input
-    newUser.contraseña = await bcrypt.hash(newUser.contraseña, SALT_ROUNDS)
+    const newUser = userObject(data, true) // Ensure `userObject` sanitizes and structures the input
+    newUser.password = await bcrypt.hash(newUser.password, SALT_ROUNDS)
     users.push(newUser)
     await fs.writeFile(usersPath, JSON.stringify(users, null, 2))
     return newUser
   }
 
-  static async updateUser (
+  async updateUser (
     id: ID,
-    data: Partial<UserInfoType>
-  ): Promise<PartialUserInfoType> {
+    data: Partial<UserType>
+  ): Promise<UserType> {
     const users = await this.getAllUsers()
     const userIndex = users.findIndex(
       user => user.id.toString() === id.toString()
@@ -215,27 +221,27 @@ class UsersModel {
     if (userIndex === -1) {
       throw new Error('Usuario no encontrado')
     }
-    if (data.correo !== undefined && data.correo) {
+    if (data.email !== undefined && data.email) {
       const emailRepeated = users
         .filter(user => user.id.toString() !== id.toString())
-        .some(user => user.correo === data.correo)
+        .some(user => user.email === data.email)
       if (emailRepeated) {
         throw new Error('El correo ya está en uso')
       }
     }
-    if (data.contraseña) {
-      data.contraseña = await bcrypt.hash(data.contraseña, SALT_ROUNDS)
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, SALT_ROUNDS)
     }
     // Actualiza los datos del usuario
     Object.assign(users[userIndex], data)
     // Hacer el path hacia aqui
-    // const filePath = pat h.join()
+    // const filePath = path.join()
     const info = JSON.stringify(users, null, 2)
     await fs.writeFile(usersPath, info, 'utf-8')
-    return userObject(users[userIndex], false) as PartialUserInfoType
+    return userObject(users[userIndex], true)
   }
 
-  static async deleteUser (id: ID): Promise<{ message: string }> {
+  async deleteUser (id: ID): Promise<StatusResponseType> {
     const users = await this.getAllUsersSafe()
     const userIndex = users.findIndex(user => user.id === id)
     if (userIndex === -1) {
@@ -243,16 +249,37 @@ class UsersModel {
     }
     users.splice(userIndex, 1)
     await fs.writeFile(usersPath, JSON.stringify(users, null, 2))
-    return { message: 'Usuario eliminado con éxito' } // Mensaje de éxito
+    return StatusResponse.success('Usuario eliminado con éxito') // Mensaje de éxito
   }
 
-  static async getBalance (id: ID): Promise<{
-    pendiente?: number
-    disponible?: number
-    porLlegar?: number
+  async getBalance (id: ID): Promise<{
+    pending: number
+    available: number
+    incoming: number
   }> {
     const user = await this.getUserById(id)
     return user.balance
+  }
+
+  async getPassword(id: ID): Promise<string> {
+    const users = await this.getAllUsers()
+    const user = users.find(usuario => usuario.id === id)
+    if (!user) {
+      throw new Error('Usuario no encontrado')
+    }
+    return user.password
+  }
+  async banUser(value: ID): Promise<StatusResponseType> {
+    const users = await this.getAllUsers()
+    const userIndex = users.findIndex(
+      user => user.id.toString() === value.toString()
+    )
+    if (userIndex === -1) {
+      throw new Error('Usuario no encontrado')
+    }
+    users[userIndex].account_status = 'Suspendido'
+    await fs.writeFile(usersPath, JSON.stringify(users, null, 2))
+    return StatusResponse.success('Usuario baneado con éxito')
   }
 }
 

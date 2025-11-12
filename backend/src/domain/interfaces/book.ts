@@ -20,19 +20,19 @@ export interface BookInterface {
   ): Promise<Partial<BookType>[]>
   getBooksByUserId(userId: ID): Promise<BookType[]>
   createBook(data: BookType): Promise<BookType>
-  updateBook(id: ID, data: BookToReviewType): Promise<BookToReviewType>
+  updateBook(id: ID, data: Partial<BookType>): Promise<BookToReviewType>
   deleteBook(id: ID): Promise<StatusResponseType>
   getAllReviewBooks(): Promise<BookType[]>
-  createReviewBook(data: BookToReviewType): Promise<BookToReviewType>
-  updateReviewBook(id: ID, data: BookToReviewType): Promise<BookToReviewType>
+  createReviewBook (data: Partial<BookType>): Promise<BookType>
+  updateReviewBook(id: ID, data: Partial<BookType>): Promise<BookType>
   deleteReviewBook(id: ID): Promise<StatusResponseType>
   forYouPage(
     userKeyInfo: AuthToken | undefined,
     sampleSize: number,
     user: UserType
-  ): Promise<BookToReviewType[]>
-  getFavoritesByUser(favorites: ID[]): Promise<BookToReviewType[]>
-  getBooksByIdList(list: ID[], l?: number): Promise<BookToReviewType[]>
+  ): Promise<Partial<BookType>[]>
+  getFavoritesByUser(favorites: ID[]): Promise<Partial<BookType>[]>
+  getBooksByIdList(list: ID[], l?: number): Promise<Partial<BookType>[]>
   predictInfo(
     file: Express.Multer.File
   ): Promise<{ title: string; author: string }>

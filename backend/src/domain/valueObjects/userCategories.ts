@@ -18,12 +18,12 @@ export class UserCategories {
     return UserCategories.roleArr
   }
 
-  get estadoCuentas () {
+  get accountStatus () {
     return UserCategories.estadoCuentaArr
   }
 
   get loginMethods () {
-    return UserCategories.loginArr
+    return UserCategories.loginArr as readonly LoginType[]
   }
 
   static isRole (role: RoleType) {

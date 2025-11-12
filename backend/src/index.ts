@@ -15,10 +15,9 @@ import swaggerUI from 'swagger-ui-express'
 import { handleStats } from '@/infrastructure/http/middlewares/handleStats.js'
 import fs from 'node:fs'
 import path from 'node:path'
-import { PORT, __dirname, pool } from './utils/config.js'
+import { PORT, __dirname, pool } from '@/utils/config.js'
 import { corsOptions } from '@/utils/corsOptions.js'
 import { statsHandler } from '@/infrastructure/http/middlewares/statsHandler.js'
-import { Server } from 'http'
 import { seeEmailTemplate } from '@/infrastructure/http/middlewares/seeEmailTemplate.js'
 import { BookInterface } from '@/domain/interfaces/book.js'
 import { UserInterface } from '@/domain/interfaces/user.js'
@@ -28,6 +27,7 @@ import { ConversationInterface } from '@/domain/interfaces/conversation.js'
 import { NotificationInterface } from '@/domain/interfaces/notification.js'
 import { TransactionInterface } from '@/domain/interfaces/transaction.js'
 import { EmailInterface } from '@/domain/interfaces/email.js'
+
 //import { rateLimitter } from './middlewares/rateLimitter.js'
 
 dotenv.config()
@@ -50,7 +50,7 @@ export const createApp = ({
   NotificationsModel: NotificationInterface
   TransactionsModel: TransactionInterface
   EmailsModel: EmailInterface
-}): Server => {
+}) => {
   // Configuración de la aplicación Express
   const app: express.Application = express()
 

@@ -11,6 +11,8 @@ import multerS3 from 'multer-s3'
 import { getContentTypeByExtension } from './getContentTypeByExtension.js'
 const __filename = fileURLToPath(import.meta.url)
 const assetsDir = path.dirname(__filename)
+
+// __dirname is not available in ES modules, so we need to use our main file
 const __dirname = path.join(assetsDir, '..', '..')
 //dirname is the first subfolder after backend/
 const POSTGRESQL_PORT = process.env.POSTGRESQL_PORT
