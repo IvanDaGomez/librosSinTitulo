@@ -1,12 +1,13 @@
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { ID } from '@/shared/types'
+import { MessageType } from '@/domain/entities/message'
+
 export interface MessageInterface {
-  getAllMessages(): Promise<MessageObjectType[]>
-  getAllMessagesByConversation(id: ID): Promise<MessageObjectType[]>
-  getMessageById(id: ID): Promise<MessageObjectType>
-  sendMessage(data: Partial<MessageObjectType>): Promise<MessageObjectType>
-  deleteMessage(id: ID): Promise<{ message: string }>
-  updateMessage(
-    id: ID,
-    data: Partial<MessageObjectType>
-  ): Promise<MessageObjectType>
-  getMessagesByQuery(query: string): Promise<MessageObjectType[]>
+  getAllMessages(): Promise<MessageType[]>
+  getAllMessagesByConversation(id: ID): Promise<MessageType[]>
+  getMessageById(id: ID): Promise<MessageType>
+  sendMessage(data: Partial<MessageType>): Promise<MessageType>
+  deleteMessage(id: ID): Promise<StatusResponseType>
+  updateMessage(id: ID, data: Partial<MessageType>): Promise<MessageType>
+  getMessagesByQuery(query: string): Promise<MessageType[]>
 }

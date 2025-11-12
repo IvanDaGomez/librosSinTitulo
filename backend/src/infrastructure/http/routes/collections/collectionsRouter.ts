@@ -1,7 +1,10 @@
 import Router, { RequestHandler } from 'express'
 import { CollectionsController } from '../../controllers/collections/collectionsController.js'
-import { upload } from '../../../../assets/config.js'
-import { IBooksModel, ICollectionsModel } from '../../../../domain/types/models.js'
+import { upload } from '../../../../utils/config.js'
+import {
+  IBooksModel,
+  ICollectionsModel
+} from '../../../../domain/types/models.js'
 
 export const createCollectionsRouter = ({
   CollectionsModel,

@@ -1,4 +1,4 @@
-import { s3 } from '../config.js'
+import { s3 } from '../../assets/config.js'
 import { DeleteObjectCommand } from '@aws-sdk/client-s3'
 
 const deleteFileFromS3 = async (key: string) => {

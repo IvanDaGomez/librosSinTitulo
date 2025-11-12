@@ -10,6 +10,7 @@ export type NotificationType = {
   read: boolean
   created_at: ISOString
   updated_at: ISOString
+  priority?: 'low' | 'medium' | 'high'
 }
 
 export class Notification {

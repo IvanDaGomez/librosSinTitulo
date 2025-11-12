@@ -20,7 +20,8 @@ import { filterBooksByFilters } from '../local/filterBooksByFilters.js'
 
 import { pool } from '../../../assets/config.js'
 import { IUsersModel } from '../../../domain/types/models.js'
-class BooksModel {
+import { BookInterface } from '@/domain/interfaces/book.js'
+class BooksModel implements BookInterface {
   private static getEssencialFields (): string[] {
     return Object.keys(bookObject({}, false))
   }

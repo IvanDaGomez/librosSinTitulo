@@ -1,20 +1,18 @@
 import { RequestHandler, Router } from 'express'
 import { UsersController } from '../../controllers/users/usersController.js'
-import { upload } from '../../../../assets/config.js'
-import {
-  IBooksModel,
-  ITransactionsModel,
-  IUsersModel
-} from '../../../../domain/types/models.js'
+import { upload } from '@/utils/config.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { TransactionInterface } from '@/domain/interfaces/transaction.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
 
 export const createUsersRouter = ({
   UsersModel,
   TransactionsModel,
   BooksModel
 }: {
-  UsersModel: IUsersModel
-  TransactionsModel: ITransactionsModel
-  BooksModel: IBooksModel
+  UsersModel: UserInterface
+  TransactionsModel: TransactionInterface
+  BooksModel: BookInterface
 }) => {
   const usersController = new UsersController({
     UsersModel,

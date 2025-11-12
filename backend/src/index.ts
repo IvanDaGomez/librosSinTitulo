@@ -1,25 +1,33 @@
 import express, { NextFunction } from 'express'
 import cors from 'cors'
-import { createUsersRouter } from './infrastructure/http/routes/users/usersRouter.js'
-import { createBooksRouter } from './infrastructure/http/routes/books/booksRouter.js'
-import { createMessagesRouter } from './infrastructure/http/routes/messages/messagesRouter.js'
-import { createConversationsRouter } from './infrastructure/http/routes/conversations/conversationsRouter.js'
-import { createNotificationsRouter } from './infrastructure/http/routes/notifications/notificationsRouter.js'
-import { createTransactionsRouter } from './infrastructure/http/routes/transactions/transactionsRouter.js'
-import { createEmailsRouter } from './infrastructure/http/routes/email/emailRouter.js'
+import { createUsersRouter } from '@/infrastructure/http/routes/users/usersRouter.js'
+import { createBooksRouter } from '@/infrastructure/http/routes/books/booksRouter.js'
+import { createMessagesRouter } from '@/infrastructure/http/routes/messages/messagesRouter.js'
+import { createConversationsRouter } from '@/infrastructure/http/routes/conversations/conversationsRouter.js'
+import { createNotificationsRouter } from '@/infrastructure/http/routes/notifications/notificationsRouter.js'
+import { createTransactionsRouter } from '@/infrastructure/http/routes/transactions/transactionsRouter.js'
+import { createEmailsRouter } from '@/infrastructure/http/routes/email/emailRouter.js'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
-import { createCollectionsRouter } from './infrastructure/http/routes/collections/collectionsRouter.js'
-import { jwtMiddleware } from './middlewares/jwtMiddleware.js'
+import { createCollectionsRouter } from '@/infrastructure/http/routes/collections/collectionsRouter.js'
+import { jwtMiddleware } from '@/infrastructure/http/middlewares/jwtMiddleware.js'
 import swaggerUI from 'swagger-ui-express'
-import { handleStats } from './middlewares/handleStats.js'
+import { handleStats } from '@/infrastructure/http/middlewares/handleStats.js'
 import fs from 'node:fs'
 import path from 'node:path'
-import { PORT, __dirname, pool } from './assets/config.js'
-import { corsOptions } from './assets/corsOptions.js'
-import { statsHandler } from './middlewares/statsHandler.js'
+import { PORT, __dirname, pool } from './utils/config.js'
+import { corsOptions } from '@/utils/corsOptions.js'
+import { statsHandler } from '@/infrastructure/http/middlewares/statsHandler.js'
 import { Server } from 'http'
-import { seeEmailTemplate } from './middlewares/seeEmailTemplate.js'
+import { seeEmailTemplate } from '@/infrastructure/http/middlewares/seeEmailTemplate.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { MessageInterface } from '@/domain/interfaces/message.js'
+import { CollectionInterface } from '@/domain/interfaces/collection.js'
+import { ConversationInterface } from '@/domain/interfaces/conversation.js'
+import { NotificationInterface } from '@/domain/interfaces/notification.js'
+import { TransactionInterface } from '@/domain/interfaces/transaction.js'
+import { EmailInterface } from '@/domain/interfaces/email.js'
 //import { rateLimitter } from './middlewares/rateLimitter.js'
 
 dotenv.config()
@@ -34,14 +42,14 @@ export const createApp = ({
   TransactionsModel,
   EmailsModel
 }: {
-  BooksModel: any
-  UsersModel: any
-  MessagesModel: any
-  CollectionsModel: any
-  ConversationsModel: any
-  NotificationsModel: any
-  TransactionsModel: any
-  EmailsModel: any
+  BooksModel: BookInterface
+  UsersModel: UserInterface
+  MessagesModel: MessageInterface
+  CollectionsModel: CollectionInterface
+  ConversationsModel: ConversationInterface
+  NotificationsModel: NotificationInterface
+  TransactionsModel: TransactionInterface
+  EmailsModel: EmailInterface
 }): Server => {
   // Configuración de la aplicación Express
   const app: express.Application = express()
@@ -57,20 +65,24 @@ export const createApp = ({
     }
     next()
   })
-  // // Middleware para manejar las cookies y el token JWT
+  // Middleware para manejar las cookies y el token JWT
   app.use(jwtMiddleware)
-  // // Middleware para trackear las solicitudes
+  // Middleware para trackear las solicitudes
   app.use(handleStats)
 
+  // Middleware de limitación de tasa
   //app.use(rateLimitter)
-  // // habilitar req.body
+
+  // habilitar req.body
   app.use(express.urlencoded({ extended: true }))
+
   // Habilitar respuestas solo en json
   app.use(express.json())
 
   // Archivos estáticos para uploads y optimized
   // const uploadsDir = path.join(__dirname, 'uploads')
   // const optimizedDir = path.join(__dirname, 'optimized')
+
   app.get('/test', (_, res) => {
     res.send('Hello world')
   })
@@ -116,11 +128,14 @@ export const createApp = ({
 
   app.get('/api/stats', statsHandler)
   app.get('/api/emailTemplate/:template', seeEmailTemplate)
+
+  // Endpoint para la documentación de la API
   const swaggerDoc = JSON.parse(
     fs.readFileSync(path.join(__dirname, 'data', 'swagger.json'), 'utf-8')
   )
   app.use('/doc', swaggerUI.serve, swaggerUI.setup(swaggerDoc))
-  // // Middleware para manejar errores
+
+  // Middleware para manejar errores
   app.use(
     (
       err: Error,

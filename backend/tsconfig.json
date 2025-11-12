@@ -19,8 +19,8 @@
   "include": [
     "src/**/*.ts",
     "backend/**/*.ts",
-    "src/assets/swagger.js",
-    "src/assets/email/sendTryEmail.ts"
+    "src/utils/swagger.js",
+    "src/utils/email/sendTryEmail.ts"
   ],
   "exclude": [
     "node_modules"

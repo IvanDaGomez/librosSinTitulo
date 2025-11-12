@@ -1,18 +1,18 @@
 export class UserCategories {
-  static readonly roleArr = ['vendedor', 'usuario', 'admin']
+  static readonly roleArr = ['seller', 'user', 'admin'] as const
   static readonly estadoCuentaArr = [
     'Activo',
     'Suspendido',
     'Vacaciones',
     'Inactivo'
-  ]
+  ] as const
   static readonly loginArr = [
     'Google',
     'Facebook',
     'Twitter',
     'Email',
-    'default'
-  ]
+    'Default'
+  ] as const
 
   get roles () {
     return UserCategories.roleArr

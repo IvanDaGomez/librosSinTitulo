@@ -1,11 +1,11 @@
-export type statusResponseType = {
+export type StatusResponseType = {
   status: 'success' | 'error'
   message: string
   success: boolean
 }
 
 export class StatusResponse {
-  static success (message: string = 'Success'): statusResponseType {
+  static success (message: string = 'Success'): StatusResponseType {
     return {
       status: 'success',
       message,
@@ -13,7 +13,7 @@ export class StatusResponse {
     }
   }
 
-  static error (message: string = 'Error'): statusResponseType {
+  static error (message: string = 'Error'): StatusResponseType {
     return {
       status: 'error',
       message,

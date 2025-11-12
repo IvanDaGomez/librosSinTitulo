@@ -1,32 +1,34 @@
 import dotenv from 'dotenv'
-import { BookObjectType } from '../../domain/types/book'
-import { NotificationType } from '../../domain/types/notification'
-import { TypeType } from '../../domain/types/notificationCategories'
-import { ID, ImageType, ISOString } from '../../domain/types/objects'
-import { PartialUserInfoType } from '../../domain/types/user'
+import { BookType } from '@/domain/entities/book'
+import { NotificationType } from '@/domain/entities/notification'
+import { notificationTypesArr } from '@/domain/valueObjects/notificationCategories'
+import { ID, ImageType, ISOString } from '@/shared/types'
+import { PartialUserType } from '@/domain/entities/user'
 dotenv.config()
 // PROBLEMS I HAVE WITH THE TYPE OF NOTIFICATION
-export type NotificationInfoNeeded = Partial<{
-  id: ID
-  id_vendedor: ID
-  images: ImageType[]
-  titulo: string
-  created_in: ISOString
-  expires_at: ISOString
-  follower: PartialUserInfoType
-  order: string,
-  metadata: Partial<{
-    book_id: ID
-    book_title: string
-    photo: ImageType
-    guia: string,
-    pregunta: string
-    respuesta: string
-  }>
-} & BookObjectType>
+export type NotificationInfoNeeded = Partial<
+  {
+    id: ID
+    id_vendedor: ID
+    images: ImageType[]
+    titulo: string
+    created_in: ISOString
+    expires_at: ISOString
+    follower: PartialUserType
+    order: string
+    metadata: Partial<{
+      book_id: ID
+      book_title: string
+      photo: ImageType
+      guia: string
+      pregunta: string
+      respuesta: string
+    }>
+  } & BookType
+>
 export function createNotification (
   data: NotificationInfoNeeded,
-  template: TypeType
+  template: notificationTypesArr
 ): NotificationType {
   const commonData = {
     id: data.id ?? crypto.randomUUID(),

@@ -1,146 +1,146 @@
 import { ID, ImageType, ISOString } from '@/shared/types'
-import {
+import UserCategories, {
   EstadoCuentaType,
   RoleType
 } from '@/domain/entities/valueObjects/userCategories'
 
 export type CollectionItem = {
-  nombre: string
-  libros_ids: ID[]
+  name: string
+  books_ids: ID[]
 }
 
 export type PartialUserType = {
   id: ID
-  nombre: string
-  rol: RoleType
-  foto_perfil: ImageType
-  libros_ids: ID[]
-  estado_cuenta: EstadoCuentaType
-  fecha_registro: ISOString
-  actualizado_en: ISOString
+  name: string
+  role: RoleType
+  profile_picture: ImageType
+  books_ids: ID[]
+  account_status: EstadoCuentaType
+  created_at: ISOString
+  updated_at: ISOString
   bio: string
-  favoritos: ID[]
+  favorites: ID[]
   conversations_ids: ID[]
   notifications_ids: ID[]
   validated: boolean
-  login: 'Google' | 'Facebook' | 'Default'
-  ubicacion: LocationType
-  seguidores: ID[]
-  siguiendo: ID[]
+  login: UserCategories['loginMethods']
+  location: LocationType
+  followers: ID[]
+  following: ID[]
   collections_ids: CollectionItem[]
-  compras_ids: ID[]
-  preferencias: {
+  purchases_ids: ID[]
+  preferences: {
     [key: string]: number
   }
-  historial_busquedas: {
+  search_history: {
     [key: string]: number
   }
   balance: {
-    pendiente: number
-    disponible: number
-    por_llegar: number
+    pending: number
+    available: number
+    incoming: number
   }
 }
 
 export type UserType = {
   id: ID
-  nombre: string
-  rol: RoleType
-  foto_perfil: ImageType
-  correo: string
-  contraseña: string
-  direccion_envio?: LocationType
-  libros_ids: ID[]
-  estado_cuenta: EstadoCuentaType
-  fecha_registro: ISOString
-  actualizado_en: ISOString
+  name: string
+  role: RoleType
+  profile_picture: ImageType
+  email: string
+  password: string
+  shipping_address?: LocationType
+  books_ids: ID[]
+  account_status: EstadoCuentaType
+  created_at: ISOString
+  updated_at: ISOString
   bio: string
-  favoritos: ID[]
+  favorites: ID[]
   conversations_ids: ID[]
   notifications_ids: ID[]
   validated: boolean
-  login: 'Google' | 'Facebook' | 'Default'
-  ubicacion?: LocationType
-  seguidores?: ID[]
-  siguiendo?: ID[]
+  login: UserCategories['loginMethods']
+  location?: LocationType
+  followers?: ID[]
+  following?: ID[]
   collections_ids?: CollectionItem[]
-  compras_ids: ID[]
-  preferencias?: {
+  purchases_ids: ID[]
+  preferences?: {
     [key: string]: number
   }
-  historial_busquedas?: {
+  search_history?: {
     [key: string]: number
   }
   balance?: {
-    pendiente?: number
-    disponible?: number
-    por_llegar?: number
+    available?: number
+    incoming?: number
+    pending?: number
   }
 }
 
 export type LocationType = {
-  calle: string
-  ciudad: string
-  pais: string
-  codigo_postal: string
+  street: string
+  city: string
+  country: string
+  postal_code: string
 }
 
 export class User {
   public readonly id: ID
-  private _nombre: string
-  private _rol: RoleType
-  private _foto_perfil: ImageType
-  private _correo?: string
-  private _contraseña?: string
-  private _direccion_envio?: LocationType
-  private _libros_ids: ID[]
-  private _estado_cuenta: EstadoCuentaType
-  private _fecha_registro: ISOString
-  private _actualizado_en: ISOString
+  private _name: string
+  private _role: RoleType
+  private _profile_picture: ImageType
+  private _email?: string
+  private _password?: string
+  private _shipping_address?: LocationType
+  private _books_ids: ID[]
+  private _account_status: EstadoCuentaType
+  private _created_at: ISOString
+  private _updated_at: ISOString
   private _bio: string
-  private _favoritos: ID[]
+  private _favorites: ID[]
   private _conversations_ids: ID[]
   private _notifications_ids: ID[]
   private _validated: boolean
-  private _login: 'Google' | 'Facebook' | 'Default'
-  private _ubicacion?: LocationType
-  private _seguidores: ID[]
-  private _siguiendo: ID[]
+  private _login: UserCategories['loginMethods']
+  private _location?: LocationType
+  private _followers: ID[]
+  private _following: ID[]
   private _collections_ids: CollectionItem[]
-  private _compras_ids: ID[]
-  private _preferencias?: { [key: string]: number }
-  private _historial_busquedas?: { [key: string]: number }
+  private _purchases_ids: ID[]
+  private _preferences?: { [key: string]: number }
+  private _search_history?: { [key: string]: number }
   private _balance?: {
-    pendiente?: number
-    disponible?: number
-    por_llegar?: number
+    pending?: number
+    available?: number
+    incoming?: number
   }
 
   private constructor (props: UserType | PartialUserType) {
     this.id = props.id
-    this._nombre = props.nombre
-    this._rol = props.rol
-    this._foto_perfil = props.foto_perfil
-    this._correo = (props as UserType).correo
-    this._contraseña = (props as UserType).contraseña
-    this._direccion_envio = (props as UserType).direccion_envio
-    this._libros_ids = props.libros_ids ?? []
-    this._estado_cuenta = props.estado_cuenta
-    this._fecha_registro = props.fecha_registro
-    this._actualizado_en = props.actualizado_en
+    this._name = props.name
+    this._role = props.role
+    this._profile_picture = props.profile_picture
+    this._email = (props as UserType).email
+    this._password = (props as UserType).password
+    this._shipping_address = (props as UserType).shipping_address
+    this._books_ids = props.books_ids ?? []
+    this._account_status = props.account_status
+    this._created_at = props.created_at
+    this._updated_at = props.updated_at
     this._bio = props.bio ?? ''
-    this._favoritos = props.favoritos ?? []
+    this._favorites = props.favorites ?? []
     this._conversations_ids = props.conversations_ids ?? []
     this._notifications_ids = props.notifications_ids ?? []
     this._validated = !!props.validated
     this._login = props.login ?? 'Default'
-    this._ubicacion = (props as any).ubicacion ?? (props as any).ubicacion
-    this._seguidores = (props as any).seguidores ?? []
-    this._siguiendo = (props as any).siguiendo ?? []
+    this._location = (props as any).location ?? (props as any).location
+    this._followers = (props as any).followers ?? []
+    this._following = (props as any).following ?? []
     this._collections_ids = (props as any).collections_ids ?? []
-    this._compras_ids = props.compras_ids ?? []
-    this._preferencias = (props as any).preferencias
-    this._historial_busquedas = (props as any).historial_busquedas
+    this._purchases_ids = props.purchases_ids ?? []
+    this._preferences = (props as any).preferences
+    this._search_history = (props as any).search_history
     this._balance = (props as any).balance
   }
 
@@ -156,49 +156,48 @@ export class User {
   private static assertValidProps (p: UserType | PartialUserType): void {
     if (!p) throw new Error('User props required')
     if (!p.id) throw new Error('id required')
-    if (!p.nombre || p.nombre.trim().length === 0)
-      throw new Error('nombre required')
-    if (!p.rol) throw new Error('rol required')
-    if (!p.foto_perfil) throw new Error('foto_perfil required')
-    if (!p.fecha_registro || !isValidISOString(p.fecha_registro))
-      throw new Error('fecha_registro invalid')
-    if (!p.actualizado_en || !isValidISOString(p.actualizado_en))
-      throw new Error('actualizado_en invalid')
+    if (!p.name || p.name.trim().length === 0) throw new Error('name required')
+    if (!p.role) throw new Error('role required')
+    if (!p.profile_picture) throw new Error('profile_picture required')
+    if (!p.created_at || !isValidISOString(p.created_at))
+      throw new Error('created_at invalid')
+    if (!p.updated_at || !isValidISOString(p.updated_at))
+      throw new Error('updated_at invalid')
   }
 
   // getters
-  get nombre (): string {
-    return this._nombre
+  get name (): string {
+    return this._name
   }
-  get rol (): RoleType {
-    return this._rol
+  get role (): RoleType {
+    return this._role
   }
-  get foto_perfil (): ImageType {
-    return this._foto_perfil
+  get profile_picture (): ImageType {
+    return this._profile_picture
   }
-  get correo (): string | undefined {
-    return this._correo
+  get email (): string | undefined {
+    return this._email
   }
-  get direccion_envio (): LocationType | undefined {
-    return this._direccion_envio
+  get shipping_address (): LocationType | undefined {
+    return this._shipping_address
   }
-  get libros_ids (): ID[] {
-    return [...this._libros_ids]
+  get books_ids (): ID[] {
+    return [...this._books_ids]
   }
-  get estado_cuenta (): EstadoCuentaType {
-    return this._estado_cuenta
+  get account_status (): EstadoCuentaType {
+    return this._account_status
   }
-  get fecha_registro (): ISOString {
-    return this._fecha_registro
+  get created_at (): ISOString {
+    return this._created_at
   }
-  get actualizado_en (): ISOString {
-    return this._actualizado_en
+  get updated_at (): ISOString {
+    return this._updated_at
   }
   get bio (): string {
     return this._bio
   }
-  get favoritos (): ID[] {
-    return [...this._favoritos]
+  get favorites (): ID[] {
+    return [...this._favorites]
   }
   get conversations_ids (): ID[] {
     return [...this._conversations_ids]
@@ -209,34 +208,32 @@ export class User {
   get validated (): boolean {
     return this._validated
   }
-  get login (): 'Google' | 'Facebook' | 'Default' {
+  get login (): UserCategories['loginMethods'] {
     return this._login
   }
-  get ubicacion (): LocationType | undefined {
-    return this._ubicacion ? { ...this._ubicacion } : undefined
+  get location (): LocationType | undefined {
+    return this._location ? { ...this._location } : undefined
   }
-  get seguidores (): ID[] {
-    return [...this._seguidores]
+  get followers (): ID[] {
+    return [...this._followers]
   }
-  get siguiendo (): ID[] {
-    return [...this._siguiendo]
+  get following (): ID[] {
+    return [...this._following]
   }
   get collections_ids (): CollectionItem[] {
     return [...this._collections_ids]
   }
-  get compras_ids (): ID[] {
-    return [...this._compras_ids]
+  get purchases_ids (): ID[] {
+    return [...this._purchases_ids]
   }
-  get preferencias (): { [key: string]: number } | undefined {
-    return this._preferencias ? { ...this._preferencias } : undefined
+  get preferences (): { [key: string]: number } | undefined {
+    return this._preferences ? { ...this._preferences } : undefined
   }
-  get historial_busquedas (): { [key: string]: number } | undefined {
-    return this._historial_busquedas
-      ? { ...this._historial_busquedas }
-      : undefined
+  get search_history (): { [key: string]: number } | undefined {
+    return this._search_history ? { ...this._search_history } : undefined
   }
   get balance ():
-    | { pendiente?: number; disponible?: number; por_llegar?: number }
+    | { pending?: number; available?: number; incoming?: number }
     | undefined {
     return this._balance ? { ...this._balance } : undefined
   }
@@ -244,85 +241,84 @@ export class User {
   public toObject (): UserType | PartialUserType {
     return {
       id: this.id,
-      nombre: this._nombre,
-      rol: this._rol,
-      foto_perfil: this._foto_perfil,
-      correo: this._correo as string,
-      contraseña: this._contraseña as string,
-      direccion_envio: this._direccion_envio,
-      libros_ids: [...this._libros_ids],
-      estado_cuenta: this._estado_cuenta,
-      fecha_registro: this._fecha_registro,
-      actualizado_en: this._actualizado_en,
+      name: this._name,
+      role: this._role,
+      profile_picture: this._profile_picture,
+      email: this._email as string,
+      password: this._password as string,
+      shipping_address: this._shipping_address,
+      books_ids: [...this._books_ids],
+      account_status: this._account_status,
+      created_at: this._created_at,
+      updated_at: this._updated_at,
       bio: this._bio,
-      favoritos: [...this._favoritos],
+      favorites: [...this._favorites],
       conversations_ids: [...this._conversations_ids],
       notifications_ids: [...this._notifications_ids],
       validated: this._validated,
       login: this._login,
-      ubicacion: this._ubicacion,
-      seguidores: [...this._seguidores],
-      siguiendo: [...this._siguiendo],
+      location: this._location ? { ...this._location } : undefined,
+      followers: [...this._followers],
+      following: [...this._following],
       collections_ids: [...this._collections_ids],
-      compras_ids: [...this._compras_ids],
-      preferencias: this._preferencias ? { ...this._preferencias } : undefined,
-      historial_busquedas: this._historial_busquedas
-        ? { ...this._historial_busquedas }
+      purchases_ids: [...this._purchases_ids],
+      preferences: this._preferences ? { ...this._preferences } : undefined,
+      search_history: this._search_history
+        ? { ...this._search_history }
         : undefined,
       balance: this._balance ? { ...this._balance } : undefined
     } as UserType | PartialUserType
   }
 
   // mutators
-  public addLibro (id: ID): void {
+  public addBook (id: ID): void {
     if (!id) return
-    if (!this._libros_ids.includes(id)) this._libros_ids.push(id)
+    if (!this._books_ids.includes(id)) this._books_ids.push(id)
     this.touch()
   }
 
-  public removeLibro (id: ID): void {
-    this._libros_ids = this._libros_ids.filter(x => x !== id)
+  public removeBook (id: ID): void {
+    this._books_ids = this._books_ids.filter(x => x !== id)
     this.touch()
   }
 
   public follow (userId: ID): void {
     if (!userId) return
-    if (!this._siguiendo.includes(userId)) this._siguiendo.push(userId)
+    if (!this._following.includes(userId)) this._following.push(userId)
   }
 
   public unfollow (userId: ID): void {
-    this._siguiendo = this._siguiendo.filter(x => x !== userId)
+    this._following = this._following.filter(x => x !== userId)
   }
 
   public addFollower (userId: ID): void {
     if (!userId) return
-    if (!this._seguidores.includes(userId)) this._seguidores.push(userId)
+    if (!this._followers.includes(userId)) this._followers.push(userId)
   }
 
   public removeFollower (userId: ID): void {
-    this._seguidores = this._seguidores.filter(x => x !== userId)
+    this._followers = this._followers.filter(x => x !== userId)
   }
 
   public addCollection (col: CollectionItem): void {
     if (!col) return
-    this._collections_ids.push({ ...col, libros_ids: [...col.libros_ids] })
+    this._collections_ids.push({ ...col, books_ids: [...col.books_ids] })
   }
 
   public updateBalance (balance: {
-    pendiente?: number
-    disponible?: number
-    por_llegar?: number
+    pending?: number
+    available?: number
+    incoming?: number
   }): void {
     this._balance = { ...(this._balance || {}), ...balance }
   }
 
   private touch (updatedAt?: ISOString): void {
     if (updatedAt) {
-      if (!isValidISOString(updatedAt))
-        throw new Error('actualizado_en invalid')
-      this._actualizado_en = updatedAt
+      if (!isValidISOString(updatedAt)) throw new Error('updated_at invalid')
+      this._updated_at = updatedAt
     } else {
-      this._actualizado_en = new Date().toISOString() as ISOString
+      this._updated_at = new Date().toISOString() as ISOString
     }
   }
 }

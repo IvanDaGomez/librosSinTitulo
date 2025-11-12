@@ -1,7 +1,7 @@
-import { BookObjectType } from '../../domain/types/book'
-import { UserInfoType } from '../../domain/types/user'
-import { TransactionObjectType } from '../../domain/types/transaction'
-import { ShippingDetailsType } from '../../domain/types/shippingDetails'
+import { BookType } from '@/domain/entities/book'
+import { UserType } from '@/domain/entities/user'
+import { TransactionType } from '@/domain/entities/transaction'
+import { ShippingDetailsType } from '@/domain/entities/shippingDetails'
 import { Barcode } from 'mercadopago/dist/clients/payment/commonTypes'
 const styles = `
                 :root{
@@ -88,10 +88,10 @@ const footer = `
 `
 let logoMeridian = '/logo.png'
 type DataType = {
-  book?: Partial<BookObjectType>
-  user?: UserInfoType | Partial<UserInfoType>
-  seller?: Partial<UserInfoType>
-  transaction?: Partial<TransactionObjectType>
+  book?: Partial<BookType>
+  user?: UserType | Partial<UserType>
+  seller?: Partial<UserType>
+  transaction?: Partial<TransactionType>
   shipping_details?: ShippingDetailsType
   metadata?: {
     guia?: string
@@ -99,8 +99,8 @@ type DataType = {
     validation_link?: string
     barcode?: Barcode
     date_of_expiration?: string
-    pregunta?: string
-    respuesta?: string
+    question?: string
+    answer?: string
   }
 }
 const thankEmailTemplate = (data: DataType, seeEmailTemplate = false) => {
@@ -122,7 +122,7 @@ const thankEmailTemplate = (data: DataType, seeEmailTemplate = false) => {
               </div>
               <h1>¡Gracias por unirte a Meridian!</h1>
               <p>Hola <strong>${
-                data.user?.nombre ?? 'amante de libros'
+                data.user?.name ?? 'amante de libros'
               }</strong>,</p>
               <p>Nos emociona que hayas decidido ser parte de nuestra comunidad de amantes de los libros.</p>
               <p>En Meridian, creemos en el poder de los libros para inspirar, educar y entretener.</p>
@@ -157,9 +157,9 @@ const bookPublishedTemplate = (data: DataType, seeEmailTemplate = false) => {
   }'/>
               </div>
               <h1>Tu libro ha sido publicado con éxito!</h1>
-              <p>Hola <strong>${data.book?.vendedor ?? ''}</strong>,</p>
+              <p>Hola <strong>${data.book?.seller ?? ''}</strong>,</p>
               <p>Felicidades! Tu libro "<strong>${
-                data.book?.titulo ?? ''
+                data.book?.title ?? ''
               }</strong>" ha sido publicado exitosamente en nuestra plataforma.</p>
               <p>Estamos emocionados de compartir tu publicación con nuestros amantes de libros!. Tu libro ya se puede buscar y está listo para ser vendido.</p>
               <p>Puedes ver tu libro aquí:</p>
@@ -219,7 +219,7 @@ const validationEmailTemplate = (data: DataType, seeEmailTemplate = false) => {
   }'/>
                 </div>
                 <h1>Valida tu correo electrónico!</h1>
-                <p>Hola <strong>${data.user?.nombre ?? ''}</strong>,</p>
+                <p>Hola <strong>${data.user?.name ?? ''}</strong>,</p>
                 <p>Gracias por registrarte en ${
                   process.env.BRAND_NAME
                 }! Para completar tu registro, por favor valida tu correo electrónico con ayuda del siguiente código:</p>
@@ -252,7 +252,7 @@ const changePasswordTemplate = (data: DataType, seeEmailTemplate = false) => {
   }'/>
                 </div>
                 <h1>Solicitud para Cambiar Contraseña</h1>
-                <p>Hola <strong>${data.user?.nombre ?? ''}</strong>,</p>
+                <p>Hola <strong>${data.user?.name ?? ''}</strong>,</p>
                 <p>Hemos recibido una solicitud para cambiar la contraseña de tu cuenta en Meridian Bookstore.</p>
                 <p>Por favor, pulsa el siguiente botón para completar el proceso de cambio de contraseña:</p>
                 <a href="${
@@ -323,17 +323,17 @@ const paymentDoneBillTemplate = (data: DataType, seeEmailTemplate = false) => {
           </div>
           <main>
             <h1>¡Pago realizado!</h1>
-            <p>Hola${data.user?.nombre ? `, ${data.user.nombre}` : ''}:</p>
+            <p>Hola${data.user?.name ? `, ${data.user.name}` : ''}:</p>
             <p>Hemos recibido tu pago exitosamente. Aquí tienes el resumen de tu compra:</p>
             <div class="bill-summary">
               <h2>Resumen de Factura</h2>
               <div class="row">
                 <span><strong>Libro:</strong></span>
-                <span>${data.book?.titulo ?? 'N/A'}</span>
+                <span>${data.book?.title ?? 'N/A'}</span>
               </div>
               <div class="row">
                 <span><strong>Vendedor:</strong></span>
-                <span>${data.seller?.nombre ?? 'N/A'}</span>
+                <span>${data.seller?.name ?? 'N/A'}</span>
               </div>
               <div class="row">
                 <span><strong>ID Transacción:</strong></span>
@@ -342,31 +342,28 @@ const paymentDoneBillTemplate = (data: DataType, seeEmailTemplate = false) => {
               <div class="row">
                 <span><strong>Fecha:</strong></span>
                 <span>${
-                  data.transaction?.response?.date_created
-                    ? new Date(
-                        data.transaction.response.date_created
-                      ).toLocaleString('es-CO', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
+                  data.transaction?.created_at
+                    ? new Date(data.transaction.created_at).toLocaleString(
+                        'es-CO',
+                        {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }
+                      )
                     : new Date().toLocaleString('es-CO')
                 }</span>
               </div>
               <div class="row">
                 <span><strong>Método de pago:</strong></span>
-                <span>${
-                  data.transaction?.response?.payment_method_id ?? 'N/A'
-                }</span>
+                <span>${data.transaction?.method ?? 'N/A'}</span>
               </div>
               <div class="row total">
                 <span>Total pagado:</span>
-                <span>$${
-                  data.transaction?.response?.transaction_amount ?? 'N/A'
-                }</span>
+                <span>$${data.transaction?.amount ?? 'N/A'}</span>
               </div>
             </div>
             <p>¡Gracias por confiar en ${process.env.BRAND_NAME}!</p>
@@ -426,7 +423,7 @@ const paymentDoneThankTemplate = (data: DataType, seeEmailTemplate = false) => {
           </div>
           <main>
             <h1>¡Gracias por tu Compra!</h1>
-            <p>Hola${data.user?.nombre ? `, ${data.user.nombre}` : ''}:</p>
+            <p>Hola${data.user?.name ? `, ${data.user.name}` : ''}:</p>
             <p>Queremos agradecerte por realizar tu compra con ${
               process.env.BRAND_NAME
             }. Tu pago ha sido confirmado.</p>
@@ -434,11 +431,11 @@ const paymentDoneThankTemplate = (data: DataType, seeEmailTemplate = false) => {
               <h2>Resumen de tu Pedido</h2>
               <div class="row">
                 <span><strong>Libro:</strong></span>
-                <span>${data.book?.titulo ?? 'N/A'}</span>
+                <span>${data.book?.title ?? 'N/A'}</span>
               </div>
               <div class="row">
                 <span><strong>Vendedor:</strong></span>
-                <span>${data.seller?.nombre ?? 'N/A'}</span>
+                <span>${data.seller?.name ?? 'N/A'}</span>
               </div>
               <div class="row">
                 <span><strong>ID Transacción:</strong></span>
@@ -447,31 +444,28 @@ const paymentDoneThankTemplate = (data: DataType, seeEmailTemplate = false) => {
               <div class="row">
                 <span><strong>Fecha:</strong></span>
                 <span>${
-                  data.transaction?.response?.date_created
-                    ? new Date(
-                        data.transaction.response.date_created
-                      ).toLocaleString('es-CO', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
+                  data.transaction?.created_at
+                    ? new Date(data.transaction.created_at).toLocaleString(
+                        'es-CO',
+                        {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }
+                      )
                     : new Date().toLocaleString('es-CO')
                 }</span>
               </div>
               <div class="row">
                 <span><strong>Método de pago:</strong></span>
-                <span>${
-                  data.transaction?.response?.payment_method_id ?? 'N/A'
-                }</span>
+                <span>${data.transaction?.method ?? 'N/A'}</span>
               </div>
               <div class="row total">
                 <span><strong>Total pagado:</strong></span>
-                <span>$${
-                  data.transaction?.response?.transaction_amount ?? 'N/A'
-                }</span>
+                <span>$${data.transaction?.amount ?? 'N/A'}</span>
               </div>
             </div>
             <p>Pronto recibirás más información sobre tu pedido.</p>
@@ -526,9 +520,9 @@ const bookSoldTemplate = (data: DataType, seeEmailTemplate = false) => {
           </div>
           <main>
             <h1>¡Tu libro se ha vendido!</h1>
-            <p>Hola${data.user?.nombre ? `, ${data.user.nombre}` : ''}:</p>
+            <p>Hola${data.user?.name ? `, ${data.user.name}` : ''}:</p>
             <p>Nos complace informarte que tu libro <strong>${
-              data.book?.titulo ?? 'N/A'
+              data.book?.title ?? 'N/A'
             }</strong> ha sido vendido exitosamente en ${
     process.env.BRAND_NAME
   }.</p>
@@ -536,7 +530,7 @@ const bookSoldTemplate = (data: DataType, seeEmailTemplate = false) => {
               <h2>Detalles de la Venta</h2>
               <div class="row">
                 <span><strong>Comprador:</strong></span>
-                <span>${data.seller?.nombre ?? 'N/A'}</span>
+                <span>${data.seller?.name ?? 'N/A'}</span>
               </div>
               <div class="row">
                 <span><strong>Guía de envío:</strong></span>
@@ -545,23 +539,24 @@ const bookSoldTemplate = (data: DataType, seeEmailTemplate = false) => {
               <div class="row">
                 <span><strong>Fecha de la compra:</strong></span>
                 <span>${
-                  data.transaction?.response?.date_created
-                    ? new Date(
-                        data.transaction.response.date_created
-                      ).toLocaleString('es-CO', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
+                  data.transaction?.created_at
+                    ? new Date(data.transaction.created_at).toLocaleString(
+                        'es-CO',
+                        {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }
+                      )
                     : new Date().toLocaleString('es-CO')
                 }</span>
               </div>
               <div class="row">
                 <span><strong>Libro vendido:</strong></span>
-                <span>${data.book?.titulo ?? 'N/A'}</span>
+                <span>${data.book?.title ?? 'N/A'}</span>
               </div>
             </div>
             <p>Por favor, prepáralo para el envío lo antes posible y llévalo al punto de "Empresa" más cercano.</p>
@@ -625,7 +620,7 @@ const efectyPendingPaymentTemplate = (
           </div>
           <main>
             <h1>¡Gracias por tu compra${
-              data?.user?.nombre ? `, ${data.user.nombre}` : ''
+              data?.user?.name ? `, ${data.user.name}` : ''
             }!</h1>
             <p>Para completar tu pedido, realiza el pago en cualquier sucursal de <strong>Efecty</strong> antes de la fecha de vencimiento.</p>
             <div class="efecty-summary">
@@ -656,9 +651,7 @@ const efectyPendingPaymentTemplate = (
               </div>
               <div class="row total">
                 <span><strong>Monto a pagar:</strong></span>
-                <span>$${
-                  data.transaction?.response?.transaction_amount ?? 'N/A'
-                }</span>
+                <span>$${data.transaction?.amount ?? 'N/A'}</span>
               </div>
             </div>
             <p>Indica al operador de Efecty que deseas realizar un pago y proporciona el código de pago junto con el monto exacto.</p>
@@ -712,14 +705,14 @@ const messageQuestionTemplate = (data: DataType, seeEmailTemplate = false) => {
           </div>
           <main>
             <h1>¡Tienes un nuevo mensaje!</h1>
-            <p>Hola ${data.user?.nombre ?? ''}:</p>
+            <p>Hola ${data.user?.name ?? ''}:</p>
             <p>Has recibido una nueva pregunta de un usuario interesado en tu libro <a href=${
               process.env.FRONTEND_URL
-            }/libros/${data?.book?.id}>"${data.book?.titulo}".</a></p>
+            }/libros/${data?.book?.id}>"${data.book?.title}".</a></p>
             <table class="question-table">
               <tr>
                 <th>Pregunta</th>
-                <td>${data.metadata?.pregunta ?? 'N/A'}</td>
+                <td>${data.metadata?.question ?? 'N/A'}</td>
               </tr>
             </table>
             <p>Para responder a este mensaje, por favor visita tus notificaciones en ${
@@ -775,18 +768,18 @@ const messageResponseTemplate = (data: DataType, seeEmailTemplate = false) => {
           </div>
           <main>
             <h1>¡Tienes una nueva respuesta!</h1>
-            <p>Hola ${data.user?.nombre ?? ''}:</p>
+            <p>Hola ${data.user?.name ?? ''}:</p>
             <p>Has recibido una respuesta a tu pregunta sobre el libro <a href=${
               process.env.FRONTEND_URL
-            }/libros/${data?.book?.id}>"${data.book?.titulo}".</a></p>
+            }/libros/${data?.book?.id}>"${data.book?.title}".</a></p>
             <table class="question-table">
               <tr>
                 <th>Tu pregunta</th>
-                <td>${data.metadata?.pregunta ?? 'N/A'}</td>
+                <td>${data.metadata?.question ?? 'N/A'}</td>
               </tr>
               <tr>
                 <th>Respuesta</th>
-                <td>${data.metadata?.respuesta ?? 'N/A'}</td>
+                <td>${data.metadata?.answer ?? 'N/A'}</td>
               </tr>
             </table>
             <p>Para ver más detalles, visita tus notificaciones en ${

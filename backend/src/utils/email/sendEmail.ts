@@ -2,7 +2,7 @@
 import nodemailer from 'nodemailer'
 import dotenv from 'dotenv'
 import { google } from 'googleapis'
-import { __dirname } from '../config.js'
+import { __dirname } from '@/utils/config.js'
 dotenv.config()
 
 /**

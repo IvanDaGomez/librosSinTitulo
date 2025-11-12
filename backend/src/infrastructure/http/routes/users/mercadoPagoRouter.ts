@@ -1,6 +1,6 @@
 import { Request, Response, Router, NextFunction } from 'express'
 import { MercadoPagoConfig, Payment } from 'mercadopago' // Asegúrate de tener el SDK de Mercado Pago instalado
-import { validateSignature } from '../../../../assets/validateSignature.js'
+import { validateSignature } from '../../../../utils/validateSignature.js'
 const MercadoPagoRouter = Router()
 
 // Endpoint para recibir los webhooks

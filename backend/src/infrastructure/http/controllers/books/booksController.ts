@@ -1,38 +1,37 @@
-/* eslint-disable camelcase */
-
-import crypto from 'node:crypto'
-import { validateBook, validatePartialBook } from '../../assets/validate.js'
-import { cambiarGuionesAEspacio } from '../../assets/agregarMas.js'
-import { chromium } from 'playwright'
-import { sendEmail } from '../../assets/email/sendEmail.js'
-import { createEmail } from '../../assets/email/htmlEmails.js'
-import { sendNotification } from '../../assets/notifications/sendNotification.js'
-import { createNotification } from '../../assets/notifications/createNotification.js'
+// import crypto from 'node:crypto'
+import { validateBook, validatePartialBook } from '@/utils/validate.js'
+import { cambiarGuionesAEspacio } from '@/utils/agregarMas.js'
+// import { chromium } from 'playwright'
+import { sendEmail } from '@/utils/email/sendEmail.js'
+import { createEmail } from '@/utils/email/htmlEmails.js'
+import { sendNotification } from '@/utils/notifications/sendNotification.js'
+import { createNotification } from '@/utils/notifications/createNotification.js'
 import {
   filterData,
   prepareCreateBookData,
   prepareUpdateBookData
-} from './prepareCreateBookData.js'
+} from '@/utils/prepareCreateBookData.js'
 import { updateData } from './updateData.js'
-import { IBooksModel, IUsersModel } from '../../domain/types/models.js'
+import { BookInterface } from '@/domain/interfaces/book'
+import { BookType } from '@/domain/entities/book'
+import { UserInterface } from '@/domain/interfaces/user'
 import express from 'express'
 import { ParsedQs } from 'qs'
-import { ID, ISOString } from '../../domain/types/objects.js'
-import { AuthToken } from '../../domain/types/authToken.js'
-import { BookObjectType } from '../../domain/types/book.js'
-import { CollectionObjectType } from '../../domain/types/collection.js'
+import { ID, ISOString } from '@/shared/types'
+import { AuthToken } from '@/domain/entities/authToken'
+import { CollectionType } from '@/domain/entities/collection'
 
 // import { helperImg } from '../../assets/helperImg.js'
 
 export class BooksController {
-  private UsersModel: IUsersModel
-  private BooksModel: IBooksModel
+  private UsersModel: UserInterface
+  private BooksModel: BookInterface
   constructor ({
     UsersModel,
     BooksModel
   }: {
-    UsersModel: IUsersModel
-    BooksModel: IBooksModel
+    UsersModel: UserInterface
+    BooksModel: BookInterface
   }) {
     /*
       Utilizamos este estilo de importación para hacer inyecciones de dependencias
@@ -135,15 +134,13 @@ export class BooksController {
       if (lParsed > 100) lParsed = 100
       // Consigue los libros del modelo
 
-      const books = await this.BooksModel.getBookByQuery(q, lParsed)
+      const books = await this.BooksModel.getBooksByQuery(q, lParsed)
 
       // Si hay usuario en la sesión, actualiza las estadísticas de los libros
       const user = req.session.user as AuthToken | undefined
       if (user) {
         for (const book of books.slice(0, 3)) {
-          const bookCopy: Partial<BookObjectType> = JSON.parse(
-            JSON.stringify(book)
-          )
+          const bookCopy: Partial<BookType> = JSON.parse(JSON.stringify(book))
           // await updateData(user, bookCopy, 'query')
         }
       }
@@ -210,7 +207,7 @@ export class BooksController {
       Se valida el libro y se envía una notificación al vendedor.
     */
 
-    let data: BookObjectType = req.body
+    let data: BookType = req.body
     try {
       data = await prepareCreateBookData(data, req)
 
@@ -222,16 +219,16 @@ export class BooksController {
         return res.status(400).json({ error: validated.error })
       }
       // Recibe el usuario para actualizar sus librosIds
-      const user = await this.UsersModel.getUserById(data.id_vendedor)
+      const user = await this.UsersModel.getUserById(data.seller_id)
 
-      // Turn user to Vendedor if not already
-      if (user.rol === 'usuario') {
-        user.rol = 'vendedor'
+      // Turn user to Seller if not already
+      if (user.role === 'User') {
+        user.role = 'Seller'
       }
 
       await this.UsersModel.updateUser(user.id, {
-        libros_ids: [...(user.libros_ids ?? []), data.id],
-        rol: user.rol
+        books_ids: [...(user.books_ids ?? []), data.id],
+        role: user.role
       })
       const book = await this.BooksModel.createBook(data)
       const notificationData = {}
@@ -239,10 +236,10 @@ export class BooksController {
         createNotification(notificationData, 'bookPublished')
       )
       console.log('Book created:', book)
-      const correo = await this.UsersModel.getEmailById(data.id_vendedor)
+      const email = (await this.UsersModel.getEmailById(data.seller_id)).email
 
       await sendEmail(
-        `${data.vendedor} ${correo.correo}`,
+        `${data.seller} ${email}`,
         'Libro publicado con éxito',
         createEmail({ book }, 'bookPublished'),
         'no-reply'
@@ -266,53 +263,51 @@ export class BooksController {
     try {
       let data = req.body as {
         respuesta?: string
-        pregunta: string
-        tipo: 'pregunta' | 'respuesta'
+        question: string
+        type: 'pregunta' | 'respuesta'
         sender_id: ID
         book_id: ID
       }
       console.log(data)
-      if (!data.pregunta || !data.tipo)
+      if (!data.question || !data.type)
         return res
           .status(400)
           .json({ error: 'No se proporcionó mensaje o tipo' })
       const existingBook = await this.BooksModel.getBookById(data.book_id)
-      const existingMessages = existingBook.mensajes ?? []
+      const existingMessages = existingBook.messages ?? []
       const messagesArray = existingMessages ?? []
-      if (data.tipo === 'pregunta') {
+      if (data.type === 'pregunta') {
         messagesArray.push({
-          pregunta: data.pregunta,
-          respuesta: undefined,
+          question: data.question,
+          answer: undefined,
           sender_id: data.sender_id
         })
-      } else if (data.tipo === 'respuesta' && data.pregunta) {
+      } else if (data.type === 'respuesta' && data.question) {
         const message = messagesArray.find(
-          item => item.pregunta === data.pregunta
+          item => item.question === data.question
         )
         console.log('A')
         if (!message)
           return res.status(400).json({ error: 'No se encontró la pregunta' })
-        message['respuesta'] = data.respuesta
+        message['answer'] = data.answer
       }
 
-      const seller = await this.UsersModel.getEmailById(
-        existingBook.id_vendedor
-      )
+      const seller = await this.UsersModel.getEmailById(existingBook.seller_id)
       const buyer = await this.UsersModel.getEmailById(data.sender_id)
 
-      if (data.tipo === 'respuesta') {
+      if (data.type === 'respuesta') {
         Promise.all([
           sendEmail(
-            buyer.correo,
-            `El vendedor ${seller.nombre} te ha respondido tu mensaje sobre el libro ${existingBook.titulo}`,
+            buyer.email,
+            `El vendedor ${seller.name} te ha respondido tu mensaje sobre el libro ${existingBook.title}`,
             createEmail(
               {
                 book: existingBook,
                 seller: seller,
                 user: buyer,
                 metadata: {
-                  pregunta: data.pregunta,
-                  respuesta: data.respuesta
+                  question: data.question,
+                  answer: data.answer
                 }
               },
               'messageResponse'
@@ -323,29 +318,29 @@ export class BooksController {
             createNotification(
               {
                 ...existingBook,
-                id_vendedor: existingBook.id_vendedor,
+                seller_id: existingBook.seller_id,
                 metadata: {
                   book_id: existingBook.id,
-                  pregunta: data.pregunta,
-                  respuesta: data.respuesta
+                  question: data.question,
+                  answer: data.answer
                 }
               },
               'messageResponse'
             )
           )
         ])
-      } else if (data.tipo === 'pregunta') {
+      } else if (data.type === 'pregunta') {
         Promise.all([
           sendEmail(
-            seller.correo,
-            `El usuario ${buyer.nombre} te ha enviado una pregunta sobre tu libro ${existingBook.titulo}`,
+            seller.email,
+            `El usuario ${buyer.name} te ha enviado una pregunta sobre tu libro ${existingBook.title}`,
             createEmail(
               {
                 book: existingBook,
                 seller: seller,
                 user: buyer,
                 metadata: {
-                  pregunta: data.pregunta
+                  question: data.question
                 }
               },
               'messageQuestion'
@@ -359,8 +354,8 @@ export class BooksController {
                 // seller,
                 metadata: {
                   book_id: existingBook.id,
-                  book_title: existingBook.titulo,
-                  pregunta: data.pregunta
+                  book_title: existingBook.title,
+                  question: data.question
                 }
               },
               'messageQuestion'
@@ -370,7 +365,7 @@ export class BooksController {
       }
 
       const dataToUpdate = {
-        mensajes: messagesArray
+        messages: messagesArray
       }
       const book = await this.BooksModel.updateBook(data.book_id, dataToUpdate)
       res.json(book)
@@ -388,12 +383,12 @@ export class BooksController {
 
       const book = await this.BooksModel.getBookById(bookId)
 
-      const user = await this.UsersModel.getUserById(book.id_vendedor)
+      const user = await this.UsersModel.getUserById(book.seller_id)
 
-      const updatedLibrosIds = user.libros_ids.filter(id => id !== bookId)
+      const updatedBooksIds = user.books_ids.filter(id => id !== bookId)
 
       await this.UsersModel.updateUser(user.id, {
-        libros_ids: updatedLibrosIds
+        books_ids: updatedBooksIds
       })
 
       const result = await this.BooksModel.deleteBook(bookId)
@@ -481,7 +476,7 @@ export class BooksController {
     next: express.NextFunction
   ): Promise<express.Response | void> => {
     try {
-      let data = req.body as Partial<BookObjectType>
+      let data: Partial<BookType> = req.body ?? ('' as Partial<BookType>)
 
       data = await prepareCreateBookData(data, req)
       const validated = validateBook(data)
@@ -519,10 +514,10 @@ export class BooksController {
   ): Promise<express.Response | void> => {
     try {
       const bookId = req.params.book_id as ID
-      let rawData = req.body as Partial<BookObjectType>
+      let rawData = req.body as Partial<BookType>
       const existingBook = await this.BooksModel.getBookById(bookId)
 
-      const data: BookObjectType = await prepareUpdateBookData(
+      const data: BookType = await prepareUpdateBookData(
         rawData,
         req,
         existingBook
@@ -578,7 +573,7 @@ export class BooksController {
         return res.status(401).json({ error: 'No se proporcionó userId' })
       const user = await this.UsersModel.getUserById(userId)
 
-      const favorites = await this.BooksModel.getFavoritesByUser(user.favoritos)
+      const favorites = await this.BooksModel.getFavoritesByUser(user.favorites)
 
       return res.json(favorites)
     } catch (err) {
@@ -591,7 +586,7 @@ export class BooksController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
-    const collection = req.body.collection as CollectionObjectType | undefined
+    const collection = req.body.collection as CollectionType | undefined
     try {
       if (!collection) {
         return res.status(400).json({ error: 'No se proporcionó la colección' })

@@ -1,5 +1,6 @@
 import { ID, ImageType } from '@/shared/types'
 import { PartialUserType, UserType } from '@/domain/entities/user'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
 
 export interface UserInterface {
   getAllUsers(): Promise<UserType[]>
@@ -7,35 +8,32 @@ export interface UserInterface {
   getUserById(id: ID): Promise<UserType>
   getPhotoAndNameUser(id: ID): Promise<{
     id: ID
-    foto_perfil: ImageType
-    nombre: string
+    profile_picture: ImageType
+    name: string
   }>
-  getEmailById(id: ID): Promise<{ correo: string; nombre: string }>
+  getEmailById(id: ID): Promise<{ email: string; name: string }>
   getUserByQuery(query: string): Promise<PartialUserType[]>
-  login(correo: string, contraseña: string): Promise<PartialUserType>
+  login(data: { email: string; password: string }): Promise<UserType>
   getPassword(id: ID): Promise<string>
-  googleLogin(data: {
-    nombre: string
-    correo: string
-  }): Promise<PartialUserType>
+  googleLogin(data: { name: string; email: string }): Promise<PartialUserType>
   facebookLogin(data: {
-    nombre: string
-    correo: string
-    foto_perfil: ImageType
+    name: string
+    email: string
+    profile_picture: ImageType
   }): Promise<PartialUserType>
-  getUserByEmail(correo: string): Promise<UserType>
-  getUsersByIdList(list: ID[], l: number): Promise<PartialUserType[]>
-  banUser(value: ID): Promise<{ message: string }>
+  getUserByEmail(email: string): Promise<UserType>
+  getUsersByIdList(list: ID[], l: number): Promise<UserType[]>
+  banUser(value: ID): Promise<StatusResponseType>
   createUser(data: {
-    nombre: string
-    correo: string
-    contraseña: string
+    name: string
+    email: string
+    password: string
   }): Promise<UserType>
-  updateUser(id: ID, data: Partial<UserType>): Promise<PartialUserType>
-  deleteUser(id: ID): Promise<{ message: string }>
+  updateUser(id: ID, data: Partial<UserType>): Promise<UserType>
+  deleteUser(id: ID): Promise<StatusResponseType>
   getBalance(id: ID): Promise<{
-    pendiente?: number
-    disponible?: number
-    por_llegar?: number
+    pending: number
+    available: number
+    incoming: number
   }>
 }

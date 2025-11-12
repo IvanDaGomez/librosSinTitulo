@@ -1,6 +1,6 @@
 import { RequestHandler, Router } from 'express'
 import { BooksController } from '../../controllers/books/booksController.js'
-import { upload } from '../../../../assets/config.js'
+import { upload } from '../../../../utils/config.js'
 import { generateResponse } from '../../controllers/separated/generateResponse.js'
 import { IBooksModel, IUsersModel } from '../../../../domain/types/models.js'
 import { AIMode } from '../../controllers/books/aiMode.js'

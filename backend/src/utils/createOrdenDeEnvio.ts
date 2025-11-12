@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 
 import { ShippingDetailsType } from '../domain/types/shippingDetails'
-import { executeQuery } from '../utils/dbUtils'
+import { executeQuery } from './dbUtils'
 
 async function crear_orden_interrapidisimo (orden_data: {
   remitente_nombre: string
