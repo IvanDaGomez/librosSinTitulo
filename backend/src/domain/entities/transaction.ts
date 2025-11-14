@@ -4,6 +4,7 @@ export type TransactionType = {
   id: ID
   from_id: ID
   to_id: ID
+  book_id: ID
   amount: number
   currency: string
   status: 'pending' | 'completed' | 'failed' | 'refunded'
@@ -17,6 +18,7 @@ export class Transaction {
   public readonly id: ID
   private _from_id: ID
   private _to_id: ID
+  private _book_id: ID
   private _amount: number
   private _currency: string
   private _status: TransactionType['status']
@@ -33,6 +35,7 @@ export class Transaction {
     this._currency = props.currency
     this._status = props.status
     this._method = props.method
+    this._book_id = props.book_id
     this._metadata = props.metadata
     this._created_at = props.created_at
     this._updated_at = props.updated_at
@@ -96,6 +99,9 @@ export class Transaction {
   get updated_at (): ISOString {
     return this._updated_at
   }
+  get book_id (): ID {
+    return this._book_id
+  }
 
   public setStatus (s: TransactionType['status'], updatedAt?: ISOString): void {
     this._status = s
@@ -122,7 +128,8 @@ export class Transaction {
       method: this._method,
       metadata: this._metadata,
       created_at: this._created_at,
-      updated_at: this._updated_at
+      updated_at: this._updated_at,
+      book_id: this._book_id
     }
   }
 }

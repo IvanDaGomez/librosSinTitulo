@@ -1,12 +1,12 @@
 export class UserCategories {
-  static readonly roleArr = ['seller', 'user', 'admin'] as const
-  static readonly estadoCuentaArr = [
+  static readonly roles = ['seller', 'user', 'admin'] as const
+  static readonly accountStatuses = [
     'Activo',
     'Suspendido',
     'Vacaciones',
     'Inactivo'
   ] as const
-  static readonly loginArr = [
+  static readonly loginTypes = [
     'Google',
     'Facebook',
     'Twitter',
@@ -15,34 +15,34 @@ export class UserCategories {
   ] as const
 
   get roles () {
-    return UserCategories.roleArr
+    return UserCategories.roles
   }
 
   get accountStatus () {
-    return UserCategories.estadoCuentaArr
+    return UserCategories.accountStatuses
   }
 
   get loginMethods () {
-    return UserCategories.loginArr as readonly LoginType[]
+    return UserCategories.loginTypes as readonly LoginType[]
   }
 
   static isRole (role: RoleType) {
-    return (UserCategories.roleArr as readonly unknown[]).includes(role)
+    return (UserCategories.roles as readonly unknown[]).includes(role)
   }
 
-  static isEstadoCuenta (value: unknown): value is EstadoCuentaType {
-    return (UserCategories.estadoCuentaArr as readonly unknown[]).includes(
+  static isAccountState (value: unknown): value is AccountStatusType {
+    return (UserCategories.accountStatuses as readonly unknown[]).includes(
       value
     )
   }
 
   static isLogin (value: unknown): value is LoginType {
-    return (UserCategories.loginArr as readonly unknown[]).includes(value)
+    return (UserCategories.loginTypes as readonly unknown[]).includes(value)
   }
 }
 
 export type RoleType = 'User' | 'Admin' | 'Vendor' | string
-export type EstadoCuentaType = 'Activo' | 'Suspendido' | 'Pendiente' | string
-export type LoginType = typeof UserCategories.loginArr[number]
+export type AccountStatusType = 'Activo' | 'Suspendido' | 'Pendiente' | string
+export type LoginType = typeof UserCategories.loginTypes[number]
 
 export { UserCategories as default, UserCategories as userCategories }

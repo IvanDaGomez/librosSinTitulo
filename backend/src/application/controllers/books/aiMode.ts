@@ -1,9 +1,7 @@
 import express from 'express'
-import { sendOpenAIRequest } from './sendOpenAIRequest.js'
-import fs from 'node:fs/promises'
-import { __dirname, s3 } from '../../assets/config.js'
-import { Express } from 'express-serve-static-core'
-import { deleteFileFromS3 } from '../../assets/aws-assets/deleteObject.js'
+import { sendOpenAIRequest } from '@/application/handlers/sendOpenAIRequest.js'
+import { __dirname, s3 } from '@/utils/config'
+import { deleteFileFromS3 } from '@/utils/aws-assets/deleteObject.js'
 export const AIMode = async (
   req: express.Request,
   res: express.Response,

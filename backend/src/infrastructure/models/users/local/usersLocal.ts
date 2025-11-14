@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises'
 import bcrypt from 'bcrypt'
-import { SALT_ROUNDS, __dirname } from '@/utils/config.js'
+import { SALT_ROUNDS, __dirname } from '@/utils/config'
 import { levenshteinDistance } from '@/utils/levenshteinDistance'
 import crypto from 'node:crypto'
-import { userObject } from '../../../../domain/mappers/userObject.js'
+import { createUser } from '@/domain/mappers/createUser.js'
 import { PartialUserType, UserType } from '@/domain/entities/user'
 import { ID, ImageType } from '@/shared/types'
 import { calculateMatchScore } from '@/utils/calculateMatchScore'
@@ -11,13 +11,14 @@ import { changeToArray } from '@/utils/changeToArray'
 import path from 'node:path'
 import { UserInterface } from '@/domain/interfaces/user.js'
 import { ModelError } from '@/domain/exceptions/modelError.js'
-import { StatusResponse, StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
-
+import {
+  StatusResponse,
+  StatusResponseType
+} from '@/domain/valueObjects/statusResponse.js'
 
 const usersPath = path.join(__dirname, 'data', 'users.json')
-class UsersModel implements UserInterface{
-  constructor () {
-  }
+class UsersModel implements UserInterface {
+  constructor () {}
   async getAllUsers (): Promise<UserType[]> {
     // Esta función devuelve todos los usuarios, incluyendo información sensible como la contraseña
     const data = await fs.readFile(usersPath, 'utf-8')
@@ -25,9 +26,9 @@ class UsersModel implements UserInterface{
       throw new Error('No se encontraron usuarios')
     }
     const users: UserType[] = JSON.parse(data)
-    return users.map(user => userObject(user, true))
+    return users.map(user => createUser(user, true))
   }
-  async getUsersByIdList(list: ID[], l: number): Promise<UserType[]> {
+  async getUsersByIdList (list: ID[], l: number): Promise<UserType[]> {
     const users = await this.getAllUsers()
     return users.filter(user => list.includes(user.id)).slice(0, l)
   }
@@ -38,7 +39,7 @@ class UsersModel implements UserInterface{
     if (!data) {
       throw new Error('No se encontraron usuarios')
     }
-    return users.map(user => userObject(user, false))
+    return users.map(user => createUser(user, false))
   }
 
   async getUserById (id: ID): Promise<UserType> {
@@ -48,7 +49,7 @@ class UsersModel implements UserInterface{
     if (!user) {
       throw new Error('Usuario no encontrado')
     }
-    return userObject(user, true)
+    return createUser(user, true)
   }
 
   async getPhotoAndNameUser (id: ID): Promise<{
@@ -69,9 +70,7 @@ class UsersModel implements UserInterface{
     }
   }
 
-  async getEmailById (
-    id: ID
-  ): Promise<{ email: string; name: string }> {
+  async getEmailById (id: ID): Promise<{ email: string; name: string }> {
     const users = await this.getAllUsers()
     const user = users.find(user => user.id === id)
     if (!user) {
@@ -116,7 +115,8 @@ class UsersModel implements UserInterface{
   }
 
   async login (data: {
-    email: string, password: string
+    email: string
+    password: string
   }): Promise<PartialUserType> {
     const users = await this.getAllUsers()
     const user = users.find(usuario => usuario.email === data.email)
@@ -129,7 +129,7 @@ class UsersModel implements UserInterface{
       throw new Error('La contraseña es incorrecta')
     }
     // Return user info, but avoid password or sensitive data
-    return userObject(user, false)
+    return createUser(user, false)
   }
 
   async googleLogin (data: {
@@ -146,9 +146,9 @@ class UsersModel implements UserInterface{
     const user = users.find(usuario => usuario.email === data.email)
     if (!user) {
       // Google sign-up flow
-      const newUser = userObject(data, true) // Ensure `userObject` sanitizes and structures the input
+      const newUser = createUser(data, true) // Ensure `createUser` sanitizes and structures the input
       newUser.login = 'Google' // Mark this as a Google user
-      // userObject() elimina el correo y la contraseña (que no hay)
+      // createUser() elimina el correo y la contraseña (que no hay)
       newUser.email = data.email
       // La validación es por defecto true si se hace este método
       newUser.validated = true
@@ -156,9 +156,9 @@ class UsersModel implements UserInterface{
       users.push(newUser)
       // Write the new user to the file
       await fs.writeFile(usersPath, JSON.stringify(users, null, 2), 'utf8')
-      return userObject(newUser, false)
+      return createUser(newUser, false)
     }
-    return userObject(user, false)
+    return createUser(user, false)
   }
 
   async facebookLogin (data: {
@@ -171,19 +171,19 @@ class UsersModel implements UserInterface{
     const user = users.find(usuario => usuario.email === data.email)
     if (!user) {
       // Google sign-up flow
-      const newUser = userObject(data, true)// Ensure `userObject` sanitizes and structures the input
+      const newUser = createUser(data, true) // Ensure `createUser` sanitizes and structures the input
       newUser.login = 'Facebook' // Mark this as a Facebook user
-      // userObject() elimina el correo y la contraseña (que no hay)
+      // createUser() elimina el correo y la contraseña (que no hay)
       newUser.email = data.email
       // La validación es por defecto true si se hace este método
       newUser.validated = true
       users.push(newUser)
       // Write the new user to the file
       await fs.writeFile(usersPath, JSON.stringify(users, null, 2), 'utf8')
-      return userObject(newUser, false)
+      return createUser(newUser, false)
     }
     // Si ya existe el usuario solo devolverlo
-    return userObject(user, false)
+    return createUser(user, false)
   }
 
   async getUserByEmail (email: string): Promise<UserType> {
@@ -193,7 +193,7 @@ class UsersModel implements UserInterface{
       throw new ModelError('Usuario no encontrado')
     }
     // Return user info, but avoid password or sensitive data
-    return userObject(user, true)
+    return createUser(user, true)
   }
 
   async createUser (data: {
@@ -203,17 +203,14 @@ class UsersModel implements UserInterface{
   }): Promise<UserType> {
     const users = await this.getAllUsers()
     // Crear valores por defecto
-    const newUser = userObject(data, true) // Ensure `userObject` sanitizes and structures the input
+    const newUser = createUser(data, true) // Ensure `createUser` sanitizes and structures the input
     newUser.password = await bcrypt.hash(newUser.password, SALT_ROUNDS)
     users.push(newUser)
     await fs.writeFile(usersPath, JSON.stringify(users, null, 2))
     return newUser
   }
 
-  async updateUser (
-    id: ID,
-    data: Partial<UserType>
-  ): Promise<UserType> {
+  async updateUser (id: ID, data: Partial<UserType>): Promise<UserType> {
     const users = await this.getAllUsers()
     const userIndex = users.findIndex(
       user => user.id.toString() === id.toString()
@@ -238,7 +235,7 @@ class UsersModel implements UserInterface{
     // const filePath = path.join()
     const info = JSON.stringify(users, null, 2)
     await fs.writeFile(usersPath, info, 'utf-8')
-    return userObject(users[userIndex], true)
+    return createUser(users[userIndex], true)
   }
 
   async deleteUser (id: ID): Promise<StatusResponseType> {
@@ -261,7 +258,7 @@ class UsersModel implements UserInterface{
     return user.balance
   }
 
-  async getPassword(id: ID): Promise<string> {
+  async getPassword (id: ID): Promise<string> {
     const users = await this.getAllUsers()
     const user = users.find(usuario => usuario.id === id)
     if (!user) {
@@ -269,7 +266,7 @@ class UsersModel implements UserInterface{
     }
     return user.password
   }
-  async banUser(value: ID): Promise<StatusResponseType> {
+  async banUser (value: ID): Promise<StatusResponseType> {
     const users = await this.getAllUsers()
     const userIndex = users.findIndex(
       user => user.id.toString() === value.toString()

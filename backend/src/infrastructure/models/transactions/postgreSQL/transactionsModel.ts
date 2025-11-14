@@ -1,19 +1,15 @@
-import { transactionObject } from '../../../../domain/mappers/transactionObject.js'
-import { TransactionObjectType } from '../../../domain/types/transaction.js'
-import { ID } from '../../../domain/types/objects.js'
-import { ShippingDetailsType } from '../../../domain/types/shippingDetails.js'
+import { transactionObject } from '@/domain/mappers/createTransaction.js'
+import { ID } from '@/shared/types'
+import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
 import { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes.js'
-import { TransactionInputType } from '../../../domain/types/transactionInput.js'
-import { WithdrawMoneyType } from '../../../domain/types/withdrawMoney.js'
-import {
-  executeQuery,
-  executeSingleResultQuery
-} from '../../../utils/dbUtils.js'
-import { pool } from '../../../assets/config.js'
-
+import { TransactionType } from '@/domain/entities/transaction'
+import { WithdrawMoneyType } from '@/domain/entities/withdrawMoney.js'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils'
+import { pool } from '@/utils/config'
 class TransactionsModel {
-  static async getAllTransactions (): Promise<TransactionObjectType[]> {
-    const transactions: TransactionObjectType[] = await executeQuery(
+  constructor () {}
+  async getAllTransactions (): Promise<TransactionType[]> {
+    const transactions: TransactionType[] = await executeQuery(
       pool,
       () => pool.query('SELECT * FROM transactions LIMIT 1000;'),
       'Error getting transactions'
@@ -21,10 +17,8 @@ class TransactionsModel {
     return transactions
   }
 
-  static async getAllTransactionsByUser (
-    id: ID
-  ): Promise<TransactionObjectType[]> {
-    const transactions: TransactionObjectType[] = await executeQuery(
+  async getAllTransactionsByUser (id: ID): Promise<TransactionType[]> {
+    const transactions: TransactionType[] = await executeQuery(
       pool,
       () =>
         pool.query(
@@ -36,7 +30,7 @@ class TransactionsModel {
     return transactions
   }
 
-  static async getTransactionById (id: number): Promise<TransactionObjectType> {
+  async getTransactionById (id: number): Promise<TransactionType> {
     const transaction = await executeSingleResultQuery(
       pool,
       () => pool.query(`SELECT * FROM transactions WHERE id = $1;`, [id]),
@@ -45,9 +39,9 @@ class TransactionsModel {
     return transaction
   }
 
-  static async createSuccessfullTransaction (
+  async createSuccessfullTransaction (
     data: Partial<TransactionInputType>
-  ): Promise<TransactionObjectType> {
+  ): Promise<TransactionType> {
     const newTransaction = transactionObject(data)
 
     await executeQuery(
@@ -60,14 +54,12 @@ class TransactionsModel {
         `,
           [
             newTransaction.id,
-            newTransaction.user_id,
-            newTransaction.seller_id,
+            newTransaction.from_id,
+            newTransaction.to_id,
             newTransaction.book_id,
             newTransaction.status,
             JSON.stringify(newTransaction.response as PaymentResponse),
-            JSON.stringify(
-              newTransaction.shipping_details as ShippingDetailsType
-            )
+            JSON.stringify(newTransaction.metadata as ShippingDetailsType)
           ]
         ),
       'Error creating transaction'
@@ -75,7 +67,7 @@ class TransactionsModel {
     return newTransaction
   }
 
-  static async deleteTransaction (id: number): Promise<{ message: string }> {
+  async deleteTransaction (id: number): Promise<{ message: string }> {
     const transaction = await this.getTransactionById(id)
     if (!transaction) {
       throw new Error()
@@ -87,10 +79,10 @@ class TransactionsModel {
     )
     return { message: 'Transacción eliminada con éxito' } // Mensaje de éxito
   }
-  static async updateSuccessfullTransaction (
+  async updateSuccessfullTransaction (
     id: number,
-    data: Partial<TransactionObjectType>
-  ): Promise<TransactionObjectType> {
+    data: Partial<TransactionType>
+  ): Promise<TransactionType> {
     const transaction = await this.getTransactionById(id)
     if (!transaction) {
       throw new Error()
@@ -116,9 +108,7 @@ class TransactionsModel {
     return result
   }
 
-  static async getBookByTransactionId (
-    id: string
-  ): Promise<TransactionObjectType> {
+  async getBookByTransactionId (id: string): Promise<TransactionType> {
     const transaction = await executeSingleResultQuery(
       pool,
       () => pool.query('SELECT * FROM transactions WHERE book_id = $1;', [id]),
@@ -127,7 +117,7 @@ class TransactionsModel {
     return transaction
   }
 
-  static async getAllWithdrawTransactions (): Promise<WithdrawMoneyType[]> {
+  async getAllWithdrawTransactions (): Promise<WithdrawMoneyType[]> {
     const withdrawData = await executeQuery(
       pool,
       () => pool.query('SELECT * FROM withdrawals;'),
@@ -135,7 +125,7 @@ class TransactionsModel {
     )
     return withdrawData
   }
-  static async createWithdrawTransaction (
+  async createWithdrawTransaction (
     data: WithdrawMoneyType
   ): Promise<{ message: string }> {
     data.status = 'pending'
@@ -162,7 +152,7 @@ class TransactionsModel {
     )
     return { message: 'Transacción de retiro creada con éxito' }
   }
-  static async markWithdrawTransaction (id: ID): Promise<WithdrawMoneyType> {
+  async markWithdrawTransaction (id: ID): Promise<WithdrawMoneyType> {
     const transaction: WithdrawMoneyType = await executeSingleResultQuery(
       pool,
       () =>

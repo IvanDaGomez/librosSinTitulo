@@ -1,21 +1,21 @@
 import express, { NextFunction } from 'express'
 import cors from 'cors'
-import { createUsersRouter } from '@/infrastructure/http/routes/users/usersRouter.js'
-import { createBooksRouter } from '@/infrastructure/http/routes/books/booksRouter.js'
-import { createMessagesRouter } from '@/infrastructure/http/routes/messages/messagesRouter.js'
-import { createConversationsRouter } from '@/infrastructure/http/routes/conversations/conversationsRouter.js'
-import { createNotificationsRouter } from '@/infrastructure/http/routes/notifications/notificationsRouter.js'
-import { createTransactionsRouter } from '@/infrastructure/http/routes/transactions/transactionsRouter.js'
-import { createEmailsRouter } from '@/infrastructure/http/routes/email/emailRouter.js'
+import { createUsersRouter } from '@/infrastructure/http/routes/usersRouter.js'
+import { createBooksRouter } from '@/infrastructure/http/routes/booksRouter.js'
+import { createMessagesRouter } from '@/infrastructure/http/routes/messagesRouter.js'
+import { createConversationsRouter } from '@/infrastructure/http/routes/conversationsRouter.js'
+import { createNotificationsRouter } from '@/infrastructure/http/routes/notificationsRouter.js'
+import { createTransactionsRouter } from '@/infrastructure/http/routes/transactionsRouter.js'
+import { createEmailsRouter } from '@/infrastructure/http/routes/emailRouter.js'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
-import { createCollectionsRouter } from '@/infrastructure/http/routes/collections/collectionsRouter.js'
+import { createCollectionsRouter } from '@/infrastructure/http/routes/collectionsRouter.js'
 import { jwtMiddleware } from '@/infrastructure/http/middlewares/jwtMiddleware.js'
 import swaggerUI from 'swagger-ui-express'
 import { handleStats } from '@/infrastructure/http/middlewares/handleStats.js'
 import fs from 'node:fs'
 import path from 'node:path'
-import { PORT, __dirname, pool } from '@/utils/config.js'
+import { PORT, __dirname, pool } from '@/utils/config'
 import { corsOptions } from '@/utils/corsOptions.js'
 import { statsHandler } from '@/infrastructure/http/middlewares/statsHandler.js'
 import { seeEmailTemplate } from '@/infrastructure/http/middlewares/seeEmailTemplate.js'
@@ -27,6 +27,8 @@ import { ConversationInterface } from '@/domain/interfaces/conversation.js'
 import { NotificationInterface } from '@/domain/interfaces/notification.js'
 import { TransactionInterface } from '@/domain/interfaces/transaction.js'
 import { EmailInterface } from '@/domain/interfaces/email.js'
+import { ApiResponse } from './domain/valueObjects/apiResponse'
+import { ControllerError } from '@/domain/exceptions/controllerError'
 
 //import { rateLimitter } from './middlewares/rateLimitter.js'
 
@@ -138,7 +140,7 @@ export const createApp = ({
   // Middleware para manejar errores
   app.use(
     (
-      err: Error,
+      err: ControllerError,
       req: express.Request,
       res: express.Response,
       next: express.NextFunction
@@ -147,13 +149,15 @@ export const createApp = ({
         if (process.env.NODE_ENV === 'development') {
           console.error('Error:', err.message)
         }
-        res.status(500).json({
-          error: err.message,
-          // process.env.NODE_ENV === 'production'
-          //   ? 'Internal Server Error'
-          //   : err.message,
-          stack: process.env.NODE_ENV === 'production' ? undefined : err.stack // Include stack trace in development
-        })
+        res.status(err.statusCode ?? 500).json(
+          ApiResponse.error('An error occurred', err.statusCode ?? 500, {
+            error:
+              process.env.NODE_ENV === 'production'
+                ? 'Internal Server Error'
+                : err.message,
+            stack: process.env.NODE_ENV === 'production' ? undefined : err.stack // Include stack trace in development
+          })
+        )
       }
     }
   )

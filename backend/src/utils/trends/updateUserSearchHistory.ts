@@ -1,12 +1,14 @@
-import { getBookKeyInfo } from '../../models/books/local/getBookKeyInfo.js'
-import { UsersModel } from '../../models/users/local/usersLocal.js'
-import { AuthToken } from '../../domain/types/authToken.js'
-import { BookObjectType } from '../../domain/types/book.js'
+import { getBookKeyInfo } from '@/infrastructure/models/books/local/getBookKeyInfo'
+import { UsersModel } from '@/infrastructure/models/users/local/usersLocal'
+import { AuthToken } from '@/domain/entities/authToken'
+import { BookType } from '@/domain/entities/book'
+import { UserInterface } from '@/domain/interfaces/user'
 
 export async function updateUserSearchHistory (
   userObj: AuthToken,
-  book: Partial<BookObjectType>,
-  action: 'query' | 'openedBook'
+  book: Partial<BookType>,
+  action: 'query' | 'openedBook',
+  userService: UserInterface
 ) {
   const maxScore: number = 30
   const minScore: number = 0
@@ -15,9 +17,9 @@ export async function updateUserSearchHistory (
   const decrement: number = 2
 
   const userId = userObj.id
-  const user = await UsersModel.getUserById(userId)
+  const user = await userService.getUserById(userId)
   const bookKeyInfo = getBookKeyInfo(book)
-  const userPreferences = user.historial_busquedas
+  const userPreferences = user.search_history || {}
   // 🔹 Restar 1 punto a todos (mínimo 0)
   Object.keys(userPreferences).forEach(key => {
     userPreferences[key] = userPreferences[key] - decrement
@@ -35,5 +37,5 @@ export async function updateUserSearchHistory (
     )
   }
   // Guardar los cambios en la base de datos
-  await UsersModel.updateUser(userId, { historial_busquedas: userPreferences })
+  await userService.updateUser(userId, { search_history: userPreferences })
 }

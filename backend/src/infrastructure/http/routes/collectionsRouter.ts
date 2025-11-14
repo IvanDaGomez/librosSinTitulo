@@ -1,5 +1,5 @@
 import Router, { RequestHandler } from 'express'
-import { CollectionsController } from '../../controllers/collections/collectionsController.js'
+import { CollectionsController } from '../../../application/controllers/collections/collectionsController.js'
 import { upload } from '../../../../utils/config.js'
 import {
   IBooksModel,

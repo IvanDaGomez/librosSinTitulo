@@ -1,6 +1,6 @@
 export class BookCategories {
-  static readonly formatsArr = ['Físico', 'Digital', 'AudioLibro']
-  static readonly genresArr = [
+  static readonly formats = ['Físico', 'Digital', 'AudioLibro']
+  static readonly genres = [
     'Novela',
     'Ciencia ficción',
     'Fantasía',
@@ -55,7 +55,7 @@ export class BookCategories {
     'Novela gráfica',
     'Nativa no lineal'
   ]
-  static readonly languagesArr = [
+  static readonly languages = [
     'Español',
     'Inglés',
     'Francés',
@@ -106,13 +106,13 @@ export class BookCategories {
     'Punjabi',
     'Otro'
   ]
-  static readonly statesArr = [
+  static readonly states = [
     'Nuevo Sellado',
     'Un solo Uso',
     'Usado',
     'Con detalles y Rayones'
   ]
-  static readonly editionsArr = [
+  static readonly editions = [
     '',
     '1ra Edición',
     '2da Edición',
@@ -121,7 +121,7 @@ export class BookCategories {
     'Reimpresión',
     'Edición Limitada'
   ]
-  static readonly coversArr = [
+  static readonly covers = [
     '',
     'Dura',
     'Blanda',
@@ -129,7 +129,7 @@ export class BookCategories {
     'Edición de bolsillo',
     'Sin tapa'
   ]
-  static readonly agesArr = [
+  static readonly ages = [
     '',
     'Menor de 12 años',
     '13-18 años',
@@ -137,7 +137,7 @@ export class BookCategories {
     '46-65 años',
     'Más de 65 años'
   ]
-  static readonly availabilitiesArr = [
+  static readonly availabilities = [
     'Disponible',
     'No disponible',
     'Vendido',
@@ -145,55 +145,53 @@ export class BookCategories {
   ]
 
   get formats () {
-    return BookCategories.formatsArr
+    return BookCategories.formats
   }
   get genres () {
-    return BookCategories.genresArr
+    return BookCategories.genres
   }
   get languages () {
-    return BookCategories.languagesArr
+    return BookCategories.languages
   }
   get states () {
-    return BookCategories.statesArr
+    return BookCategories.states
   }
   get editions () {
-    return BookCategories.editionsArr
+    return BookCategories.editions
   }
   get covers () {
-    return BookCategories.coversArr
+    return BookCategories.covers
   }
   get ages () {
-    return BookCategories.agesArr
+    return BookCategories.ages
   }
   get availabilities () {
-    return BookCategories.availabilitiesArr
+    return BookCategories.availabilities
   }
 
   static isFormat (value: unknown): value is FormatType {
-    return (BookCategories.formatsArr as readonly unknown[]).includes(value)
+    return (BookCategories.formats as readonly unknown[]).includes(value)
   }
   static isGenre (value: unknown): value is GenreType {
-    return (BookCategories.genresArr as readonly unknown[]).includes(value)
+    return (BookCategories.genres as readonly unknown[]).includes(value)
   }
   static isLanguage (value: unknown): value is LanguageType {
-    return (BookCategories.languagesArr as readonly unknown[]).includes(value)
+    return (BookCategories.languages as readonly unknown[]).includes(value)
   }
   static isState (value: unknown): value is StateType {
-    return (BookCategories.statesArr as readonly unknown[]).includes(value)
+    return (BookCategories.states as readonly unknown[]).includes(value)
   }
   static isEdition (value: unknown): value is EditionType {
-    return (BookCategories.editionsArr as readonly unknown[]).includes(value)
+    return (BookCategories.editions as readonly unknown[]).includes(value)
   }
   static isCover (value: unknown): value is CoverType {
-    return (BookCategories.coversArr as readonly unknown[]).includes(value)
+    return (BookCategories.covers as readonly unknown[]).includes(value)
   }
   static isAge (value: unknown): value is AgeType {
-    return (BookCategories.agesArr as readonly unknown[]).includes(value)
+    return (BookCategories.ages as readonly unknown[]).includes(value)
   }
   static isAvailability (value: unknown): value is AvailabilityType {
-    return (BookCategories.availabilitiesArr as readonly unknown[]).includes(
-      value
-    )
+    return (BookCategories.availabilities as readonly unknown[]).includes(value)
   }
 }
 

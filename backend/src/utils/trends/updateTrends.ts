@@ -1,22 +1,25 @@
 import fs from 'node:fs/promises'
-import { getBookKeyInfo } from '../../models/books/local/getBookKeyInfo.js'
-import { BookObjectType } from '../../domain/types/book.js'
+import { BookType } from '@/domain/entities/book'
 import path from 'node:path'
-import { __dirname } from '../config.js'
-export async function updateTrends (book: Partial<BookObjectType>, action: 'query' | 'openedBook') {
-  /* 
-  * 🔹 Función para actualizar tendencias globales en la app
-  *  🔹 Parámetros
-  * - book: Objeto de libro que contiene información sobre el libro
-  * - action: Acción realizada por el usuario ('query' o 'openedBook')
-  *  🔹 Lógica
-  * - Se definen las puntuaciones máximas y mínimas, así como los incrementos y decrementos
-  * - Se lee el archivo de tendencias o se crea uno nuevo si no existe
-  * - Se reduce la puntuación de todas las tendencias (mínimo 0)
-  * - Se obtienen las palabras clave del libro
-  * - Se incrementa la puntuación de las tendencias según la acción realizada
-  * - Se guardan los cambios en el archivo de tendencias
-  */
+import { __dirname } from '@/utils/config'
+import { getBookKeyInfo } from '@/infrastructure/models/books/local/getBookKeyInfo'
+export async function updateTrends (
+  book: Partial<BookType>,
+  action: 'query' | 'openedBook'
+) {
+  /*
+   * 🔹 Función para actualizar tendencias globales en la app
+   *  🔹 Parámetros
+   * - book: Objeto de libro que contiene información sobre el libro
+   * - action: Acción realizada por el usuario ('query' o 'openedBook')
+   *  🔹 Lógica
+   * - Se definen las puntuaciones máximas y mínimas, así como los incrementos y decrementos
+   * - Se lee el archivo de tendencias o se crea uno nuevo si no existe
+   * - Se reduce la puntuación de todas las tendencias (mínimo 0)
+   * - Se obtienen las palabras clave del libro
+   * - Se incrementa la puntuación de las tendencias según la acción realizada
+   * - Se guardan los cambios en el archivo de tendencias
+   */
   const decrement = 1
   const incrementSeenBook = 6
   const incrementOpenedBook = 10
@@ -27,7 +30,7 @@ export async function updateTrends (book: Partial<BookObjectType>, action: 'quer
   } = {}
   // 🔹 Lee trends.json y si no existe lo crea
   while (true) {
-  try {
+    try {
       const data = await fs.readFile(TRENDS_FILE, 'utf-8')
       trends = JSON.parse(data)
       break
@@ -53,7 +56,8 @@ export async function updateTrends (book: Partial<BookObjectType>, action: 'quer
     return
   }
   // 🔹 Aumento de valores
-  const increment = action === 'openedBook' ? incrementOpenedBook : incrementSeenBook
+  const increment =
+    action === 'openedBook' ? incrementOpenedBook : incrementSeenBook
   for (const key of bookKeyInfo) {
     const newScore = Math.min((trends[key] || 0) + increment, MAX_TREND_SCORE)
     if (trends[key] !== newScore) hasChanges = true // Detect changes

@@ -1,5 +1,5 @@
 import { RequestHandler, Router } from 'express'
-import { UsersController } from '../../controllers/users/usersController.js'
+import { UsersController } from '../../../application/controllers/users/usersController.js'
 import { upload } from '@/utils/config.js'
 import { BookInterface } from '@/domain/interfaces/book.js'
 import { TransactionInterface } from '@/domain/interfaces/transaction.js'

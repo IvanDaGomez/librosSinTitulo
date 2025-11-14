@@ -1,17 +1,14 @@
 import { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes'
-import { ID, ISOString } from '../../domain/types/objects'
-import { ShippingDetailsType } from '../../domain/types/shippingDetails'
-import { TransactionObjectType } from '../../domain/types/transaction'
-import { TransactionInputType } from '../../domain/types/transactionInput'
+import { ID, ISOString } from '@/shared/types'
+import { ShippingDetailsType } from '@/domain/entities/shippingDetails'
+import { TransactionType } from '@/domain/entities/transaction'
 
-// TODO: Cambiar el tipo de shippingDetails
-const transactionObject = (
-  data: Partial<TransactionInputType>
-): TransactionObjectType => {
+// TODO: Revisar si es necesario desglosar más el objeto response para evitar exponer datos innecesarios
+const transactionObject = (data: Partial<TransactionType>): TransactionType => {
   const { api_response, ...importantData } = data.response as PaymentResponse
   return {
     id: data.response?.id, // ID único de la transacción
-    user_id: data.user_id ?? crypto.randomUUID(), // ID del usuario que realiza la compra
+    from_id: data.from_id ?? crypto.randomUUID(), // ID del usuario que realiza la compra
     seller_id: data.seller_id ?? crypto.randomUUID(),
     book_id: data.book_id ?? crypto.randomUUID(),
     status: data.status ?? data.response?.status ?? 'pending',

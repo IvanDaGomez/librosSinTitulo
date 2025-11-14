@@ -1,29 +1,28 @@
 import fs from 'node:fs/promises'
 import bcrypt from 'bcrypt'
-import { pool, SALT_ROUNDS } from '@/utils/config'
 import { levenshteinDistance } from '@/utils/levenshteinDistance'
 import crypto from 'node:crypto'
-import { userObject } from '@/domain/mappers/userObject'
+import { createUser } from '@/domain/mappers/createUser'
 import { PartialUserType, UserType } from '@/domain/entities/user'
 import { ID, ImageType, ISOString } from '@/shared/types'
 import { calculateMatchScore } from '@/utils/calculateMatchScore.js'
 import { changeToArray } from '@/utils/changeToArray.js'
-import {
-  DatabaseError,
-  executeQuery,
-  executeSingleResultQuery
-} from '@/utils/dbUtils.js'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
 import { UserInterface } from '@/domain/interfaces/user.js'
-import { StatusResponse, StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import {
+  StatusResponse,
+  StatusResponseType
+} from '@/domain/valueObjects/statusResponse'
+import { ModelError } from '@/domain/exceptions/modelError'
+import { pool, SALT_ROUNDS } from '@/utils/config'
 class UsersModel implements UserInterface {
-  constructor () {
-  }
+  constructor () {}
   private getEssencialFields (): string[] {
-    return Object.keys(userObject({}, false))
+    return Object.keys(createUser({}, false))
   }
   async getAllUsers (): Promise<UserType[]> {
     // Esta función devuelve todos los usuarios, incluyendo información sensible como la contraseña
-    const users = await executeQuery(
+    const users = await executeQuery<UserType>(
       pool,
       () => pool.query('SELECT * FROM users;'),
       'Error getting users'
@@ -33,10 +32,10 @@ class UsersModel implements UserInterface {
 
   async getAllUsersSafe (): Promise<PartialUserType[]> {
     // Esta función devuelve todos los usuarios, pero sin información sensible como la contraseña
-    const users = await executeQuery(
+    const users = await executeQuery<PartialUserType>(
       pool,
       () =>
-        pool.query(
+        pool.query<PartialUserType>(
           `SELECT ${this.getEssencialFields().join(', ')} FROM users;`
         ),
       'Error getting users'
@@ -50,7 +49,7 @@ class UsersModel implements UserInterface {
       ', '
     )} FROM users WHERE id = ${id}`
     console.log('Query to get user by ID:', query)
-    const user: PartialUserType = await executeSingleResultQuery(
+    const user = await executeSingleResultQuery<PartialUserType>(
       pool,
       () =>
         pool.query(
@@ -61,28 +60,24 @@ class UsersModel implements UserInterface {
         ),
       'Error getting user'
     )
-    return userObject(user, true)
+    if (!user) {
+      throw new ModelError('El usuario no existe')
+    }
+    return createUser(user, true)
   }
   async getUsersByIdList (list: ID[]): Promise<UserType[]> {
-    try {
-      const users: PartialUserType[] = await executeQuery(
-        pool,
-        () =>
-          pool.query(
-            `SELECT ${this.getEssencialFields().join(
-              ', '
-            )} FROM users WHERE id = ANY($1);`,
-            [list]
-          ),
-        'Failed to fetch users by ID list'
-      )
-      return users.map(user => userObject(user, true))
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error fetching users by ID list', error)
-    }
+    const users: PartialUserType[] = await executeQuery(
+      pool,
+      () =>
+        pool.query<PartialUserType>(
+          `SELECT ${this.getEssencialFields().join(
+            ', '
+          )} FROM users WHERE id = ANY($1);`,
+          [list]
+        ),
+      'Failed to fetch users by ID list'
+    )
+    return users.map(user => createUser(user, true))
   }
 
   async getPhotoAndNameUser (id: ID): Promise<{
@@ -93,9 +88,10 @@ class UsersModel implements UserInterface {
     const user = await executeSingleResultQuery(
       pool,
       () =>
-        pool.query(`SELECT id, foto_perfil, nombre FROM users WHERE id = $1;`, [
-          id
-        ]),
+        pool.query(
+          `SELECT id, profile_picture, name FROM users WHERE id = $1;`,
+          [id]
+        ),
       'Error getting user'
     )
     console.log(id)
@@ -103,15 +99,13 @@ class UsersModel implements UserInterface {
     return user
   }
 
-  async getEmailById (
-    id: ID
-  ): Promise<{ email: string; name: string }> {
+  async getEmailById (id: ID): Promise<{ email: string; name: string }> {
     const user = await executeSingleResultQuery(
       pool,
-      () => pool.query(`SELECT correo, nombre FROM users WHERE id = $1;`, [id]),
+      () => pool.query(`SELECT email, name FROM users WHERE id = $1;`, [id]),
       'Error getting user'
     )
-    return userObject(user, true)
+    return createUser(user, true)
   }
 
   // Pendiente desarrollar, una buena query para buscar varios patrones
@@ -119,7 +113,7 @@ class UsersModel implements UserInterface {
     query: string,
     l: number = 100
   ): Promise<PartialUserType[]> {
-    const users: PartialUserType[] = await executeQuery(
+    const users = await executeQuery<PartialUserType>(
       pool,
       () =>
         pool.query(
@@ -134,7 +128,7 @@ class UsersModel implements UserInterface {
 
     // Recorremos todos los libros y calculamos el puntaje de coincidencia
     const usersWithScores = users
-      .map((user: PartialUserType) => {
+      .map(user => {
         const score = calculateMatchScore(user, queryWords, query)
 
         // Validamos si el score es suficiente, por ejemplo si es menor a 2 no lo devolvemos
@@ -156,7 +150,9 @@ class UsersModel implements UserInterface {
     email: string
     password: string
   }): Promise<PartialUserType> {
-    const user = await executeSingleResultQuery(
+    const user = await executeSingleResultQuery<
+      PartialUserType & { password: string }
+    >(
       pool,
       () =>
         pool.query(
@@ -169,7 +165,7 @@ class UsersModel implements UserInterface {
     )
 
     if (!user) {
-      throw new Error('El correo no existe')
+      throw new Error('El email no existe')
     }
 
     const validated = await bcrypt.compare(data.password, user.password)
@@ -177,8 +173,7 @@ class UsersModel implements UserInterface {
     if (!validated) {
       throw new Error('La contraseña es incorrecta')
     }
-    // Return user info, but avoid password or sensitive data
-    return userObject(user, false) as PartialUserType
+    return createUser(user, false)
   }
 
   async googleLogin (data: {
@@ -186,23 +181,23 @@ class UsersModel implements UserInterface {
     email: string
     profile_picture: ImageType
   }): Promise<PartialUserType> {
-    const user = await executeSingleResultQuery(
+    const user = await executeSingleResultQuery<UserType>(
       pool,
       () => pool.query(`SELECT * FROM users WHERE email = $1;`, [data.email]),
       'Error getting user'
     )
     if (!user) {
       // Google sign-up flow
-      const newUser = userObject(data, true) // Ensure `userObject` sanitizes and structures the input
+      const newUser = createUser(data, true) // Ensure `createUser` sanitizes and structures the input
       newUser.login = 'Google' // Mark this as a Google user
-      // userObject() elimina el correo y la contraseña (que no hay)
+      // createUser() elimina el email y la contraseña (que no hay)
       newUser.email = data.email
       // La validación es por defecto true si se hace este método
       newUser.validated = true
       await this.createUser(newUser)
-      return userObject(newUser, false)
+      return createUser(newUser, false)
     }
-    return userObject(user, false)
+    return createUser(user, false)
   }
 
   async facebookLogin (data: {
@@ -210,20 +205,20 @@ class UsersModel implements UserInterface {
     email: string
     profile_picture: ImageType
   }): Promise<PartialUserType> {
-    const user = await executeSingleResultQuery(
+    const user = await executeSingleResultQuery<UserType>(
       pool,
       () => pool.query(`SELECT * FROM users WHERE email = $1;`, [data.email]),
       'Error getting user'
     )
     if (!user) {
-      // Google sign-up flow
-      const newUser = userObject(data, true) // Ensure `userObject` sanitizes and structures the input
-      newUser.login = 'Facebook' // Mark this as a Google user
-      // userObject() elimina el correo y la contraseña (que no hay)
+      // Facebook sign-up flow
+      const newUser = createUser(data, true) // Ensure `createUser` sanitizes and structures the input
+      newUser.login = 'Facebook' // Mark this as a Facebook user
+      // createUser() elimina el email y la contraseña (que no hay)
       newUser.email = data.email
       // La validación es por defecto true si se hace este método
       newUser.validated = true
-      await executeQuery(
+      const result = await executeSingleResultQuery<PartialUserType>(
         pool,
         () =>
           pool.query(
@@ -231,57 +226,59 @@ class UsersModel implements UserInterface {
               ', '
             )}) VALUES (${this.getEssencialFields()
               .map((_, i) => `$${i + 1}`)
-              .join(', ')}) RETURNING *;`,
+              .join(', ')}) RETURNING (${this.getEssencialFields().join(
+              ', '
+            )});`,
             Object.values(newUser)
           ),
         'Error creating user'
       )
-      return userObject(newUser, false)
+      if (!result) {
+        throw new ModelError('Error creating user')
+      }
+      return result
     }
-    return userObject(user, false)
+    return createUser(user, false)
   }
   async getPassword (id: ID): Promise<string> {
-    const user = await executeSingleResultQuery(
+    const user = await executeSingleResultQuery<{ password: string }>(
       pool,
-      () => pool.query(`SELECT contraseña FROM users WHERE id = $1;`, [id]),
+      () =>
+        pool.query<{ password: string }>(
+          `SELECT password FROM users WHERE id = $1;`,
+          [id]
+        ),
       'Error getting user'
     )
     if (!user) {
-      throw new Error('El usuario no existe')
+      throw new ModelError('El usuario no existe')
     }
     return user.password
   }
-  async getUserByEmail (correo: string): Promise<UserType> {
+  async getUserByEmail (email: string): Promise<UserType> {
     const user = await executeSingleResultQuery(
       pool,
-      () =>
-        pool.query(
-          `SELECT ${this.getEssencialFields().join(
-            ', '
-          )} FROM users WHERE correo = $1;`,
-          [correo]
-        ),
+      () => pool.query(`SELECT * FROM users WHERE email = $1;`, [email]),
       'Error getting user'
     )
 
     if (!user) {
-      throw new Error('El correo no existe')
+      throw new Error('El email no existe')
     }
 
     return user
   }
 
   async createUser (data: Partial<UserType>): Promise<UserType> {
-    // Crear valores por defecto
-    const newUser = userObject(data, true) as UserType // Ensure `userObject` sanitizes and structures the input
+    const newUser = createUser(data, true)
     newUser.password = await bcrypt.hash(newUser.password, SALT_ROUNDS)
     await executeQuery(
       pool,
       () =>
         pool.query(
-          `INSERT INTO users (id, nombre, rol, foto_perfil, correo, direccion_envio, libros_ids, estado_cuenta,
-          fecha_registro, actualizado_en, bio, favoritos, conversations_ids, notifications_ids, validated, login,
-          ubicacion, seguidores, siguiendo, collections_ids, preferencias, historial_busquedas, balance, compras_ids, contraseña)
+          `INSERT INTO users (id, name, rol, profile_picture, email, shipping_address, books_ids, account_status,
+          created_at, updated_at, bio, favorites, conversations_ids, notifications_ids, validated, login,
+          location, followers, following, collections_ids, preferences, search_history, balance, purchases_ids, password)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
           $17, $18, $19, $20, $21, $22, $23, $24, $25);`,
           [
@@ -316,60 +313,66 @@ class UsersModel implements UserInterface {
     )
     return newUser
   }
+  async updateUser (id: ID, data: Partial<UserType>): Promise<UserType> {
+    data.updated_at = new Date().toISOString()
 
-  async updateUser (
-    id: ID,
-    data: Partial<UserType>
-  ): Promise<UserType> {
-    try {
-      data.updated_at = new Date().toISOString() as ISOString
-      const keys = Object.keys(data)
-      const values = Object.values(data)
-
-      let updateString = ''
-      for (const i of keys) {
-        updateString += `${i} = $${keys.indexOf(i) + 1}, `
+    // 1. Validación de email
+    if (data.email) {
+      const userWithSameEmail = await this.getUserByEmail(data.email)
+      if (userWithSameEmail && userWithSameEmail.id !== id) {
+        throw new ModelError('El email ya está en uso')
       }
-      updateString = updateString.slice(0, -2) // Remove last comma and space
-
-      const existingUser = await this.getEmailById(id)
-      if (existingUser.email === data.email) {
-        throw new Error('El correo ya está en uso')
-      }
-      if (data.password) {
-        data.password = await bcrypt.hash(data.password, SALT_ROUNDS)
-      }
-      const result = await executeSingleResultQuery(
-        pool,
-        () =>
-          pool.query(
-            `UPDATE users SET ${updateString} WHERE id = $${keys.length + 1} 
-            RETURNING ${this.getEssencialFields().join(', ')};`,
-            [...values, id]
-          ),
-        `Failed to update user with ID ${id}`
-      )
-
-      return result
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(`Error updating book with ID ${id}`, error)
     }
+
+    // 2. Hash de password si aplica
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, SALT_ROUNDS)
+    }
+
+    const keys = Object.keys(data)
+    const values = Object.values(data)
+
+    if (keys.length === 0) {
+      throw new ModelError('No fields to update')
+    }
+
+    // 3. Construcción segura del SET
+    const updateString = keys
+      .map((key, index) => `${key} = $${index + 1}`)
+      .join(', ')
+
+    const params = [...values, id]
+    const idPosition = params.length
+
+    const result = await executeSingleResultQuery<UserType>(
+      pool,
+      () =>
+        pool.query(
+          `UPDATE users 
+            SET ${updateString}
+            WHERE id = $${idPosition}
+            RETURNING *;`,
+          params
+        ),
+      `Failed to update user with ID ${id}`
+    )
+    if (!result) {
+      throw new ModelError('Error updating user')
+    }
+    return result
   }
 
   async deleteUser (id: ID): Promise<StatusResponseType> {
     const user = await this.getUserById(id)
     if (!user) {
-      throw new Error('Usuario no encontrado')
+      throw new ModelError('Usuario no encontrado')
     }
     await executeQuery(
       pool,
       () => pool.query('DELETE FROM users WHERE id = $1;', [id]),
       'Error deleting user'
     )
-    return StatusResponse.success('Usuario eliminado con éxito') // Mensaje de éxito
+    return StatusResponse.success('Usuario eliminado con éxito')
   }
 
   async getBalance (id: ID): Promise<{
@@ -380,51 +383,44 @@ class UsersModel implements UserInterface {
     const user = await this.getUserById(id)
     return user.balance
   }
-  async banUser (value: ID): Promise<StatusResponseType> {
-    const user = await this.getUserById(value)
-    const userEmail = await this.getUserByEmail(value)
-    if (!user && !userEmail) {
-      throw new Error('Usuario no encontrado')
+  async banUser (value: ID | string): Promise<StatusResponseType> {
+    // 1. Normalizar: obtener usuario por ID o por email
+    const user =
+      (await this.getUserById(value)) || (await this.getUserByEmail(value))
+
+    if (!user) {
+      throw new ModelError('Usuario no encontrado')
     }
+
+    const userId = user.id
 
     const client = await pool.connect()
     try {
-      // Start a transaction
       await client.query('BEGIN')
 
-      // Update the user's account status
+      // 2. Suspender usando el ID REAL
       await client.query(
-        `UPDATE users SET estado_cuenta='Suspendido' WHERE correo = $1 OR nombre = $1;`,
-        [value]
+        `UPDATE users SET estado_cuenta = 'Suspendido' WHERE id = $1;`,
+        [userId]
       )
 
-      // Delete related books
-      await client.query(
-        `DELETE FROM books WHERE id_vendedor IN (SELECT id FROM users WHERE correo = $1);`,
-        [value]
-      )
+      // 3. Eliminar libros del usuario
+      await client.query(`DELETE FROM books WHERE id_vendedor = $1;`, [userId])
 
-      // Delete related notifications
-      await client.query(
-        `DELETE FROM notifications WHERE user_id IN (SELECT id FROM users WHERE correo = $1);`,
-        [value]
-      )
+      // 4. Eliminar notificaciones del usuario
+      await client.query(`DELETE FROM notifications WHERE user_id = $1;`, [
+        userId
+      ])
 
-      // Commit the transaction
       await client.query('COMMIT')
 
-      return StatusResponse.success('Usuario suspendido y datos relacionados eliminados con éxito')
+      return StatusResponse.success(
+        'Usuario suspendido y datos relacionados eliminados con éxito'
+      )
     } catch (error) {
-      // If any error occurs, rollback the transaction
-
       await client.query('ROLLBACK')
-      if (error instanceof Error) {
-        console.error('Error al suspender el usuario:', error)
-        throw new Error('Error al suspender el usuario')
-      }
-      return StatusResponse.error('Error al suspender el usuario')
+      throw new ModelError('Error al suspender el usuario')
     } finally {
-      // Release the client
       client.release()
     }
   }

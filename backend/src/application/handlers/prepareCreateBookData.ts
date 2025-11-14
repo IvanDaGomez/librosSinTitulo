@@ -1,8 +1,8 @@
-import { BookObjectType } from '../../domain/types/book'
+import { BookType } from '@/domain/entities/book'
 import express from 'express'
-import { ImageType } from '../../domain/types/objects'
-import { bookObject } from '../../models/books/bookObject.js'
-import saveOptimizedImages from '../../assets/saveOptimizedImages.js'
+import { ImageType } from '@/shared/types'
+import { createBook } from '@/domain/mappers/createBook'
+import saveOptimizedImages from '@/utils/saveOptimizedImages'
 /**
  * Prepares and formats the book data for creation by parsing and transforming
  * specific fields from the incoming request. This function ensures that numeric
@@ -24,15 +24,14 @@ import saveOptimizedImages from '../../assets/saveOptimizedImages.js'
 async function prepareCreateBookData (
   data: any,
   req: express.Request
-): Promise<BookObjectType> {
-  if (data.oferta)
-    data.oferta = parseInt(data.oferta) as BookObjectType['oferta']
-  data.precio = parseInt(data.precio) as BookObjectType['precio']
+): Promise<BookType> {
+  if (data.oferta) data.oferta = parseInt(data.oferta) as BookType['offer']
+  data.precio = parseInt(data.precio) as BookType['price']
   if (data.keywords && typeof data.keywords === 'string') {
     data.keywords = (data.keywords as string)
       .split(',')
       .map(keyword => keyword.trim())
-      .filter(keyword => keyword) as BookObjectType['keywords']
+      .filter(keyword => keyword) as BookType['keywords']
   } else {
     data.keywords = []
   }
@@ -44,27 +43,25 @@ async function prepareCreateBookData (
       const endpoint = path.split('amazonaws.com')[1] // Extract the path after the S3 bucket URL
       const imagePath = process.env.IMAGES_URL + endpoint // Construct the full image URL
       return imagePath
-    }) as BookObjectType['images']
+    }) as BookType['images']
     //await saveOptimizedImages(data.images)
   }
-  return data as BookObjectType
+  return data as BookType
 }
 
 async function prepareUpdateBookData (
   data: any,
   req: express.Request,
-  existingBook: BookObjectType
-): Promise<BookObjectType> {
-  if (data.oferta)
-    data.oferta = parseInt(data.oferta) as BookObjectType['oferta']
-  if (data.precio)
-    data.precio = parseInt(data.precio) as BookObjectType['precio']
+  existingBook: BookType
+): Promise<BookType> {
+  if (data.oferta) data.oferta = parseInt(data.oferta) as BookType['offer']
+  if (data.precio) data.precio = parseInt(data.precio) as BookType['price']
 
   if (data.keywords && typeof data.keywords === 'string') {
     data.keywords = (data.keywords as string)
       .split(',')
       .map(keyword => keyword.trim())
-      .filter(keyword => keyword) as BookObjectType['keywords']
+      .filter(keyword => keyword) as BookType['keywords']
   }
 
   if (req.files) {
@@ -73,30 +70,24 @@ async function prepareUpdateBookData (
       const endpoint = path.split('amazonaws.com')[1] // Extract the path after the S3 bucket URL
       const imagePath = process.env.IMAGES_URL + endpoint // Construct the full image URL
       return imagePath
-    }) as BookObjectType['images']
+    }) as BookType['images']
     //await saveOptimizedImages(data.images)
   }
-  return bookObject(data, true) as BookObjectType
+  return createBook(data, true) as BookType
 }
 
-function filterData (data: BookObjectType): BookObjectType {
-  const allowedFields = Object.keys(
-    bookObject({}, true)
-  ) as (keyof BookObjectType)[]
+function filterData (data: BookType): BookType {
+  const allowedFields = Object.keys(createBook({}, true)) as (keyof BookType)[]
 
-  let filteredData: Partial<
-    Record<keyof BookObjectType, BookObjectType[keyof BookObjectType]>
-  > = {}
+  let filteredData: Partial<Record<keyof BookType, BookType[keyof BookType]>> =
+    {}
   Object.keys(data).forEach(key => {
-    const keyField = key as keyof BookObjectType
+    const keyField = key as keyof BookType
     if (allowedFields.includes(keyField)) {
-      filteredData[keyField] = data[
-        keyField
-      ] as BookObjectType[keyof BookObjectType]
+      filteredData[keyField] = data[keyField] as BookType[keyof BookType]
     }
   })
-  filteredData.actualizado_en =
-    new Date().toISOString() as BookObjectType['actualizado_en']
-  return filteredData as BookObjectType
+  filteredData.updated_at = new Date().toISOString() as BookType['updated_at']
+  return filteredData as BookType
 }
 export { prepareCreateBookData, prepareUpdateBookData, filterData }

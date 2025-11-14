@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises'
-import { conversationObject } from '../../../../domain/mappers/conversationObject.js'
+import { conversationObject } from '../../../../domain/mappers/createConversation.js'
 import { ConversationObjectType } from '../../../domain/types/conversation.js'
 import { ID } from '../../../domain/types/objects.js'
 import {

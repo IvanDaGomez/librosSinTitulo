@@ -1,20 +1,20 @@
 import multer from 'multer'
 import path from 'node:path'
-import pkg from 'pg'
+import { Pool } from 'pg'
 import dotenv from 'dotenv'
 dotenv.config()
-const { Pool } = pkg
 import { fileURLToPath } from 'node:url'
 import { Payment, MercadoPagoConfig, Preference } from 'mercadopago'
 import { S3Client } from '@aws-sdk/client-s3'
 import multerS3 from 'multer-s3'
-import { getContentTypeByExtension } from './getContentTypeByExtension.js'
+import { getContentTypeByExtension } from '@/utils/getContentTypeByExtension.js'
 const __filename = fileURLToPath(import.meta.url)
 const assetsDir = path.dirname(__filename)
 
 // __dirname is not available in ES modules, so we need to use our main file
-const __dirname = path.join(assetsDir, '..', '..')
+const __dirname = path.join(assetsDir, '..', '..', '..')
 //dirname is the first subfolder after backend/
+
 const POSTGRESQL_PORT = process.env.POSTGRESQL_PORT
   ? parseInt(process.env.POSTGRESQL_PORT, 10)
   : 5432

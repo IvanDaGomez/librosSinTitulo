@@ -1,16 +1,17 @@
 import { RequestHandler, Router } from 'express'
-import { BooksController } from '../../controllers/books/booksController.js'
-import { upload } from '../../../../utils/config.js'
-import { generateResponse } from '../../controllers/separated/generateResponse.js'
-import { IBooksModel, IUsersModel } from '../../../../domain/types/models.js'
-import { AIMode } from '../../controllers/books/aiMode.js'
+import { BooksController } from '@/application/controllers/books/booksController'
+import { upload } from '@/utils/config'
+import { generateResponse } from '@/application/controllers/separated/generateResponse.js'
+import { AIMode } from '@/application/controllers/books/aiMode.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
 
 export const createBooksRouter = ({
   BooksModel,
   UsersModel
 }: {
-  BooksModel: IBooksModel
-  UsersModel: IUsersModel
+  BooksModel: BookInterface
+  UsersModel: UserInterface
 }) => {
   const booksRouter = Router()
   const booksController = new BooksController({ BooksModel, UsersModel })

@@ -1,18 +1,18 @@
-import { NotificationType } from '../../domain/types/notification'
-import { ISOString } from '../../domain/types/objects'
+import { NotificationType } from '@/domain/entities/notification'
+import { ISOString } from '@/shared/types'
 
-const notificationObject = (
+const createNotification = (
   data: Partial<NotificationType>
 ): NotificationType => {
   return {
     id: data.id ?? crypto.randomUUID(),
-    title: data.title ?? '',
-    priority: data.priority ?? 'low',
-    type: data.type ?? 'invalidNotification',
     user_id: data.user_id ?? crypto.randomUUID(),
-    input: data.input ?? '',
-    created_in: data.created_in ?? (new Date().toISOString() as ISOString),
+    type: data.type ?? 'invalidNotification',
+    title: data.title ?? '',
+    body: data.body ?? '',
+    priority: data.priority ?? 'low',
     read: data.read ?? false,
+    created_at: data.created_at ?? (new Date().toISOString() as ISOString),
     action_url: data.action_url,
     expires_at:
       data.expires_at ??
@@ -23,4 +23,4 @@ const notificationObject = (
   }
 }
 
-export { notificationObject }
+export { createNotification }

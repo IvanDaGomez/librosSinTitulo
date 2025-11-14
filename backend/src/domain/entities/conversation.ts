@@ -1,10 +1,11 @@
 import { ID, ISOString } from '@/shared/types'
+import { MessageType } from './message'
 
 export type ConversationType = {
   id: ID
   participants: ID[]
   messages_ids: ID[]
-  last_preview?: string
+  last_message?: MessageType | null
   created_at: ISOString
   updated_at: ISOString
 }
@@ -13,7 +14,7 @@ export class Conversation {
   public readonly id: ID
   private _participants: ID[]
   private _messages_ids: ID[]
-  private _last_preview?: string
+  private _last_message?: MessageType | null
   private _created_at: ISOString
   private _updated_at: ISOString
 
@@ -25,7 +26,7 @@ export class Conversation {
     this._messages_ids = Array.isArray(props.messages_ids)
       ? [...props.messages_ids]
       : []
-    this._last_preview = props.last_preview
+    this._last_message = props.last_message
     this._created_at = props.created_at
     this._updated_at = props.updated_at
   }
@@ -60,8 +61,8 @@ export class Conversation {
     return [...this._messages_ids]
   }
 
-  get last_preview (): string | undefined {
-    return this._last_preview
+  get last_message (): MessageType | null {
+    return this._last_message ?? null
   }
 
   get created_at (): ISOString {
@@ -77,7 +78,7 @@ export class Conversation {
       id: this.id,
       participants: [...this._participants],
       messages_ids: [...this._messages_ids],
-      last_preview: this._last_preview,
+      last_message: this._last_message,
       created_at: this._created_at,
       updated_at: this._updated_at
     }
@@ -94,10 +95,10 @@ export class Conversation {
     this.touch()
   }
 
-  public addMessageId (msgId: ID, preview?: string): void {
+  public addMessageId (msgId: ID, message?: MessageType | null): void {
     if (!msgId) return
     this._messages_ids.push(msgId)
-    if (preview) this._last_preview = preview
+    if (message) this._last_message = message
     this.touch()
   }
 

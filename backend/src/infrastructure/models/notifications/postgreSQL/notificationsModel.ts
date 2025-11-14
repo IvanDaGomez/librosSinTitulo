@@ -1,12 +1,13 @@
-import { notificationObject } from '../../../../domain/mappers/notificationObject.js'
-import { NotificationType } from '../../../domain/types/notification.js'
-import { ID } from '../../../domain/types/objects.js'
+import { createNotification } from '@/domain/mappers/createNotification'
+import { NotificationType } from '@/domain/entities/notification'
+import { ID } from '@/shared/types'
 import {
   DatabaseError,
   executeQuery,
   executeSingleResultQuery
-} from '../../../utils/dbUtils.js'
-import { pool } from '../../../assets/config.js'
+} from '@/utils/dbUtils'
+import { pool } from '@/utils/config.js'
+import { ModelError } from '@/domain/exceptions/modelError'
 
 export class NotificationsModel {
   static async getAllNotifications (): Promise<NotificationType[]> {
@@ -39,45 +40,37 @@ export class NotificationsModel {
   }
 
   static async getNotificationById (id: ID): Promise<NotificationType> {
-    try {
-      return await executeSingleResultQuery(
-        pool,
-        () => pool.query('SELECT * FROM notifications WHERE id = $1;', [id]),
-        `Failed to fetch notification with ID ${id}`
-      )
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(
-        `Error retrieving notification with ID ${id}`,
-        error
-      )
+    const notification = await executeSingleResultQuery<NotificationType>(
+      pool,
+      () => pool.query('SELECT * FROM notifications WHERE id = $1;', [id]),
+      `Failed to fetch notification with ID ${id}`
+    )
+    if (!notification) {
+      throw new ModelError(`Notification with ID ${id} not found`)
     }
+    return notification
   }
 
   static async createNotification (
     data: Partial<NotificationType>
   ): Promise<NotificationType> {
-    const newNotification = notificationObject(data)
-
-    await executeQuery(
+    const newNotification = createNotification(data)
+    await executeSingleResultQuery<NotificationType>(
       pool,
       () =>
         pool.query(
-          'INSERT INTO notifications (id, title, priority, type, user_id, input, created_in, read, action_url, expires_at, message, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);',
+          'INSERT INTO notifications (id, user_id, type, title, body, action_url, read, created_at, priority, expires_at, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);',
           [
             newNotification.id,
-            newNotification.title,
-            newNotification.priority,
-            newNotification.type,
             newNotification.user_id,
-            newNotification.input,
-            newNotification.created_in,
-            newNotification.read,
+            newNotification.type,
+            newNotification.title,
+            newNotification.body,
             newNotification.action_url,
+            newNotification.read,
+            newNotification.created_at,
+            newNotification.priority,
             newNotification.expires_at,
-            newNotification.message,
             JSON.stringify(newNotification.metadata)
           ]
         ),

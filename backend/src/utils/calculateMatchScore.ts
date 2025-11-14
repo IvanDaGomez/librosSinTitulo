@@ -1,5 +1,5 @@
-import { levenshteinDistance } from './levenshteinDistance.js'
-import { changeToArray } from './changeToArray.js'
+import { levenshteinDistance } from '@/utils/levenshteinDistance'
+import { changeToArray } from '@/utils/changeToArray'
 const FIELD_WEIGHTS: Record<string, number> = {
   titulo: 5,
   autor: 3,

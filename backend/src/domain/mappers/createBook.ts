@@ -2,18 +2,12 @@ import { BookToReviewType, BookType } from '@/domain/entities/book'
 import { ISOString } from '@/shared/types'
 
 // Overload signatures
-function bookObject(
-  data: BookType | Partial<BookType>,
-  fullInfo: true
-): BookType
-function bookObject(
-  data: BookType | Partial<BookType>,
-  fullInfo: false
-): Partial<BookType>
+function createBook(data: Partial<BookType>, fullInfo: true): BookType
+function createBook(data: Partial<BookType>, fullInfo: false): Partial<BookType>
 
 // Implementation
-function bookObject (
-  data: BookType | Partial<BookType>,
+function createBook (
+  data: Partial<BookType>,
   fullInfo = true
 ): BookType | Partial<BookType> {
   if (fullInfo) {
@@ -67,7 +61,7 @@ function bookObject (
   } as Partial<BookType>
 }
 
-function bookToReview(
+function createBookToReview (
   data: Partial<BookToReviewType> | Partial<BookType> = {}
 ): BookToReviewType {
   return {
@@ -96,4 +90,4 @@ function bookToReview(
   }
 }
 
-export { bookObject, bookToReview }
+export { createBook, createBookToReview }

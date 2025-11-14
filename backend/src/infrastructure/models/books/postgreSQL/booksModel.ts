@@ -1,69 +1,76 @@
 import fs from 'node:fs/promises'
-import { changeToArray } from '../../../assets/changeToArray.js'
-import { calculateMatchScore } from '../../../assets/calculateMatchScore.js'
+import { changeToArray } from '@/utils/changeToArray'
+import { calculateMatchScore } from '@/utils/calculateMatchScore'
 import * as tf from '@tensorflow/tfjs'
 import { getBookKeyInfo } from '../local/getBookKeyInfo.js'
-import { getTrends } from '../../../assets/getTrends.js'
-import { bookObject } from '../../../../domain/mappers/bookObject.js'
-import { ID, ISOString } from '../../../domain/types/objects.js'
-import { AuthToken } from '../../../domain/types/authToken.js'
-import { CollectionObjectType } from '../../../domain/types/collection.js'
-import { BookObjectType } from '../../../domain/types/book.js'
+import { getTrends } from '@/utils/getTrends'
+import { createBook } from '@/domain/mappers/createBook'
+import { ID, ISOString } from '@/shared/types'
+import { AuthToken } from '@/domain/entities/authToken'
+import { CollectionType } from '@/domain/entities/collection'
+import { Book, BookToReviewType, BookType } from '@/domain/entities/book'
 import {
   executeQuery,
   executeSingleResultQuery,
   DatabaseError
-} from '../../../utils/dbUtils.js'
-
+} from '@/utils/dbUtils'
 import { filterBooksByFilters } from '../local/filterBooksByFilters.js'
-// __dirname is not available in ES modules, so we need to use import.meta.url
-
-import { pool } from '../../../assets/config.js'
-import { IUsersModel } from '../../../domain/types/models.js'
+import { pool } from '@/utils/config'
 import { BookInterface } from '@/domain/interfaces/book.js'
+import { ModelError } from '@/domain/exceptions/modelError.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import {
+  StatusResponse,
+  StatusResponseType
+} from '@/domain/valueObjects/statusResponse.js'
+import { UserType } from '@/domain/entities/user.js'
 class BooksModel implements BookInterface {
-  private static getEssencialFields (): string[] {
-    return Object.keys(bookObject({}, false))
+  private getEssencialFields (): string[] {
+    return Object.keys(createBook({}, false))
   }
-  static async getAllBooks (): Promise<BookObjectType[]> {
+
+  private async handle<T> (fn: () => Promise<T>, message: string): Promise<T> {
     try {
-      const books = await executeQuery(
+      return await fn()
+    } catch (error) {
+      throw new ModelError(
+        message,
+        error instanceof Error ? error.stack : undefined
+      )
+    }
+  }
+  async getAllBooks (): Promise<BookType[]> {
+    return this.handle(async () => {
+      const books = await executeQuery<BookType>(
         pool,
         () => pool.query('SELECT * FROM books;'),
         'Failed to fetch books from database'
       )
 
       return books
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error retrieving books', error)
-    }
+    }, 'Error retrieving all books')
   }
 
-  static async getBookById (id: ID): Promise<BookObjectType> {
-    try {
-      const data: BookObjectType = await executeSingleResultQuery(
+  async getBookById (id: ID): Promise<BookType> {
+    return this.handle(async () => {
+      const data = await executeSingleResultQuery<BookType>(
         pool,
         () => pool.query('SELECT * FROM books WHERE id = $1;', [id]),
         `Failed to fetch book with ID ${id}`
       )
-      return data
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
+      if (!data) {
+        throw new ModelError('Book not found')
       }
-      throw new DatabaseError(`Error retrieving book with ID ${id}`, error)
-    }
+      return data
+    }, `Error retrieving book with ID ${id}`)
   }
 
-  static async getBookByQuery (
+  async getBooksByQuery (
     query: string,
     l: number = 24,
-    books: BookObjectType[] = []
-  ): Promise<Partial<BookObjectType>[]> {
-    try {
+    books: BookType[] = []
+  ): Promise<Partial<BookType>[]> {
+    return this.handle(async () => {
       if (books.length === 0) {
         books = await executeQuery(
           pool,
@@ -79,11 +86,11 @@ class BooksModel implements BookInterface {
       const queryWords = changeToArray(query)
       if (query === 'Nuevo') {
         return books
-          .filter(book => book.disponibilidad === 'Disponible')
+          .filter(book => book.availability === 'Disponible')
           .sort((a, b) => {
             return (
-              new Date(b.fecha_publicacion).getTime() -
-              new Date(a.fecha_publicacion).getTime()
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
             )
           })
       }
@@ -96,126 +103,115 @@ class BooksModel implements BookInterface {
         .filter(({ score }) => score >= queryWords.length * 0.7)
 
       // Ordenamos antes de filtrar por cantidad
-      const filterdBooks: Partial<BookObjectType>[] = booksWithScores
+      const filterdBooks: Partial<BookType>[] = booksWithScores
         .sort((a, b) => b.score - a.score)
         .map(item => item.book)
 
       return filterdBooks
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error searching books by query', error)
-    }
+    }, `Error getting books by query: ${query}`)
   }
 
-  static async getBooksByQueryWithFilters (
+  async getBooksByQueryWithFilters (
     query: string,
-    filters: Partial<Record<keyof BookObjectType, any>>,
+    filters: Partial<Record<keyof BookType, any>>,
     limit: number
-  ): Promise<Partial<BookObjectType>[]> {
+  ): Promise<Partial<BookType>[]> {
     // TODO: Implementar la función en la base de datos como tal
-    let books = await executeQuery(
-      pool,
-      () =>
-        pool.query(
-          `SELECT * FROM books WHERE disponibilidad = 'Disponible' ORDER BY RANDOM() LIMIT 1000;`
-        ),
-      'Failed to fetch books from database'
-    )
+    return this.handle(async () => {
+      let books = await executeQuery(
+        pool,
+        () =>
+          pool.query(
+            `SELECT * FROM books WHERE disponibilidad = 'Disponible' ORDER BY RANDOM() LIMIT 1000;`
+          ),
+        'Failed to fetch books from database'
+      )
 
-    type PreparedFiltersType = Partial<
-      {
-        [key in keyof BookObjectType[]]?: any[] | number
-      } & {
-        min_precio?: number
-        max_precio?: number
-        ciudad?: string[]
-        departamento?: string[]
-      }
-    >
-    const preparedFilters: PreparedFiltersType = {}
-    Object.keys(filters).forEach(filter => {
-      const filterValue = filters[filter as keyof BookObjectType]
-      if (typeof filterValue === 'string') {
-        preparedFilters[filter as any] = filterValue.split(',')
-      }
-      if (
-        filter === 'precio' &&
-        Array.isArray(preparedFilters[filter as keyof PreparedFiltersType])
-      ) {
-        const prices = preparedFilters[
-          filter as keyof PreparedFiltersType
-        ] as number[]
-        preparedFilters['min_precio'] = Math.min(...prices)
-        preparedFilters['max_precio'] = Math.max(...prices)
-        delete preparedFilters[filter as keyof PreparedFiltersType]
-      }
-    })
-    books = filterBooksByFilters(books, preparedFilters)
-    // Perform search based on the query
-    const resultBooks = await this.getBookByQuery(query, limit, books)
+      type PreparedFiltersType = Partial<
+        {
+          [key in keyof BookType[]]?: any[] | number
+        } & {
+          min_precio?: number
+          max_precio?: number
+          ciudad?: string[]
+          departamento?: string[]
+        }
+      >
+      const preparedFilters: PreparedFiltersType = {}
+      Object.keys(filters).forEach(filter => {
+        const filterValue = filters[filter as keyof BookType]
+        if (typeof filterValue === 'string') {
+          preparedFilters[filter as any] = filterValue.split(',')
+        }
+        if (
+          filter === 'precio' &&
+          Array.isArray(preparedFilters[filter as keyof PreparedFiltersType])
+        ) {
+          const prices = preparedFilters[
+            filter as keyof PreparedFiltersType
+          ] as number[]
+          preparedFilters['min_precio'] = Math.min(...prices)
+          preparedFilters['max_precio'] = Math.max(...prices)
+          delete preparedFilters[filter as keyof PreparedFiltersType]
+        }
+      })
+      books = filterBooksByFilters(books, preparedFilters)
+      // Perform search based on the query
+      const resultBooks = await this.getBooksByQuery(query, limit, books)
 
-    return resultBooks
+      return resultBooks
+    }, `Error getting books by query with filters: ${query}`)
   }
 
-  static async createBook (data: BookObjectType): Promise<BookObjectType> {
-    try {
-      const book = bookObject(data, true)
+  async createBook (data: BookType): Promise<BookType> {
+    return this.handle(async () => {
+      const book = createBook(data, true)
       await executeQuery(
         pool,
         () =>
           pool.query(
-            `INSERT INTO books (id, titulo, autor, precio, oferta, isbn, images, keywords, 
-          descripcion, estado, genero, formato, vendedor, id_vendedor, edicion, idioma, 
-          ubicacion, tapa, edad, fecha_publicacion, actualizado_en, disponibilidad,
-          mensajes, collections_ids)
+            `INSERT INTO books (id, title, author, price, offer, isbn, images, keywords, 
+          description, status, genre, format, seller, seller_id, edition, language, 
+          location, cover, age, created_at, updated_at, availability,
+          messages, collections_ids)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
           $14, $15, $16, $17, $18, $19, $20,$21,$22, $23, $24);`,
             [
               book.id,
-              book.titulo,
-              book.autor,
-              book.precio,
-              book.oferta,
+              book.title,
+              book.author,
+              book.price,
+              book.offer,
               book.isbn,
               book.images,
               book.keywords,
-              book.descripcion,
-              book.estado,
-              book.genero,
-              book.formato,
-              book.vendedor,
-              book.id_vendedor,
-              book.edicion,
-              book.idioma,
-              book.ubicacion,
-              book.tapa,
-              book.edad,
-              book.fecha_publicacion,
-              book.actualizado_en,
-              book.disponibilidad,
-              book.mensajes,
+              book.description,
+              book.status,
+              book.genre,
+              book.format,
+              book.seller,
+              book.seller_id,
+              book.edition,
+              book.language,
+              book.location,
+              book.cover,
+              book.age,
+              book.created_at,
+              book.updated_at,
+              book.availability,
+              book.messages,
               book.collections_ids
             ]
           ),
         'Failed to create new book'
       )
       return book
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error creating new book', error)
-    }
+    }, 'Error creating new book')
   }
 
-  static async updateBook (
-    id: ID,
-    data: Partial<BookObjectType>
-  ): Promise<BookObjectType> {
-    try {
-      data.actualizado_en = new Date().toISOString() as ISOString
+  async updateBook (id: ID, data: Partial<BookType>): Promise<BookType> {
+    return this.handle(async () => {
+      data.updated_at = new Date().toISOString() as ISOString
       const keys = Object.keys(data)
       const values = Object.values(data)
       let updateString = ''
@@ -224,7 +220,7 @@ class BooksModel implements BookInterface {
       }
       updateString = updateString.slice(0, -2) // Remove last comma and space
 
-      const result = await executeSingleResultQuery(
+      const result = await executeSingleResultQuery<BookType>(
         pool,
         () =>
           pool.query(
@@ -236,17 +232,15 @@ class BooksModel implements BookInterface {
         `Failed to update book with ID ${id}`
       )
 
-      return result
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
+      if (!result) {
+        throw new ModelError('Book not found')
       }
-      throw new DatabaseError(`Error updating book with ID ${id}`, error)
-    }
+      return result
+    }, `Error updating book with ID ${id}`)
   }
 
-  static async deleteBook (id: ID): Promise<{ message: string }> {
-    try {
+  async deleteBook (id: ID): Promise<StatusResponseType> {
+    return this.handle(async () => {
       // Check if the book exists
       const result = await executeSingleResultQuery(
         pool,
@@ -259,110 +253,90 @@ class BooksModel implements BookInterface {
         () => pool.query('DELETE FROM books WHERE id = $1;', [id]),
         `Failed to delete book with ID ${id}`
       )
-      return { message: 'Book deleted successfully' }
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(`Error deleting book with ID ${id}`, error)
-    }
+      return StatusResponse.success('Book deleted successfully')
+    }, `Error deleting book with ID ${id}`)
   }
 
-  static async getAllReviewBooks (): Promise<BookObjectType[]> {
-    try {
+  async getAllReviewBooks (): Promise<BookType[]> {
+    return this.handle(async () => {
       return await executeQuery(
         pool,
         () => pool.query('SELECT * FROM books_backstage;'),
         'Failed to fetch review books from database'
       )
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error retrieving review books', error)
-    }
+    }, 'Error retrieving all review books')
   }
 
-  static async createReviewBook (
-    data: Partial<BookObjectType>
-  ): Promise<BookObjectType> {
-    try {
-      const book = bookObject(data, true)
-      await executeQuery(
+  async createReviewBook (data: Partial<BookType>): Promise<BookType> {
+    return this.handle(async () => {
+      let book = createBook(data, true)
+      const response = await executeSingleResultQuery<BookType>(
         pool,
         () =>
           pool.query(
-            `INSERT INTO books_backstage (id, titulo, autor, precio, oferta, isbn, images, keywords, 
-          descripcion, estado, genero, formato, vendedor, id_vendedor, edicion, idioma, 
-          ubicacion, tapa, edad, fecha_publicacion, actualizado_en, disponibilidad,
-          mensajes, collections_ids)
+            `INSERT INTO books_backstage (id, title, author, price, offer, isbn, images, keywords, 
+          description, status, genre, format, seller, seller_id, edition, language, 
+          location, cover, age, created_at, updated_at, availability,
+          messages, collections_ids)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-          $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24);`,
+          $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+          RETURNING *
+          ;`,
             [
               book.id,
-              book.titulo,
-              book.autor,
-              book.precio,
-              book.oferta,
+              book.title,
+              book.author,
+              book.price,
+              book.offer,
               book.isbn,
               book.images,
               book.keywords,
-              book.descripcion,
-              book.estado,
-              book.genero,
-              book.formato,
-              book.vendedor,
-              book.id_vendedor,
-              book.edicion,
-              book.idioma,
-              book.ubicacion,
-              book.tapa,
-              book.edad,
-              book.fecha_publicacion,
-              book.actualizado_en,
-              book.disponibilidad,
-              book.mensajes,
+              book.description,
+              book.status,
+              book.genre,
+              book.format,
+              book.seller,
+              book.seller_id,
+              book.edition,
+              book.language,
+              book.location,
+              book.cover,
+              book.age,
+              book.created_at,
+              book.updated_at,
+              book.availability,
+              book.messages,
               book.collections_ids
             ]
           ),
         'Failed to create review book'
       )
       return book
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error creating review book', error)
-    }
+    }, 'Error creating review book')
   }
 
-  static async deleteReviewBook (id: ID): Promise<{ message: string }> {
-    try {
+  async deleteReviewBook (id: ID): Promise<StatusResponseType> {
+    return this.handle(async () => {
       await executeQuery(
         pool,
         () => pool.query('DELETE FROM books_backstage WHERE id = $1;', [id]),
         `Failed to delete review book with ID ${id}`
       )
-      return { message: 'Book deleted successfully' }
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(`Error deleting review book with ID ${id}`, error)
-    }
+      return StatusResponse.success('Review book deleted successfully')
+    }, `Error deleting review book with ID ${id}`)
   }
 
-  static async updateReviewBook (
+  async updateReviewBook (
     id: ID,
-    data: Partial<BookObjectType>
-  ): Promise<Partial<BookObjectType>> {
-    try {
+    data: Partial<BookToReviewType>
+  ): Promise<BookToReviewType> {
+    return this.handle(async () => {
       const [keys, values] = Object.entries(data)
       const updateString = keys.reduce((last, key, index) => {
         const prefix = index === 0 ? '' : ', '
         return `${last}${prefix}${key} = $${index + 1}`
       })
-      const result = await executeSingleResultQuery(
+      const result = await executeSingleResultQuery<BookToReviewType>(
         pool,
         () =>
           pool.query(
@@ -374,26 +348,21 @@ class BooksModel implements BookInterface {
         `Failed to update review book with ID ${id}`
       )
 
-      if (!result.length) {
+      if (!result) {
         throw new DatabaseError('Review book not found')
       }
 
-      return bookObject(result[0], false)
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(`Error updating review book with ID ${id}`, error)
-    }
+      return result
+    }, `Error updating review book with ID ${id}`)
   }
 
-  static async forYouPage (
+  async forYouPage (
     userKeyInfo: AuthToken | undefined,
     sampleSize: number = 1000,
-    UsersModel: IUsersModel
-  ): Promise<Partial<BookObjectType>[]> {
-    try {
-      const books = await executeQuery(
+    userService: UserInterface
+  ): Promise<Partial<BookType>[]> {
+    return this.handle(async () => {
+      const books = await executeQuery<Partial<BookType>>(
         pool,
         () =>
           pool.query(
@@ -413,10 +382,10 @@ class BooksModel implements BookInterface {
       let preferences: string[] = []
       let likes: ID[] = []
       if (userKeyInfo?.id) {
-        const user = await UsersModel.getUserById(userKeyInfo.id)
-        preferences = Object.keys(user?.preferencias || {})
-        historial = Object.keys(user?.historial_busquedas || {})
-        likes = user.favoritos ?? []
+        const user = await userService.getUserById(userKeyInfo.id)
+        preferences = Object.keys(user?.preferences || {})
+        historial = Object.keys(user?.search_history || {})
+        likes = user.favorites ?? []
 
         // Si el usuario tiene libros favoritos, entonces los agrego a las querywords
 
@@ -427,7 +396,7 @@ class BooksModel implements BookInterface {
             ...preferences,
             ...booksFavorites
               .filter(b => b !== undefined)
-              .map(book => book.titulo ?? '')
+              .map(book => book.title ?? '')
           ]
         }
       }
@@ -451,60 +420,56 @@ class BooksModel implements BookInterface {
           } else return null
         })
         .filter(
-          (item): item is { book: BookObjectType; score: number } =>
-            item !== null
+          (item): item is { book: BookType; score: number } => item !== null
         )
 
       booksWithScores.sort((a, b) => b.score - a.score)
 
-      return booksWithScores.map(item => bookObject(item.book, false))
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error generating recommendations', error)
-    }
+      return booksWithScores.map(item => createBook(item.book, false))
+    }, 'Error generating For You page recommendations')
   }
 
-  static async getFavoritesByUser (
-    favorites: ID[]
-  ): Promise<Partial<BookObjectType>[]> {
-    try {
-      const elements = await Promise.all(
-        favorites.map(ID => {
-          return this.getBookById(ID)
-        })
+  async getBooksByIdList (list: ID[]): Promise<BookType[]> {
+    return this.handle(async () => {
+      if (!list || list.length === 0) return []
+
+      const books = await executeQuery<BookType>(
+        pool,
+        () =>
+          pool.query(
+            `SELECT * FROM books WHERE id = ANY($1) AND disponibilidad = 'Disponible';`,
+            [list]
+          ),
+        'Failed to fetch favorite books by user'
       )
 
-      return elements
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error fetching favorite books', error)
-    }
-  }
+      // Preserve the order of the incoming favorites array
+      const booksById = new Map(books.map(b => [b.id, b]))
+      const ordered = list
+        .map(id => booksById.get(id))
+        .filter((b): b is BookType => !!b)
 
-  static async getBooksByIdList (list: ID[]): Promise<BookObjectType[]> {
-    try {
-      const books = await executeQuery(
+      return ordered
+    }, 'Error fetching favorite books by user')
+  }
+  async getBooksByUserId (userId: ID): Promise<BookType[]> {
+    return this.handle(async () => {
+      const books = await executeQuery<BookType>(
         pool,
-        () => pool.query('SELECT * FROM books WHERE id = ANY($1);', [list]),
-        'Failed to fetch books by ID list'
+        () =>
+          pool.query(
+            'SELECT * FROM books WHERE seller_id = $1 ORDER BY created_at DESC;',
+            [userId]
+          ),
+        `Failed to fetch books for user with ID ${userId}`
       )
       return books
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error fetching books by ID list', error)
-    }
+    }, `Error getting books with userId:${userId}`)
   }
-
-  static async predictInfo (
+  async predictInfo (
     file: Express.Multer.File
   ): Promise<{ title: string; author: string }> {
-    try {
+    return this.handle(async () => {
       // Read the file buffer
       const imageBuffer = await fs.readFile(file.path)
       const tensor = tf.tensor([0, 0, 0])
@@ -526,29 +491,13 @@ class BooksModel implements BookInterface {
         title: 'Hola',
         author: 'soy'
       }
-    } catch (error) {
-      throw new DatabaseError(
-        'Error predicting book information from image',
-        error
-      )
-    }
+    }, 'Error predicting book info from image')
   }
-  static async getBooksByCollection (
-    collection: CollectionObjectType
-  ): Promise<BookObjectType[]> {
-    try {
-      // Esta función devuelve todos los libros de una colección específica
-      // Obtener todos los libros
-      const books = await Promise.all(
-        collection.libros_ids.map(id => this.getBookById(id))
-      )
-      return books
-    } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error fetching books by collection', error)
-    }
+  async getBooksByCollection (collection: CollectionType): Promise<BookType[]> {
+    return this.handle(async () => {
+      const ids = collection.book_ids
+      return this.getBooksByIdList(ids)
+    }, `Error getting books for collection with ID ${collection.id}`)
   }
 }
 

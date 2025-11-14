@@ -1,17 +1,11 @@
 import { ISOString } from '@/shared/types'
 import { PartialUserType, UserType } from '@/domain/entities/user'
 
-function userObject(
-  name: UserType | Partial<UserType>,
-  fullInfo: false
-): PartialUserType
-function userObject(
-  name: UserType | Partial<UserType>,
-  fullInfo: true
-): UserType
+function createUser(data: Partial<UserType>, fullInfo: false): PartialUserType
+function createUser(data: Partial<UserType>, fullInfo: true): UserType
 
-function userObject (
-  data: UserType | Partial<UserType>,
+function createUser (
+  data: Partial<UserType>,
   fullInfo = false
 ): UserType | PartialUserType {
   if (fullInfo) {
@@ -89,4 +83,4 @@ function userObject (
   }
 }
 
-export { userObject }
+export { createUser }

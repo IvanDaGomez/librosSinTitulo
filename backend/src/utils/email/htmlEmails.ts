@@ -1,11 +1,18 @@
 import dotenv from 'dotenv'
 
-import { BookObjectType } from '../../domain/types/book'
-import { UserInfoType } from '../../domain/types/user'
-import { TransactionObjectType } from '../../domain/types/transaction'
-import { Barcode } from 'mercadopago/dist/clients/payment/commonTypes'
-import { ShippingDetailsType } from '../../domain/types/shippingDetails'
-import { thankEmailTemplate, bookPublishedTemplate, validationEmailTemplate, changePasswordTemplate, paymentDoneBillTemplate, paymentDoneThankTemplate, bookSoldTemplate, efectyPendingPaymentTemplate, DataType, messageResponseTemplate, messageQuestionTemplate } from './htmlTemplates.js'
+import {
+  thankEmailTemplate,
+  bookPublishedTemplate,
+  validationEmailTemplate,
+  changePasswordTemplate,
+  paymentDoneBillTemplate,
+  paymentDoneThankTemplate,
+  bookSoldTemplate,
+  efectyPendingPaymentTemplate,
+  DataType,
+  messageResponseTemplate,
+  messageQuestionTemplate
+} from '@/utils/email/htmlTemplates'
 dotenv.config()
 
 type emailToSendType =
@@ -20,10 +27,8 @@ type emailToSendType =
   | 'efectyPendingPayment'
   | 'messageQuestion'
   | 'messageResponse'
-function createEmail (
-  data: DataType,
-  template: emailToSendType
-): string {
+
+function createEmail (data: DataType, template: emailToSendType): string {
   switch (template) {
     case 'thankEmail': {
       return thankEmailTemplate(data)

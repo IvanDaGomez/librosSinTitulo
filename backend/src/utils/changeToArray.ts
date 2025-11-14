@@ -4,10 +4,8 @@ export function changeToArray (element: string | string[]): string[] {
   */
   if (typeof element === 'string' && element.trim() !== '') {
     return element.split(' ').filter(Boolean)
-  }
-  else if (Array.isArray(element)) {
+  } else if (Array.isArray(element)) {
     return element.filter(Boolean)
   }
   return []
 }
- 

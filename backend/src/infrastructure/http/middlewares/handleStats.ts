@@ -3,7 +3,7 @@ import path from 'node:path'
 import express from 'express'
 // File paths for different events
 const files = {
-  signups: './dist/data/signups.csv',
+  signups: '@/dist/data/signups.csv',
   booksUploaded: './dist/data/booksUploaded.csv',
   searches: './dist/data/searches.csv',
   messages: './dist/data/messages.csv',
@@ -11,8 +11,9 @@ const files = {
 }
 
 // Helper to append data to a CSV
-async function appendToCSV (filePath: string, data:
-  { [key: string]: string | number | boolean | undefined}
+async function appendToCSV (
+  filePath: string,
+  data: { [key: string]: string | number | boolean | undefined }
 ) {
   const fullPath = path.resolve(filePath)
 
@@ -30,29 +31,36 @@ async function appendToCSV (filePath: string, data:
     await fs.writeFile(fullPath, header, 'utf-8')
   }
 
-  // Append the new data as a row 
+  // Append the new data as a row
   const row = Object.values(data).join(',') + '\n'
   await fs.appendFile(fullPath, row, 'utf-8')
 }
 
-async function handleStats (req: express.Request, res: express.Response, next: express.NextFunction) {
+async function handleStats (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) {
   try {
     const now = new Date().toISOString() // Current timestamp
     const willTrack = req.headers['track'] === 'true' // Check if tracking is enabled
     if (!willTrack) {
       return next()
     }
-    const { titulo, price } = req.body ?? { titulo: '', price: ''}// Extracting title and price from request body
+    const { titulo, price } = req.body ?? { titulo: '', price: '' } // Extracting title and price from request body
     if (!titulo || !price) {
       return next()
     }
     switch (true) {
-      case (req.url.includes('/api/users')): {
+      case req.url.includes('/api/users'): {
         // Record user signups
         let action
         if (req.url === '/api/users' && req.method === 'POST') {
           action = 'signUp'
-        } else if (req.url.includes('/api/users/login') && req.method === 'GET') {
+        } else if (
+          req.url.includes('/api/users/login') &&
+          req.method === 'GET'
+        ) {
           action = 'login'
         } else return
         const data = { date: now, action }
@@ -60,14 +68,14 @@ async function handleStats (req: express.Request, res: express.Response, next: e
         break
       }
 
-      case (req.url === '/api/books' && req.method === 'POST'): {
+      case req.url === '/api/books' && req.method === 'POST': {
         // Record book uploads
         const data = { date: now, bookTitle: titulo }
         await appendToCSV(files.booksUploaded, data)
         break
-      }  
+      }
 
-      case (req.url.includes('/api/books/query') && req.method === 'GET'): {
+      case req.url.includes('/api/books/query') && req.method === 'GET': {
         // Record searches
         const q = req.query.q as string
         const data = { date: now, query: q }
@@ -75,14 +83,14 @@ async function handleStats (req: express.Request, res: express.Response, next: e
         break
       }
 
-      case (req.url === '/api/messages' && req.method === 'POST'): {
+      case req.url === '/api/messages' && req.method === 'POST': {
         // Record messages
         const data = { date: now, recipient: 'example_recipient' }
         await appendToCSV(files.messages, data)
         break
       }
 
-      case (req.url === '/api/transactions' && req.method === 'POST'): {
+      case req.url === '/api/transactions' && req.method === 'POST': {
         // Record transactions
         const data = { date: now, amount: price }
         await appendToCSV(files.transactions, data)
@@ -92,7 +100,6 @@ async function handleStats (req: express.Request, res: express.Response, next: e
         next()
       }
     }
-
   } catch (err) {
     next(err)
   }

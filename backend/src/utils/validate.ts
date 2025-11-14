@@ -1,16 +1,7 @@
 import { z } from 'zod'
-import {
-  ageArr,
-  availabilityArr,
-  coverArr,
-  editionArr,
-  formatsArr,
-  genresArr,
-  languagesArr,
-  statesArr
-} from '../domain/types/bookCategories.js'
-import { estadoCuentaArr, roleArr } from '../domain/types/userCategories.js'
-import { notificationTypeArr } from '../domain/types/notificationCategories.js'
+import BookCategories from '@/domain/valueObjects/bookCategories'
+import UserCategories from '@/domain/valueObjects/userCategories'
+import NotificationCategories from '@/domain/valueObjects/notificationCategories'
 // PENDIENTE EL PATCH
 
 const userSchema = z.object({
@@ -44,9 +35,9 @@ const userSchema = z.object({
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .max(20, 'La contraseña debe tener menos de 20 caracteres'),
 
-  rol: z.enum(roleArr).default('usuario'),
+  rol: z.enum(UserCategories.roles).default('user'),
 
-  estado_cuenta: z.enum(estadoCuentaArr).default('Activo'),
+  estado_cuenta: z.enum(UserCategories.accountStatuses).default('Activo'),
 
   direccion_envio: z
     .object({
@@ -111,13 +102,17 @@ export const bookSchema = z.object({
   keywords: z.array(z.string()).optional(),
   id: z.string().optional(), // Mongo ID validation (consider ObjectId regex if needed)
   descripcion: z.string(),
-  estado: z.enum(statesArr),
-  genero: z.enum(genresArr),
-  formato: z.enum(formatsArr),
+  estado: z.enum([...BookCategories.states] as [string, ...string[]]),
+  genero: z.enum([...BookCategories.genres] as [string, ...string[]]),
+  formato: z.enum([...BookCategories.formats] as [string, ...string[]]),
   vendedor: z.string(),
   id_vendedor: z.string(),
-  edicion: z.enum(editionArr).optional(),
-  idioma: z.enum(languagesArr).optional(),
+  edicion: z
+    .enum([...BookCategories.editions] as [string, ...string[]])
+    .optional(),
+  idioma: z
+    .enum([...BookCategories.languages] as [string, ...string[]])
+    .optional(),
   ubicacion: z
     .object({
       ciudad: z.string(),
@@ -125,11 +120,13 @@ export const bookSchema = z.object({
       pais: z.string()
     })
     .optional(),
-  tapa: z.enum(coverArr).optional(),
-  edad: z.enum(ageArr).optional(),
+  tapa: z.enum([...BookCategories.covers] as [string, ...string[]]).optional(),
+  edad: z.enum([...BookCategories.ages] as [string, ...string[]]).optional(),
   fecha_publicacion: z.coerce.date(),
   actualizado_en: z.coerce.date(),
-  disponibilidad: z.enum(availabilityArr).optional(),
+  disponibilidad: z
+    .enum([...BookCategories.availabilities] as [string, ...string[]])
+    .optional(),
   mensajes: z.array(z.tuple([z.string(), z.string(), z.string()])).optional(),
   mensaje: z.string().optional(),
   tipo: z.array(z.string()).optional(),
@@ -184,7 +181,7 @@ const notificationSchema = z.object({
   id: z.string().optional(),
 
   theme: z.enum(['light', 'dark']).default('light'),
-  type: z.enum(notificationTypeArr),
+  type: z.enum(NotificationCategories.notificationTypes),
   user_id: z.string().min(1, 'userId is required'),
 
   title: z.string().optional(),

@@ -1,16 +1,25 @@
-import { pool } from './config.js'
-import { IUsersModel } from '../domain/types/models.js'
-import { BooksModel } from '../models/books/local/booksLocal.js'
-import { CollectionsModel } from '../models/collections/local/collectionsModel.js'
-import { ConversationsModel } from '../models/conversations/local/conversationsModel.js'
-import { EmailsModel } from '../models/emails/local/emailsModel.js'
-import { MessagesModel } from '../models/messages/local/messagesModel.js'
-import { NotificationsModel } from '../models/notifications/local/notificationsModel.js'
-import { TransactionsModel } from '../models/transactions/local/transactionsModel.js'
-import { UsersModel } from '../models/users/local/usersLocal.js'
+import { pool } from '@/utils/config'
+import { UserInterface } from '@/domain/interfaces/user'
+import { BooksModel } from '@/infrastructure/models/books/postgreSQL/booksModel'
+import { CollectionsModel } from '@/infrastructure/models/collections/postgreSQL/collectionsModel.js'
+import { ConversationsModel } from '@/infrastructure/models/conversations/postgreSQL/conversationsModel.js'
+import { EmailsModel } from '@/infrastructure/models/emails/postgreSQL/emailsModel'
+import { MessagesModel } from '@/infrastructure/models/messages/postgreSQL/messagesModel'
+import { NotificationsModel } from '@/infrastructure/models/notifications/postgreSQL/notificationsModel'
+import { TransactionsModel } from '@/infrastructure/models/transactions/postgreSQL/transactionsModel'
+import { UsersModel } from '@/infrastructure/models/users/postgreSQL/usersModel'
 import fs from 'node:fs/promises'
-import { __dirname } from './config.js'
+import { __dirname } from '@/utils/config'
 import path from 'node:path'
+
+const usersModel = new UsersModel()
+const booksModel = new BooksModel()
+const collectionsModel = new CollectionsModel()
+const conversationsModel = new ConversationsModel()
+const messagesModel = new MessagesModel()
+const notificationsModel = new NotificationsModel()
+const transactionsModel = new TransactionsModel()
+const emailsModel = new EmailsModel()
 async function dropTables () {
   const dropUsersTable = `DROP TABLE IF EXISTS users CASCADE;`
   const dropBooksTable = `DROP TABLE IF EXISTS books CASCADE;`
@@ -24,21 +33,20 @@ async function dropTables () {
   const dropNotificationsTable = `DROP TABLE IF EXISTS notifications CASCADE;`
   const dropTransactionsTable = `DROP TABLE IF EXISTS transactions CASCADE;`
   const dropOrdersTable = `DROP TABLE IF EXISTS orders CASCADE;`
-  // await Promise.all([
-  //   pool.query(dropUsersTable),
-  //   pool.query(dropBooksTable),
-  //   pool.query(dropCollectionsTable),
-  //   pool.query(dropConversationsTable),
-  //   pool.query(dropMessagesTable),
-  //   pool.query(dropEmailsTable),
-  //   pool.query(dropNotificationsTable),
-  //   pool.query(dropTransactionsTable),
-  //   pool.query(dropBooksBackstageTable),
-  //   pool.query(dropWithdrawalsTable),
-  //   pool.query(dropTrendsTable),
-  //   pool.query(dropOrdersTable)
-  // ])
-  // Dont want to drop the tables in production
+  await Promise.all([
+    pool.query(dropUsersTable),
+    pool.query(dropBooksTable),
+    pool.query(dropCollectionsTable),
+    pool.query(dropConversationsTable),
+    pool.query(dropMessagesTable),
+    pool.query(dropEmailsTable),
+    pool.query(dropNotificationsTable),
+    pool.query(dropTransactionsTable),
+    pool.query(dropBooksBackstageTable),
+    pool.query(dropWithdrawalsTable),
+    pool.query(dropTrendsTable),
+    pool.query(dropOrdersTable)
+  ])
   console.log('Tables dropped successfully')
 }
 
@@ -46,86 +54,86 @@ async function createTables () {
   const createUsersTable = `
     CREATE TABLE IF NOT EXISTS users (
       id VARCHAR PRIMARY KEY,
-      nombre VARCHAR(100) NOT NULL,
-      rol VARCHAR(50) NOT NULL,
-      foto_perfil VARCHAR(255),
-      correo VARCHAR(100) NOT NULL UNIQUE,
-      direccion_envio JSONB,
-      libros_ids VARCHAR[],
-      estado_cuenta VARCHAR(50) NOT NULL,
-      fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      name VARCHAR(100) NOT NULL,
+      role VARCHAR(50) NOT NULL,
+      profile_picture VARCHAR(255),
+      email VARCHAR(100) NOT NULL UNIQUE,
+      shipping_address JSONB,
+      books_ids VARCHAR[],
+      account_status VARCHAR(50) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       bio TEXT,
-      favoritos VARCHAR[],
+      favorites VARCHAR[],
       conversations_ids VARCHAR[],
       notifications_ids VARCHAR[],
       validated BOOLEAN DEFAULT FALSE,
       login VARCHAR(50) NOT NULL,
-      ubicacion JSONB,
-      seguidores VARCHAR[],
-      siguiendo VARCHAR[],
+      location JSONB,
+      followers VARCHAR[],
+      following VARCHAR[],
       collections_ids VARCHAR[],
-      compras_ids VARCHAR[],
-      preferencias JSONB,
-      historial_busquedas JSONB,
+      purchases_ids VARCHAR[],
+      preferences JSONB,
+      search_history JSONB,
       balance JSONB,
-      contraseña VARCHAR(255)
+      password VARCHAR(255)
     );
   `
 
   const createBooksTable = `
     CREATE TABLE IF NOT EXISTS books (
       id VARCHAR PRIMARY KEY,
-      titulo VARCHAR(255) NOT NULL,
-      autor VARCHAR(255) NOT NULL,
-      precio DECIMAL(10) NOT NULL,
-      oferta DECIMAL(10),
+      title VARCHAR(255) NOT NULL,
+      author VARCHAR(255) NOT NULL,
+      price DECIMAL(10) NOT NULL,
+      offer DECIMAL(10),
       isbn VARCHAR(20),
       images VARCHAR(200)[],
       keywords VARCHAR[],
-      descripcion TEXT,
-      estado VARCHAR(50),
-      genero VARCHAR(50),
-      formato VARCHAR(50),
-      vendedor VARCHAR(100),
-      id_vendedor VARCHAR,
-      edicion VARCHAR(50),
-      idioma VARCHAR(50),
-      ubicacion JSONB,
-      tapa VARCHAR(50),
-      edad VARCHAR(50),
-      fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      disponibilidad VARCHAR(50) DEFAULT TRUE,
-      mensajes JSONB[],
+      description TEXT,
+      status VARCHAR(50),
+      genre VARCHAR(50),
+      format VARCHAR(50),
+      seller VARCHAR(100),
+      seller_id VARCHAR,
+      edition VARCHAR(50),
+      language VARCHAR(50),
+      location JSONB,
+      cover VARCHAR(50),
+      age VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      availability BOOLEAN DEFAULT TRUE,
+      messages JSONB[],
       collections_ids VARCHAR[]
     );
   `
   const createBooksBackstageTable = `
     CREATE TABLE IF NOT EXISTS books_backstage (
       id VARCHAR PRIMARY KEY,
-      titulo VARCHAR(255) NOT NULL,
-      autor VARCHAR(255) NOT NULL,
-      precio DECIMAL(10) NOT NULL,
-      oferta DECIMAL(10),
+      title VARCHAR(255) NOT NULL,
+      author VARCHAR(255) NOT NULL,
+      price DECIMAL(10) NOT NULL,
+      offer DECIMAL(10),
       isbn VARCHAR(20),
       images VARCHAR(200)[],
       keywords VARCHAR[],
-      descripcion TEXT,
-      estado VARCHAR(50),
-      genero VARCHAR(50),
-      formato VARCHAR(50),
-      vendedor VARCHAR(100),
-      id_vendedor VARCHAR,
-      edicion VARCHAR(50),
-      idioma VARCHAR(50),
-      ubicacion JSONB,
-      tapa VARCHAR(50),
-      edad VARCHAR(50),
-      fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      disponibilidad VARCHAR(50) DEFAULT 'Disponible',
-      mensajes JSONB[],
+      description TEXT,
+      status VARCHAR(50),
+      genre VARCHAR(50),
+      format VARCHAR(50),
+      seller VARCHAR(100),
+      seller_id VARCHAR,
+      edition VARCHAR(50),
+      language VARCHAR(50),
+      location JSONB,
+      cover VARCHAR(50),
+      age VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      availability VARCHAR(50) DEFAULT 'Available',
+      messages JSONB[],
       collections_ids VARCHAR[]
     );
   `
@@ -140,24 +148,24 @@ async function createTables () {
     CREATE TABLE IF NOT EXISTS withdrawals (
       id VARCHAR PRIMARY KEY,
       user_id VARCHAR,
-      numero_cuenta VARCHAR(50),
+      account_number VARCHAR(50),
       bank VARCHAR(50),
       phone_number VARCHAR(50),
-      monto DECIMAL(10, 2),
-      fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      amount DECIMAL(10, 2),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       status VARCHAR(50) DEFAULT 'pending'
     );`
   const createCollectionsTable = `
     CREATE TABLE IF NOT EXISTS collections (
       id VARCHAR PRIMARY KEY,
-      foto VARCHAR(255),
-      libros_ids VARCHAR[],
-      nombre VARCHAR(100) NOT NULL,
-      descripcion TEXT,
-      seguidores VARCHAR[],
+      photo VARCHAR(255),
+      books_ids VARCHAR[],
+      name VARCHAR(100) NOT NULL,
+      description TEXT,
+      followers VARCHAR[],
       user_id VARCHAR,
       saga BOOLEAN DEFAULT FALSE,
-      creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `
 
@@ -165,7 +173,7 @@ async function createTables () {
     CREATE TABLE IF NOT EXISTS conversations (
       id VARCHAR PRIMARY KEY,
       users VARCHAR[] NOT NULL,
-      created_in TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       last_message JSONB
     );
   `
@@ -175,7 +183,7 @@ async function createTables () {
       conversation_id VARCHAR,
       user_id VARCHAR,
       message TEXT NOT NULL,
-      created_in TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       read BOOLEAN DEFAULT FALSE
     );
   `
@@ -194,7 +202,7 @@ async function createTables () {
       type VARCHAR(50) NOT NULL,
       user_id VARCHAR,
       input TEXT,
-      created_in TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       read BOOLEAN DEFAULT FALSE,
       action_url VARCHAR(255),
       expires_at TIMESTAMP NOT NULL,
@@ -213,7 +221,7 @@ async function createTables () {
       status VARCHAR(50) NOT NULL,
       shipping_details JSONB,
       response JSONB,
-      orden JSONB
+      order JSONB
     );
   `
   const createOrdersTable = `
@@ -225,7 +233,7 @@ async function createTables () {
       status VARCHAR(50) NOT NULL,
       shipping_details JSONB,
       response JSONB,
-      orden JSONB,
+      order JSONB,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -250,10 +258,10 @@ async function createTables () {
 }
 
 async function fillTablesWithLocalData () {
-  const userData = await UsersModel.getAllUsers()
-  const bookData = await BooksModel.getAllBooks()
-  const bookBackstageData = await BooksModel.getAllReviewBooks()
-  const withdrawalData = await TransactionsModel.getAllWithdrawTransactions()
+  const userData = await usersModel.getAllUsers()
+  const bookData = await booksModel.getAllBooks()
+  const bookBackstageData = await booksModel.getAllReviewBooks()
+  const withdrawalData = await transactionsModel.getAllWithdrawTransactions()
   const rawTrends = await fs.readFile(
     path.join(__dirname, 'data', 'trends.json'),
     'utf-8'
@@ -264,45 +272,45 @@ async function fillTablesWithLocalData () {
   const messageData = await MessagesModel.getAllMessages()
   const notificationData = await NotificationsModel.getAllNotifications()
   const emailData = await EmailsModel.getAllEmails()
-  const transactionData = await TransactionsModel.getAllTransactions()
+  const transactionData = await transactionsModel.getAllTransactions()
 
   try {
     await Promise.all(
       userData.map(user =>
         pool.query(
           `
-          INSERT INTO users (id, nombre, rol, foto_perfil, correo, direccion_envio, libros_ids, 
-          estado_cuenta, fecha_registro, actualizado_en, bio, favoritos, conversations_ids, 
-          notifications_ids, validated, login, ubicacion, seguidores, siguiendo, collections_ids, 
-          compras_ids, preferencias, historial_busquedas, balance, contraseña)
+          INSERT INTO users (id, name, role, profile_picture, email, shipping_address, books_ids, 
+          account_status, created_at, updated_at, bio, favorites, conversations_ids, 
+          notifications_ids, validated, login, location, followers, following, collections_ids, 
+          purchases_ids, preferences, search_history, balance, password)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25);
         `,
           [
             user.id,
-            user.nombre,
-            user.rol,
-            user.foto_perfil,
-            user.correo,
-            user.direccion_envio,
-            user.libros_ids,
-            user.estado_cuenta,
-            user.fecha_registro,
-            user.actualizado_en,
+            user.name,
+            user.role,
+            user.profile_picture,
+            user.email,
+            user.shipping_address,
+            user.books_ids,
+            user.account_status,
+            user.created_at,
+            user.updated_at,
             user.bio,
-            user.favoritos,
+            user.favorites,
             user.conversations_ids,
             user.notifications_ids,
             user.validated,
             user.login,
-            user.ubicacion,
-            user.seguidores,
-            user.siguiendo,
+            user.location,
+            user.followers,
+            user.following,
             user.collections_ids,
-            user.compras_ids,
-            user.preferencias,
-            user.historial_busquedas,
+            user.purchases_ids,
+            user.preferences,
+            user.search_history,
             user.balance,
-            user.contraseña
+            user.password
           ]
         )
       )
@@ -316,37 +324,37 @@ async function fillTablesWithLocalData () {
       bookData.map(book =>
         pool.query(
           `
-          INSERT INTO books (id, titulo, autor, precio, oferta, isbn, images, keywords, 
-          descripcion, estado, genero, formato, vendedor, id_vendedor, edicion, idioma, 
-          ubicacion, tapa, edad, fecha_publicacion, actualizado_en, disponibilidad,
-          mensajes, collections_ids)
+          INSERT INTO books (id, title, author, price, offer, isbn, images, keywords, 
+          description, status, genre, format, seller, seller_id, edition, language, 
+          location, cover, age, created_at, updated_at, availability,
+          messages, collections_ids)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-          $14, $15, $16, $17, $18, $19, $20,$21,$22, $23, $24);
+          $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24);
         `,
           [
             book.id,
-            book.titulo,
-            book.autor,
-            book.precio,
-            book.oferta,
+            book.title,
+            book.author,
+            book.price,
+            book.offer,
             book.isbn,
             book.images,
             book.keywords,
-            book.descripcion,
-            book.estado,
-            book.genero,
-            book.formato,
-            book.vendedor,
-            book.id_vendedor,
-            book.edicion,
-            book.idioma,
-            book.ubicacion,
-            book.tapa,
-            book.edad,
-            book.fecha_publicacion,
-            book.actualizado_en,
-            book.disponibilidad,
-            book.mensajes,
+            book.description,
+            book.status,
+            book.genre,
+            book.format,
+            book.seller,
+            book.seller_id,
+            book.edition,
+            book.language,
+            book.location,
+            book.cover,
+            book.age,
+            book.created_at,
+            book.updated_at,
+            book.availability,
+            book.messages,
             book.collections_ids
           ]
         )
@@ -361,63 +369,63 @@ async function fillTablesWithLocalData () {
       bookBackstageData.map(book =>
         pool.query(
           `
-          INSERT INTO books_backstage (id, titulo, autor, precio, oferta, isbn, images, keywords, 
-          descripcion, estado, genero, formato, vendedor, id_vendedor, edicion, idioma, 
-          ubicacion, tapa, edad, fecha_publicacion, actualizado_en, disponibilidad,
-          mensajes, collections_ids)
+          INSERT INTO books_backstage (id, title, author, price, offer, isbn, images, keywords, 
+          description, status, genre, format, seller, seller_id, edition, language, 
+          location, cover, age, created_at, updated_at, availability,
+          messages, collections_ids)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-          $14, $15, $16, $17, $18, $19, $20,$21,$22, $23, $24);
+          $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24);
         `,
           [
             book.id,
-            book.titulo,
-            book.autor,
-            book.precio,
-            book.oferta,
+            book.title,
+            book.author,
+            book.price,
+            book.offer,
             book.isbn,
             book.images,
             book.keywords,
-            book.descripcion,
-            book.estado,
-            book.genero,
-            book.formato,
-            book.vendedor,
-            book.id_vendedor,
-            book.edicion,
-            book.idioma,
-            book.ubicacion,
-            book.tapa,
-            book.edad,
-            book.fecha_publicacion,
-            book.actualizado_en,
-            book.disponibilidad,
-            book.mensajes,
+            book.description,
+            book.status,
+            book.genre,
+            book.format,
+            book.seller,
+            book.seller_id,
+            book.edition,
+            book.language,
+            book.location,
+            book.cover,
+            book.age,
+            book.created_at,
+            book.updated_at,
+            book.availability,
+            book.messages,
             book.collections_ids
           ]
         )
       )
     )
   } catch (error) {
-    console.error('Error inserting books:', error)
+    console.error('Error inserting books_backstage:', error)
   }
   try {
     await Promise.all(
       collectionData.map(collection =>
         pool.query(
           `
-          INSERT INTO collections (id, foto, libros_ids, nombre, descripcion, seguidores, user_id, saga, creado_en)
+          INSERT INTO collections (id, photo, books_ids, name, description, followers, user_id, saga, created_at)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
         `,
           [
             collection.id,
-            collection.foto,
-            collection.libros_ids,
-            collection.nombre,
-            collection.descripcion,
-            collection.seguidores,
+            collection.photo,
+            collection.books_ids,
+            collection.name,
+            collection.description,
+            collection.followers,
             collection.user_id,
             collection.saga,
-            collection.creado_en
+            collection.created_at
           ]
         )
       )
@@ -431,13 +439,13 @@ async function fillTablesWithLocalData () {
       conversationData.map(conversation =>
         pool.query(
           `
-          INSERT INTO conversations (id, users, created_in, last_message)
+          INSERT INTO conversations (id, users, created_at, last_message)
           VALUES ($1, $2, $3, $4);
         `,
           [
             conversation.id,
             conversation.users,
-            conversation.created_in,
+            conversation.created_at,
             conversation.last_message
           ]
         )
@@ -452,7 +460,7 @@ async function fillTablesWithLocalData () {
       messageData.map(message =>
         pool.query(
           `
-          INSERT INTO messages (id, conversation_id, user_id, message, created_in, read)
+          INSERT INTO messages (id, conversation_id, user_id, message, created_at, read)
           VALUES ($1, $2, $3, $4, $5, $6);
         `,
           [
@@ -460,7 +468,7 @@ async function fillTablesWithLocalData () {
             message.conversation_id,
             message.user_id,
             message.message,
-            message.created_in,
+            message.created_at,
             message.read
           ]
         )
@@ -475,7 +483,7 @@ async function fillTablesWithLocalData () {
       notificationData.map(notification =>
         pool.query(
           `
-          INSERT INTO notifications (id, title, priority, type, user_id, input, created_in, read, action_url, expires_at, message, metadata)
+          INSERT INTO notifications (id, title, priority, type, user_id, input, created_at, read, action_url, expires_at, message, metadata)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
         `,
           [
@@ -485,7 +493,7 @@ async function fillTablesWithLocalData () {
             notification.type,
             notification.user_id,
             notification.input,
-            notification.created_in,
+            notification.created_at,
             notification.read,
             notification.action_url,
             notification.expires_at,
@@ -520,7 +528,7 @@ async function fillTablesWithLocalData () {
       transactionData.map(transaction =>
         pool.query(
           `
-          INSERT INTO transactions (id, user_id, book_id, seller_id, status, shipping_details, response, orden)
+          INSERT INTO transactions (id, user_id, book_id, seller_id, status, shipping_details, response, order)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
         `,
           [
@@ -544,16 +552,16 @@ async function fillTablesWithLocalData () {
       withdrawalData.map(withdrawal =>
         pool.query(
           `
-          INSERT INTO withdrawals (id, user_id, numero_cuenta, bank, monto, fecha, status, phone_number)
+          INSERT INTO withdrawals (id, user_id, account_number, bank, amount, created_at, status, phone_number)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
         `,
           [
             withdrawal.id,
             withdrawal.user_id,
-            withdrawal.numero_cuenta,
+            withdrawal.account_number,
             withdrawal.bank,
-            withdrawal.monto,
-            withdrawal.fecha,
+            withdrawal.amount,
+            withdrawal.created_at,
             withdrawal.status,
             withdrawal.phone_number
           ]
@@ -579,7 +587,6 @@ async function fillTablesWithLocalData () {
     console.error('Error inserting trends:', error)
   }
   console.log('Tables filled with local data successfully')
-  // Close the database connection
 }
 
 async function seed () {

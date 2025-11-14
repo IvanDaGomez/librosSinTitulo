@@ -4,6 +4,7 @@ import { CollectionType } from '@/domain/entities/collection'
 import { ID } from '@/shared/types'
 import { UserType } from '@/domain/entities/user'
 import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { UserInterface } from './user'
 
 export interface BookInterface {
   getAllBooks(): Promise<BookType[]>
@@ -20,18 +21,20 @@ export interface BookInterface {
   ): Promise<Partial<BookType>[]>
   getBooksByUserId(userId: ID): Promise<BookType[]>
   createBook(data: BookType): Promise<BookType>
-  updateBook(id: ID, data: Partial<BookType>): Promise<BookToReviewType>
+  updateBook(id: ID, data: Partial<BookType>): Promise<BookType>
   deleteBook(id: ID): Promise<StatusResponseType>
-  getAllReviewBooks(): Promise<BookType[]>
-  createReviewBook (data: Partial<BookType>): Promise<BookType>
-  updateReviewBook(id: ID, data: Partial<BookType>): Promise<BookType>
+  getAllReviewBooks(): Promise<BookToReviewType[]>
+  createReviewBook(data: Partial<BookToReviewType>): Promise<BookToReviewType>
+  updateReviewBook(
+    id: ID,
+    data: Partial<BookToReviewType>
+  ): Promise<BookToReviewType>
   deleteReviewBook(id: ID): Promise<StatusResponseType>
   forYouPage(
     userKeyInfo: AuthToken | undefined,
-    sampleSize: number,
-    user: UserType
+    sampleSize: number | undefined,
+    userService: UserInterface
   ): Promise<Partial<BookType>[]>
-  getFavoritesByUser(favorites: ID[]): Promise<Partial<BookType>[]>
   getBooksByIdList(list: ID[], l?: number): Promise<Partial<BookType>[]>
   predictInfo(
     file: Express.Multer.File

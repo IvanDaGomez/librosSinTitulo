@@ -1,8 +1,13 @@
-import { getBookKeyInfo } from '../../models/books/local/getBookKeyInfo.js'
-import { UsersModel } from '../../models/users/local/usersLocal.js'
-import { AuthToken } from '../../domain/types/authToken.js'
-import { BookObjectType } from '../../domain/types/book.js'
-export async function updateUserPreferences (userObj: AuthToken, book: Partial<BookObjectType>, action: 'query' | 'openedBook') {
+import { getBookKeyInfo } from '@/infrastructure/models/books/local/getBookKeyInfo.js'
+import { AuthToken } from '@/domain/entities/authToken'
+import { BookType } from '@/domain/entities/book'
+import { UserInterface } from '@/domain/interfaces/user'
+export async function updateUserPreferences (
+  userObj: AuthToken,
+  book: Partial<BookType>,
+  action: 'query' | 'openedBook',
+  userService: UserInterface
+) {
   /**
    * 🔹 Función para actualizar las preferencias del usuario en función de la acción realizada
    *  🔹 Parámetros
@@ -24,9 +29,9 @@ export async function updateUserPreferences (userObj: AuthToken, book: Partial<B
   const decrement: number = 1
 
   const userId = userObj.id
-  const user = await UsersModel.getUserById(userId)
+  const user = await userService.getUserById(userId)
   const bookKeyInfo = getBookKeyInfo(book)
-  const userPreferences = user?.preferencias || {}
+  const userPreferences = user?.preferences || {}
 
   Object.keys(userPreferences).forEach(key => {
     userPreferences[key] = userPreferences[key] - decrement
@@ -35,10 +40,14 @@ export async function updateUserPreferences (userObj: AuthToken, book: Partial<B
     }
   })
 
-  const increment = action === 'openedBook' ? seenBookIncrement : openedBookIncrement
+  const increment =
+    action === 'openedBook' ? seenBookIncrement : openedBookIncrement
   for (const key of bookKeyInfo) {
-    userPreferences[key] = Math.min((userPreferences[key] || minScore) + increment, maxScore)
+    userPreferences[key] = Math.min(
+      (userPreferences[key] || minScore) + increment,
+      maxScore
+    )
   }
 
-  await UsersModel.updateUser(userId, { preferencias: userPreferences })
+  await userService.updateUser(userId, { preferences: userPreferences })
 }

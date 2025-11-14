@@ -1,6 +1,6 @@
 export class NotificationCategory {
-  static readonly prioritiesArr = ['low', 'normal', 'high'] as const
-  static readonly notificationTypesArr = [
+  static readonly priorities = ['low', 'normal', 'high'] as const
+  static readonly notificationTypes = [
     'newMessage',
     'bookUpdated',
     'bookBought',
@@ -19,11 +19,11 @@ export class NotificationCategory {
   ] as const
 
   get priorities () {
-    return NotificationCategory.prioritiesArr
+    return NotificationCategory.priorities
   }
 
   get notificationTypes () {
-    return NotificationCategory.notificationTypesArr
+    return NotificationCategory.notificationTypes
   }
 
   readonly id: string
@@ -102,14 +102,14 @@ export class NotificationCategory {
   static isValidPriority (value: unknown): value is PriorityType {
     return (
       typeof value === 'string' &&
-      (NotificationCategory.prioritiesArr as readonly string[]).includes(value)
+      (NotificationCategory.priorities as readonly string[]).includes(value)
     )
   }
 
   static isValidType (value: unknown): value is NotificationType {
     return (
       typeof value === 'string' &&
-      (NotificationCategory.notificationTypesArr as readonly string[]).includes(
+      (NotificationCategory.notificationTypes as readonly string[]).includes(
         value
       )
     )
@@ -136,9 +136,9 @@ export class NotificationCategory {
   }
 }
 
-export type PriorityType = typeof NotificationCategory.prioritiesArr[number]
+export type PriorityType = typeof NotificationCategory.priorities[number]
 export type NotificationType =
-  typeof NotificationCategory.notificationTypesArr[number]
+  typeof NotificationCategory.notificationTypes[number]
 
 export {
   NotificationCategory as default,

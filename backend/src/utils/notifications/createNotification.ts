@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import { BookType } from '@/domain/entities/book'
 import { NotificationType } from '@/domain/entities/notification'
-import { notificationTypesArr } from '@/domain/valueObjects/notificationCategories'
+import NotificationCategory from '@/domain/valueObjects/notificationCategories'
 import { ID, ImageType, ISOString } from '@/shared/types'
 import { PartialUserType } from '@/domain/entities/user'
 dotenv.config()
@@ -20,20 +20,20 @@ export type NotificationInfoNeeded = Partial<
       book_id: ID
       book_title: string
       photo: ImageType
-      guia: string
-      pregunta: string
-      respuesta: string
+      guide: string
+      question: string
+      answer: string
     }>
   } & BookType
 >
 export function createNotification (
   data: NotificationInfoNeeded,
-  template: notificationTypesArr
+  template: NotificationCategory['notificationTypes'][number]
 ): NotificationType {
   const commonData = {
     id: data.id ?? crypto.randomUUID(),
     read: false,
-    created_in: data.created_in ?? (new Date().toISOString() as ISOString),
+    created_at: data.created_at ?? (new Date().toISOString() as ISOString),
     expires_at:
       data.expires_at ??
       (new Date(
@@ -49,8 +49,8 @@ export function createNotification (
         priority: 'high',
         type: 'welcomeUser',
         user_id: data.id ?? crypto.randomUUID(),
-        message:
-          'Estamos emocionados de tenerte con nosotros. Esperamos que disfrutes de la experiencia y encuentres justo lo que necesitas. Si tienes alguna pregunta, no dudes en contactarnos. ¡Gracias por unirte!'
+        body: 'Estamos emocionados de tenerte con nosotros. Esperamos que disfrutes de la experiencia y encuentres justo lo que necesitas. Si tienes alguna pregunta, no dudes en contactarnos. ¡Gracias por unirte!',
+        created_at: commonData.created_at
       }
       break
     }
@@ -63,7 +63,7 @@ export function createNotification (
         user_id: data.follower?.id ?? crypto.randomUUID(),
         action_url: `${process.env.FRONTEND_URL}/usuarios/${data.follower?.id}`,
         metadata: {
-          photo: data.follower?.foto_perfil ?? ''
+          photo: data.follower?.profile_picture ?? ''
         }
       }
       break
@@ -145,7 +145,7 @@ export function createNotification (
           photo: (data.images ?? [])[0],
           book_title: data.titulo,
           book_id: data.id,
-          pregunta: data.metadata?.pregunta
+          question: data.metadata?.question
         }
       }
       break
@@ -162,8 +162,8 @@ export function createNotification (
           photo: (data.images ?? [])[0],
           book_title: data.titulo,
           book_id: data.id,
-          pregunta: data.metadata?.pregunta,
-          respuesta: data.metadata?.respuesta
+          question: data.metadata?.question,
+          answer: data.metadata?.answer
         }
       }
       break

@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises'
-import { collectionObject } from '../../../../domain/mappers/collectionObject.js'
+import { collectionObject } from '../../../../domain/mappers/createCollection.js'
 import { calculateMatchScore } from '../../../assets/calculateMatchScore.js'
 import { CollectionObjectType } from '../../../domain/types/collection.js'
 import { ID } from '../../../domain/types/objects.js'
@@ -96,7 +96,6 @@ class CollectionsModel {
       }
       updateString = updateString.slice(0, -2) // Remove last comma and space
 
-
       const result = await executeSingleResultQuery(
         pool,
         () =>
@@ -174,7 +173,7 @@ class CollectionsModel {
     )
     if (Object.keys(query.where).length === 0)
       throw new Error('No se encontraron colecciones para este usuario')
-      collections = collections.filter(collection => {
+    collections = collections.filter(collection => {
       return Object.keys(query.where).some(filter => {
         const key = filter as keyof CollectionObjectType
         return (
@@ -218,7 +217,6 @@ class CollectionsModel {
     userKeyInfo: any,
     sampleSize: number = 24
   ): Promise<CollectionObjectType[]> {
-
     const collections = await executeQuery(
       pool,
       () =>

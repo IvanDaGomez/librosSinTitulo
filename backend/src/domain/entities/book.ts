@@ -11,6 +11,7 @@ import {
 } from '@/domain/valueObjects/bookCategories'
 
 export type BookType = {
+  id: ID
   title: string
   author: string
   price: number
@@ -18,7 +19,6 @@ export type BookType = {
   isbn: string
   images: ImageType[]
   keywords: string[]
-  id: ID
   description: string
   status: StateType
   genre: GenreType

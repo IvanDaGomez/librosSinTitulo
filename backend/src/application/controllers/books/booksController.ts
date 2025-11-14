@@ -1,6 +1,6 @@
 // import crypto from 'node:crypto'
 import { validateBook, validatePartialBook } from '@/utils/validate.js'
-import { cambiarGuionesAEspacio } from '@/utils/agregarMas.js'
+import { cambiarGuionesAEspacio } from '@/utils/parseSpaces.js'
 // import { chromium } from 'playwright'
 import { sendEmail } from '@/utils/email/sendEmail.js'
 import { createEmail } from '@/utils/email/htmlEmails.js'
@@ -10,22 +10,25 @@ import {
   filterData,
   prepareCreateBookData,
   prepareUpdateBookData
-} from '@/utils/prepareCreateBookData.js'
-import { updateData } from './updateData.js'
+} from '@/utils/prepareCreateBookData'
+import { updateData } from '../../handlers/updateData.js'
 import { BookInterface } from '@/domain/interfaces/book'
-import { BookType } from '@/domain/entities/book'
+import { BookToReviewType, BookType } from '@/domain/entities/book'
 import { UserInterface } from '@/domain/interfaces/user'
-import express from 'express'
+import express, { RequestHandler } from 'express'
 import { ParsedQs } from 'qs'
 import { ID, ISOString } from '@/shared/types'
 import { AuthToken } from '@/domain/entities/authToken'
 import { CollectionType } from '@/domain/entities/collection'
+import { BookService } from '@/application/services/books/bookService.js'
+import { UserService } from '@/application/services/users/userService.js'
+import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
 
 // import { helperImg } from '../../assets/helperImg.js'
 
 export class BooksController {
-  private UsersModel: UserInterface
-  private BooksModel: BookInterface
+  private userService: UserInterface
+  private bookService: BookInterface
   constructor ({
     UsersModel,
     BooksModel
@@ -37,22 +40,18 @@ export class BooksController {
       Utilizamos este estilo de importación para hacer inyecciones de dependencias
       en lugar de importar directamente los modelos en este archivo
     */
-    this.UsersModel = UsersModel
-    this.BooksModel = BooksModel
+    this.userService = new UserService(UsersModel)
+    this.bookService = new BookService(BooksModel)
   }
 
   getAllBooks = async (
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
-    /*
-      Aquí se obtiene todos los libros de la base de datos y se envían como respuesta.
-      Si no se encuentran libros, se envía un error 500.
-    */
+  ): Promise<express.Response | void | RequestHandler> => {
     try {
-      const books = await this.BooksModel.getAllBooks()
-      return res.json(books)
+      const books = await this.bookService.getAllBooks()
+      return res.json(ApiResponse.success(books))
     } catch (err) {
       next(err)
     }
@@ -62,22 +61,17 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
-    /*
-      Aquí se obtiene un libro específico por su ID y se envía como respuesta.
-      Si no se encuentra el libro, se envía un error 404.
-    */
+  ): Promise<express.Response | void | RequestHandler> => {
     try {
       const bookId = req.params.book_id as ID
-      const book = await this.BooksModel.getBookById(bookId)
-
+      const book = await this.bookService.getBookById(bookId)
       const update = req.headers.update === book.id
       const user = req.session.user as AuthToken | undefined
       if (update && user) {
         const bookCopy = JSON.parse(JSON.stringify(book)) // aseguro que es limpio y plano
-        // await updateData(user, bookCopy, 'openedBook')
+        await updateData(user, bookCopy, 'openedBook')
       }
-      return res.json(book)
+      return res.json(ApiResponse.success(book))
     } catch (err) {
       next(err)
     }
@@ -86,7 +80,7 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     /*
       Aquí se obtiene libros específicos por su ID y se envía como respuesta.
       Si no se encuentra el libro, se envía un error 404.
@@ -99,7 +93,7 @@ export class BooksController {
         return res.status(400).json({ error: 'No se proporcionaron IDs' })
       }
 
-      const books = await this.BooksModel.getBooksByIdList(
+      const books = await this.bookService.getBooksByIdList(
         idsArray,
         idsArray.length
       )
@@ -112,7 +106,7 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     /*
       Aquí se obtiene libros específicos por su query y se envía como respuesta.
       Si no se encuentra el libro, se envía un error 404.
@@ -120,7 +114,7 @@ export class BooksController {
     */
 
     try {
-      let { q, l } = req.query as { q: string | ParsedQs; l: string | ParsedQs }
+      let { q, l } = req.query as { q: string; l: string | ParsedQs | number }
       // Validación de la query
       if (q) {
         q = cambiarGuionesAEspacio(q as string)
@@ -129,12 +123,10 @@ export class BooksController {
           .status(400)
           .json({ error: 'El parámetro de consulta "q" es requerido' })
       }
-      let lParsed: number = parseInt((l as string) ?? '24', 10)
-
-      if (lParsed > 100) lParsed = 100
+      if (!l) l = 24
       // Consigue los libros del modelo
 
-      const books = await this.BooksModel.getBooksByQuery(q, lParsed)
+      const books = await this.bookService.getBooksByQuery(q, l)
 
       // Si hay usuario en la sesión, actualiza las estadísticas de los libros
       const user = req.session.user as AuthToken | undefined
@@ -154,7 +146,7 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     /*
       Aquí se obtiene libros específicos por su query y se envía como respuesta.
       Si no se encuentra el libro, se envía un error 404.
@@ -180,7 +172,7 @@ export class BooksController {
 
       const lParsed = parseInt(l as string, 10) || 24
 
-      const books = await this.BooksModel.getBooksByQueryWithFilters(
+      const books = await this.bookService.getBooksByQueryWithFilters(
         q,
         filters,
         lParsed
@@ -200,7 +192,7 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     /*
       Aquí se crea un libro nuevo con el modelo.
       Si no se encuentra el libro, se envía un error 500.
@@ -209,6 +201,10 @@ export class BooksController {
 
     let data: BookType = req.body
     try {
+      const session = req.session
+      if (!session.user) {
+        return res.status(401).json({ error: 'No autenticado' })
+      }
       data = await prepareCreateBookData(data, req)
 
       const validated = validateBook(data)
@@ -219,24 +215,24 @@ export class BooksController {
         return res.status(400).json({ error: validated.error })
       }
       // Recibe el usuario para actualizar sus librosIds
-      const user = await this.UsersModel.getUserById(data.seller_id)
+      const user = await this.userService.getUserById(data.seller_id)
 
       // Turn user to Seller if not already
-      if (user.role === 'User') {
-        user.role = 'Seller'
+      if (user.role === 'user') {
+        user.role = 'seller'
       }
 
-      await this.UsersModel.updateUser(user.id, {
+      await this.userService.updateUser(user.id, {
         books_ids: [...(user.books_ids ?? []), data.id],
         role: user.role
       })
-      const book = await this.BooksModel.createBook(data)
+      const book = await this.bookService.createBook(data)
       const notificationData = {}
       await sendNotification(
         createNotification(notificationData, 'bookPublished')
       )
       console.log('Book created:', book)
-      const email = (await this.UsersModel.getEmailById(data.seller_id)).email
+      const email = (await this.userService.getEmailById(data.seller_id)).email
 
       await sendEmail(
         `${data.seller} ${email}`,
@@ -254,7 +250,7 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     /*
       Aquí se crea una pregunta sobre un libro.
       Si no se encuentra el libro, se envía un error 500.
@@ -262,7 +258,7 @@ export class BooksController {
     */
     try {
       let data = req.body as {
-        respuesta?: string
+        answer?: string
         question: string
         type: 'pregunta' | 'respuesta'
         sender_id: ID
@@ -273,7 +269,7 @@ export class BooksController {
         return res
           .status(400)
           .json({ error: 'No se proporcionó mensaje o tipo' })
-      const existingBook = await this.BooksModel.getBookById(data.book_id)
+      const existingBook = await this.bookService.getBookById(data.book_id)
       const existingMessages = existingBook.messages ?? []
       const messagesArray = existingMessages ?? []
       if (data.type === 'pregunta') {
@@ -292,8 +288,8 @@ export class BooksController {
         message['answer'] = data.answer
       }
 
-      const seller = await this.UsersModel.getEmailById(existingBook.seller_id)
-      const buyer = await this.UsersModel.getEmailById(data.sender_id)
+      const seller = await this.userService.getEmailById(existingBook.seller_id)
+      const buyer = await this.userService.getEmailById(data.sender_id)
 
       if (data.type === 'respuesta') {
         Promise.all([
@@ -367,7 +363,7 @@ export class BooksController {
       const dataToUpdate = {
         messages: messagesArray
       }
-      const book = await this.BooksModel.updateBook(data.book_id, dataToUpdate)
+      const book = await this.bookService.updateBook(data.book_id, dataToUpdate)
       res.json(book)
     } catch (err) {
       next(err)
@@ -377,21 +373,21 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     try {
       const bookId = req.params.book_id as ID
 
-      const book = await this.BooksModel.getBookById(bookId)
+      const book = await this.bookService.getBookById(bookId)
 
-      const user = await this.UsersModel.getUserById(book.seller_id)
+      const user = await this.userService.getUserById(book.seller_id)
 
       const updatedBooksIds = user.books_ids.filter(id => id !== bookId)
 
-      await this.UsersModel.updateUser(user.id, {
+      await this.userService.updateUser(user.id, {
         books_ids: updatedBooksIds
       })
 
-      const result = await this.BooksModel.deleteBook(bookId)
+      const result = await this.bookService.deleteBook(bookId)
 
       return res.json(result)
     } catch (err) {
@@ -403,11 +399,11 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     try {
       const bookId = req.params.bookId as ID
       const rawData = req.body
-      const existingBook = await this.BooksModel.getBookById(bookId)
+      const existingBook = await this.bookService.getBookById(bookId)
       const data = await prepareUpdateBookData(rawData, req, existingBook)
 
       const validated = validatePartialBook(data)
@@ -416,7 +412,7 @@ export class BooksController {
       }
 
       const filteredData = filterData(data)
-      const book = await this.BooksModel.updateBook(bookId, filteredData)
+      const book = await this.bookService.updateBook(bookId, filteredData)
 
       if (!rawData.mensaje && !rawData.tipo) {
         const notificationData = {}
@@ -461,9 +457,9 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     try {
-      const books = await this.BooksModel.getAllReviewBooks()
+      const books = await this.bookService.getAllReviewBooks()
       return res.json(books)
     } catch (err) {
       next(err)
@@ -474,9 +470,9 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     try {
-      let data: Partial<BookType> = req.body ?? ('' as Partial<BookType>)
+      let data: Partial<BookToReviewType> = req.body
 
       data = await prepareCreateBookData(data, req)
       const validated = validateBook(data)
@@ -485,7 +481,7 @@ export class BooksController {
         return res.status(400).json({ error: validated.error })
       }
 
-      const book = await this.BooksModel.createReviewBook(data)
+      const book = await this.bookService.createReviewBook(data)
 
       res.send(book)
     } catch (err) {
@@ -497,10 +493,10 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     try {
       const bookId = req.params.book_id as ID
-      const result = await this.BooksModel.deleteReviewBook(bookId)
+      const result = await this.bookService.deleteReviewBook(bookId)
       return res.json(result)
     } catch (err) {
       next(err)
@@ -511,11 +507,11 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     try {
       const bookId = req.params.book_id as ID
       let rawData = req.body as Partial<BookType>
-      const existingBook = await this.BooksModel.getBookById(bookId)
+      const existingBook = await this.bookService.getBookById(bookId)
 
       const data: BookType = await prepareUpdateBookData(
         rawData,
@@ -528,7 +524,7 @@ export class BooksController {
       }
       const filteredData = filterData(data)
       filteredData.actualizado_en = new Date().toISOString() as ISOString
-      const book = await this.BooksModel.updateReviewBook(bookId, filteredData)
+      const book = await this.bookService.updateReviewBook(bookId, filteredData)
 
       res.status(200).json(book)
     } catch (err) {
@@ -540,7 +536,7 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     /*
       Aquí se obtiene libros específicos por su query y se envía como respuesta.
       Las consultas actualizan las estadísticas de los libros y los usuarios.
@@ -550,10 +546,10 @@ export class BooksController {
       const lParsed = parseInt(l, 10) || 24
       const user = req.session.user as AuthToken | undefined
 
-      const results = await this.BooksModel.forYouPage(
+      const results = await this.bookService.forYouPage(
         user,
         lParsed,
-        this.UsersModel
+        this.userService
       )
 
       return res.json(results)
@@ -566,14 +562,16 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     const userId = req.params.userId as ID | undefined
     try {
       if (!userId)
         return res.status(401).json({ error: 'No se proporcionó userId' })
-      const user = await this.UsersModel.getUserById(userId)
+      const user = await this.userService.getUserById(userId)
 
-      const favorites = await this.BooksModel.getFavoritesByUser(user.favorites)
+      const favorites = await this.bookService.getFavoritesByUser(
+        user.favorites
+      )
 
       return res.json(favorites)
     } catch (err) {
@@ -585,14 +583,14 @@ export class BooksController {
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
-  ): Promise<express.Response | void> => {
+  ): Promise<express.Response | void | RequestHandler> => {
     const collection = req.body.collection as CollectionType | undefined
     try {
       if (!collection) {
         return res.status(400).json({ error: 'No se proporcionó la colección' })
       }
 
-      const books = await this.BooksModel.getBooksByCollection(collection)
+      const books = await this.bookService.getBooksByCollection(collection)
 
       return res.json(books)
     } catch (err) {

@@ -6,23 +6,25 @@ export type NotificationType = {
   type: string
   title?: string
   body?: string
-  payload?: Record<string, any>
+  action_url?: string
   read: boolean
   created_at: ISOString
-  updated_at: ISOString
   priority?: 'low' | 'medium' | 'high'
+  expires_at?: ISOString
+  metadata?: Record<string, any>
 }
 
-export class Notification {
+export class Notification implements NotificationType {
   public readonly id: ID
   private _user_id: ID
   private _type: string
   private _title?: string
   private _body?: string
-  private _payload?: Record<string, any>
   private _read: boolean
   private _created_at: ISOString
-  private _updated_at: ISOString
+  private _expires_at?: ISOString
+  private _metadata?: Record<string, any>
+  private _action_url?: string
 
   private constructor (props: NotificationType) {
     this.id = props.id
@@ -30,10 +32,11 @@ export class Notification {
     this._type = props.type
     this._title = props.title
     this._body = props.body
-    this._payload = props.payload
+    this._action_url = props.action_url
     this._read = !!props.read
     this._created_at = props.created_at
-    this._updated_at = props.updated_at
+    this._expires_at = props.expires_at
+    this._metadata = props.metadata
   }
 
   public static create (props: NotificationType): Notification {
@@ -52,8 +55,10 @@ export class Notification {
     if (!p.type) throw new Error('type required')
     if (!p.created_at || !isValidISOString(p.created_at))
       throw new Error('created_at invalid')
-    if (!p.updated_at || !isValidISOString(p.updated_at))
-      throw new Error('updated_at invalid')
+    if (p.expires_at && !isValidISOString(p.expires_at))
+      throw new Error('expires_at invalid')
+    if (p.metadata && typeof p.metadata !== 'object')
+      throw new Error('metadata invalid')
   }
 
   get user_id (): ID {
@@ -72,8 +77,8 @@ export class Notification {
     return this._body
   }
 
-  get payload (): Record<string, any> | undefined {
-    return this._payload
+  get action_url (): string | undefined {
+    return this._action_url
   }
 
   get read (): boolean {
@@ -84,27 +89,19 @@ export class Notification {
     return this._created_at
   }
 
-  get updated_at (): ISOString {
-    return this._updated_at
+  get expires_at (): ISOString | undefined {
+    return this._expires_at
+  }
+  get metadata (): Record<string, any> | undefined {
+    return this._metadata
   }
 
   public markRead (updatedAt?: ISOString): void {
     this._read = true
-    this.touch(updatedAt)
   }
 
   public markUnread (updatedAt?: ISOString): void {
     this._read = false
-    this.touch(updatedAt)
-  }
-
-  private touch (updatedAt?: ISOString): void {
-    if (updatedAt) {
-      if (!isValidISOString(updatedAt)) throw new Error('invalid ISO')
-      this._updated_at = updatedAt
-    } else {
-      this._updated_at = new Date().toISOString() as ISOString
-    }
   }
 
   public toObject (): NotificationType {
@@ -114,10 +111,9 @@ export class Notification {
       type: this._type,
       title: this._title,
       body: this._body,
-      payload: this._payload,
+      action_url: this._action_url,
       read: this._read,
-      created_at: this._created_at,
-      updated_at: this._updated_at
+      created_at: this._created_at
     }
   }
 }
