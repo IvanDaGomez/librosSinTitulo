@@ -1,0 +1,74 @@
+import { ID } from '@/shared/types'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { ServiceError } from '@/domain/exceptions/serviceError'
+import { MessageType } from '@/domain/entities/message'
+import { MessageInterface } from '@/domain/interfaces/message'
+
+export class MessageService implements MessageInterface {
+  private messagesModel: MessageInterface
+
+  constructor (messagesModel: MessageInterface) {
+    this.messagesModel = messagesModel
+  }
+
+  private async handle<T> (fn: () => Promise<T>, message: string): Promise<T> {
+    try {
+      return await fn()
+    } catch (error) {
+      throw new ServiceError(
+        message,
+        error instanceof ServiceError ? error.statusCode : 500,
+        error instanceof Error ? error.stack : undefined
+      )
+    }
+  }
+
+  getAllMessages (): Promise<MessageType[]> {
+    return this.handle(
+      () => this.messagesModel.getAllMessages(),
+      'Error getting all messages'
+    )
+  }
+
+  getAllMessagesByConversation (id: ID): Promise<MessageType[]> {
+    return this.handle(
+      () => this.messagesModel.getAllMessagesByConversation(id),
+      `Error getting messages for conversation with id: ${id}`
+    )
+  }
+
+  getMessageById (id: ID): Promise<MessageType> {
+    return this.handle(
+      () => this.messagesModel.getMessageById(id),
+      `Error getting message with id: ${id}`
+    )
+  }
+
+  sendMessage (data: Partial<MessageType>): Promise<MessageType> {
+    return this.handle(
+      () => this.messagesModel.sendMessage(data),
+      'Error sending message'
+    )
+  }
+
+  deleteMessage (id: ID): Promise<StatusResponseType> {
+    return this.handle(
+      () => this.messagesModel.deleteMessage(id),
+      `Error deleting message with id: ${id}`
+    )
+  }
+
+  updateMessage (id: ID, data: Partial<MessageType>): Promise<MessageType> {
+    return this.handle(
+      () => this.messagesModel.updateMessage(id, data),
+      `Error updating message with id: ${id}`
+    )
+  }
+
+  getMessagesByQuery (query: string): Promise<MessageType[]> {
+    return this.handle(
+      () => this.messagesModel.getMessagesByQuery(query),
+      `Error getting messages by query: ${query}`
+    )
+  }
+}

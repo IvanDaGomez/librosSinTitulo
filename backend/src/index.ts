@@ -44,14 +44,14 @@ export const createApp = ({
   TransactionsModel,
   EmailsModel
 }: {
-  BooksModel: BookInterface
-  UsersModel: UserInterface
-  MessagesModel: MessageInterface
-  CollectionsModel: CollectionInterface
-  ConversationsModel: ConversationInterface
-  NotificationsModel: NotificationInterface
-  TransactionsModel: TransactionInterface
-  EmailsModel: EmailInterface
+  BooksModel: any
+  UsersModel: any
+  MessagesModel: any
+  CollectionsModel: any
+  ConversationsModel: any
+  NotificationsModel: any
+  TransactionsModel: any
+  EmailsModel: any
 }) => {
   // Configuración de la aplicación Express
   const app: express.Application = express()

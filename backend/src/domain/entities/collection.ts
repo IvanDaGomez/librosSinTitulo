@@ -3,7 +3,7 @@ import { ID, ImageType, ISOString } from '@/shared/types'
 export type CollectionType = {
   id: ID
   photo: ImageType
-  book_ids: ID[]
+  books_ids: ID[]
   name: string
   description?: string
   followers: ID[]
@@ -17,7 +17,7 @@ export class Collection {
   public readonly user_id: ID
 
   private _photo: ImageType
-  private _book_ids: ID[]
+  private _books_ids: ID[]
   private _name: string
   private _description?: string
   private _followers: ID[]
@@ -29,8 +29,8 @@ export class Collection {
     this.user_id = props.user_id
 
     this._photo = props.photo
-    this._book_ids = Array.isArray(props.book_ids)
-      ? Array.from(new Set(props.book_ids))
+    this._books_ids = Array.isArray(props.books_ids)
+      ? Array.from(new Set(props.books_ids))
       : []
     this._name = props.name
     this._description = props.description
@@ -46,7 +46,7 @@ export class Collection {
     const normalized: CollectionType = {
       id: props.id,
       photo: props.photo,
-      book_ids: props.book_ids ?? [],
+      books_ids: props.books_ids ?? [],
       name: props.name,
       description: props.description,
       followers: props.followers ?? [],
@@ -67,7 +67,8 @@ export class Collection {
     if (!p.user_id) throw new Error('user_id is required')
     if (!p.name || p.name.trim().length === 0)
       throw new Error('name is required')
-    if (!Array.isArray(p.book_ids)) throw new Error('book_ids must be an array')
+    if (!Array.isArray(p.books_ids))
+      throw new Error('books_ids must be an array')
     if (!Array.isArray(p.followers))
       throw new Error('followers must be an array')
     if (!p.created_at || !isValidISOString(p.created_at))
@@ -79,8 +80,8 @@ export class Collection {
     return this._photo
   }
 
-  get book_ids (): ID[] {
-    return [...this._book_ids]
+  get books_ids (): ID[] {
+    return [...this._books_ids]
   }
 
   get name (): string {
@@ -108,7 +109,7 @@ export class Collection {
     return {
       id: this.id,
       photo: this._photo,
-      book_ids: [...this._book_ids],
+      books_ids: [...this._books_ids],
       name: this._name,
       description: this._description,
       followers: [...this._followers],
@@ -122,7 +123,7 @@ export class Collection {
     return new Collection({
       ...this.toObject(),
       ...changes,
-      book_ids: changes.book_ids ?? this.book_ids,
+      books_ids: changes.books_ids ?? this.books_ids,
       followers: changes.followers ?? this.followers
     })
   }
@@ -130,13 +131,13 @@ export class Collection {
   // Mutators (maintain invariants)
   public addBook (bookId: ID): void {
     if (!bookId) return
-    if (!this._book_ids.includes(bookId)) {
-      this._book_ids.push(bookId)
+    if (!this._books_ids.includes(bookId)) {
+      this._books_ids.push(bookId)
     }
   }
 
   public removeBook (bookId: ID): void {
-    this._book_ids = this._book_ids.filter(id => id !== bookId)
+    this._books_ids = this._books_ids.filter(id => id !== bookId)
   }
 
   public addFollower (userId: ID): void {

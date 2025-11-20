@@ -1,11 +1,11 @@
 import { RequestHandler, Router } from 'express'
-import { EmailsController } from '../../controllers/emails/emailsController.js'
-import { IEmailsModel } from '../../../../domain/types/models.js'
+import { EmailsController } from '@/application/controllers/emails/emailsController.js'
+import { EmailInterface } from '@/domain/interfaces/email.js'
 
 export const createEmailsRouter = ({
   EmailsModel
 }: {
-  EmailsModel: IEmailsModel
+  EmailsModel: EmailInterface
 }) => {
   // Crear una instancia del controlador de emails
   const emailsController = new EmailsController({ EmailsModel })

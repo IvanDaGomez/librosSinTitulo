@@ -1,17 +1,17 @@
 import { ID, ISOString } from '@/shared/types'
 
 export type LocationType = {
-  calle: string
-  ciudad: string
-  pais: string
-  codigo_postal?: string
-  departamento?: string
+  street: string
+  city: string
+  country: string
+  postal_code?: string
+  department?: string
 }
 
 export type ShippingDetailsType = {
   id: ID
   user_id: ID
-  direccion: LocationType
+  address: LocationType
   status: 'pending' | 'shipped' | 'delivered' | 'cancelled'
   tracking_number?: string
   carrier?: string
@@ -22,7 +22,7 @@ export type ShippingDetailsType = {
 export class ShippingDetails {
   public readonly id: ID
   private _user_id: ID
-  private _direccion: LocationType
+  private _address: LocationType
   private _status: ShippingDetailsType['status']
   private _tracking_number?: string
   private _carrier?: string
@@ -32,7 +32,7 @@ export class ShippingDetails {
   private constructor (props: ShippingDetailsType) {
     this.id = props.id
     this._user_id = props.user_id
-    this._direccion = { ...props.direccion }
+    this._address = { ...props.address }
     this._status = props.status
     this._tracking_number = props.tracking_number
     this._carrier = props.carrier
@@ -53,7 +53,7 @@ export class ShippingDetails {
     if (!p) throw new Error('ShippingDetails props required')
     if (!p.id) throw new Error('id required')
     if (!p.user_id) throw new Error('user_id required')
-    if (!p.direccion || !p.direccion.calle) throw new Error('direccion invalid')
+    if (!p.address || !p.address.street) throw new Error('address invalid')
     if (!p.created_at || !isValidISOString(p.created_at))
       throw new Error('created_at invalid')
     if (!p.updated_at || !isValidISOString(p.updated_at))
@@ -64,8 +64,8 @@ export class ShippingDetails {
     return this._user_id
   }
 
-  get direccion (): LocationType {
-    return { ...this._direccion }
+  get address (): LocationType {
+    return { ...this._address }
   }
 
   get status (): ShippingDetailsType['status'] {
@@ -88,8 +88,8 @@ export class ShippingDetails {
     return this._updated_at
   }
 
-  public updateAddress (direccion: LocationType, updatedAt?: ISOString): void {
-    this._direccion = { ...direccion }
+  public updateAddress (address: LocationType, updatedAt?: ISOString): void {
+    this._address = { ...address }
     this.touch(updatedAt)
   }
 
@@ -124,7 +124,7 @@ export class ShippingDetails {
     return {
       id: this.id,
       user_id: this._user_id,
-      direccion: { ...this._direccion },
+      address: { ...this._address },
       status: this._status,
       tracking_number: this._tracking_number,
       carrier: this._carrier,

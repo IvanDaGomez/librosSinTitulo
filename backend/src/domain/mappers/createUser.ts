@@ -1,5 +1,12 @@
-import { ISOString } from '@/shared/types'
-import { PartialUserType, UserType } from '@/domain/entities/user'
+import { ID, ImageType, ISOString } from '@/shared/types'
+import {
+  PartialUserType,
+  UserType,
+  LocationType,
+  CollectionItem
+} from '@/domain/entities/user'
+import { parseValue } from '@/utils/parseValue'
+import UserCategories from '../valueObjects/userCategories'
 
 function createUser(data: Partial<UserType>, fullInfo: false): PartialUserType
 function createUser(data: Partial<UserType>, fullInfo: true): UserType
@@ -10,74 +17,106 @@ function createUser (
 ): UserType | PartialUserType {
   if (fullInfo) {
     const fullAnswer: UserType = {
-      id: data.id ?? crypto.randomUUID(),
-      name: data.name ?? '',
-      email: data.email ?? '',
-      password: data.password ?? '',
-      role: data.role ?? 'user',
-      profile_picture: data.profile_picture ?? '',
-      books_ids: data.books_ids ?? [],
-      account_status: data.account_status ?? 'Activo',
-      created_at: data.created_at ?? (new Date().toISOString() as ISOString),
-      updated_at: data.updated_at ?? (new Date().toISOString() as ISOString),
-      bio: data.bio ?? '',
-      favorites: data.favorites ?? [],
-      conversations_ids: data.conversations_ids ?? [],
-      notifications_ids: data.notifications_ids ?? [],
-      validated: data.validated ?? false,
-      login: data.login ?? 'Default',
-      location: data.location ?? {
+      id: parseValue<ID>(data.id, crypto.randomUUID()),
+      name: parseValue<string>(data.name, ''),
+      email: parseValue<string>(data.email, ''),
+      password: parseValue<string>(data.password, ''),
+      role: parseValue<UserCategories['roles'][number]>(data.role, 'user'),
+      profile_picture: parseValue<ImageType>(data.profile_picture, ''),
+      books_ids: parseValue<ID[]>(data.books_ids, []),
+      account_status: parseValue<UserCategories['accountStatus'][number]>(
+        data.account_status,
+        'Activo'
+      ),
+      created_at: parseValue<ISOString>(
+        data.created_at,
+        new Date().toISOString() as ISOString
+      ),
+      updated_at: parseValue<ISOString>(
+        data.updated_at,
+        new Date().toISOString() as ISOString
+      ),
+      bio: parseValue<string>(data.bio, ''),
+      favorites: parseValue<ID[]>(data.favorites, []),
+      conversations_ids: parseValue<ID[]>(data.conversations_ids, []),
+      notifications_ids: parseValue<ID[]>(data.notifications_ids, []),
+      validated: parseValue<boolean>(data.validated, false),
+      login: parseValue<UserCategories['loginMethods'][number]>(
+        data.login,
+        'Default'
+      ),
+      location: parseValue<LocationType>(data.location, {
         street: '',
         city: '',
         country: '',
         postal_code: ''
-      },
-      followers: data.followers ?? [],
-      following: data.following ?? [],
-      collections_ids: data.collections_ids ?? [],
-      preferences: data.preferences ?? {},
-      search_history: data.search_history ?? {},
+      }),
+      followers: parseValue<ID[]>(data.followers, []),
+      following: parseValue<ID[]>(data.following, []),
+      collections_ids: parseValue<CollectionItem[]>(data.collections_ids, []),
+      preferences: parseValue<{
+        [key: string]: number
+      }>(data.preferences, {}),
+      search_history: parseValue<{
+        [key: string]: number
+      }>(data.search_history, {}),
       balance: {
-        pending: data.balance?.pending ?? 0,
-        available: data.balance?.available ?? 0,
-        incoming: data.balance?.incoming ?? 0
+        pending: parseValue<number>(data.balance?.pending, 0),
+        available: parseValue<number>(data.balance?.available, 0),
+        incoming: parseValue<number>(data.balance?.incoming, 0)
       },
-      purchases_ids: data.purchases_ids ?? []
+      purchases_ids: parseValue<ID[]>(data.purchases_ids, [])
     }
     return fullAnswer
   } else {
     const partialAnswer: PartialUserType = {
-      id: data.id ?? crypto.randomUUID(),
-      name: data.name ?? '',
-      role: data.role ?? 'user',
-      profile_picture: data.profile_picture ?? '',
-      books_ids: data.books_ids ?? [],
-      account_status: data.account_status ?? 'Activo',
-      created_at: data.created_at ?? (new Date().toISOString() as ISOString),
-      updated_at: data.updated_at ?? (new Date().toISOString() as ISOString),
-      bio: data.bio ?? '',
-      favorites: data.favorites ?? [],
-      conversations_ids: data.conversations_ids ?? [],
-      notifications_ids: data.notifications_ids ?? [],
-      validated: data.validated ?? false,
-      login: data.login ?? 'Default',
-      location: data.location ?? {
+      id: parseValue<ID>(data.id, crypto.randomUUID()),
+      name: parseValue<string>(data.name, ''),
+      role: parseValue<UserCategories['roles'][number]>(data.role, 'user'),
+      profile_picture: parseValue<ImageType>(data.profile_picture, ''),
+      books_ids: parseValue<ID[]>(data.books_ids, []),
+      account_status: parseValue<UserCategories['accountStatus'][number]>(
+        data.account_status,
+        'Activo'
+      ),
+      created_at: parseValue<ISOString>(
+        data.created_at,
+        new Date().toISOString() as ISOString
+      ),
+      updated_at: parseValue<ISOString>(
+        data.updated_at,
+        new Date().toISOString() as ISOString
+      ),
+      bio: parseValue<string>(data.bio, ''),
+      favorites: parseValue<ID[]>(data.favorites, []),
+      conversations_ids: parseValue<ID[]>(data.conversations_ids, []),
+      notifications_ids: parseValue<ID[]>(data.notifications_ids, []),
+      validated: parseValue<boolean>(data.validated, false),
+      login: parseValue<UserCategories['loginMethods'][number]>(
+        data.login,
+        'Default'
+      ),
+      location: parseValue<LocationType>(data.location, {
         street: '',
         city: '',
         country: '',
         postal_code: ''
-      },
-      followers: data.followers ?? [],
-      following: data.following ?? [],
-      collections_ids: data.collections_ids ?? [],
-      preferences: data.preferences ?? {},
-      search_history: data.search_history ?? {},
+      }),
+      followers: parseValue<ID[]>(data.followers, []),
+      following: parseValue<ID[]>(data.following, []),
+      collections_ids: parseValue<CollectionItem[]>(data.collections_ids, []),
+      preferences: parseValue<{
+        [key: string]: number
+      }>(data.preferences, {}),
+      search_history: parseValue<{
+        [key: string]: number
+      }>(data.search_history, {}),
       balance: {
-        pending: data.balance?.pending ?? 0,
-        available: data.balance?.available ?? 0,
-        incoming: data.balance?.incoming ?? 0
+        pending: parseValue<number>(data.balance?.pending, 0),
+        available: parseValue<number>(data.balance?.available, 0),
+        incoming: parseValue<number>(data.balance?.incoming, 0)
       },
-      purchases_ids: data.purchases_ids ?? []
+      purchases_ids: parseValue<ID[]>(data.purchases_ids, [])
     }
     return partialAnswer
   }

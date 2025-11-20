@@ -279,10 +279,11 @@ async function fillTablesWithLocalData () {
       userData.map(user =>
         pool.query(
           `
-          INSERT INTO users (id, name, role, profile_picture, email, shipping_address, books_ids, 
-          account_status, created_at, updated_at, bio, favorites, conversations_ids, 
-          notifications_ids, validated, login, location, followers, following, collections_ids, 
-          purchases_ids, preferences, search_history, balance, password)
+          INSERT INTO users (id, name, role, profile_picture, email,
+          password, shipping_address, books_ids, account_status, created_at,
+          updated_at, bio, favorites, conversations_ids, notifications_ids,
+          validated, login, location, followers, following, collections_ids,
+          purchases_ids, preferences, search_history, balance)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25);
         `,
           [
@@ -291,6 +292,7 @@ async function fillTablesWithLocalData () {
             user.role,
             user.profile_picture,
             user.email,
+            user.password,
             user.shipping_address,
             user.books_ids,
             user.account_status,
@@ -309,8 +311,7 @@ async function fillTablesWithLocalData () {
             user.purchases_ids,
             user.preferences,
             user.search_history,
-            user.balance,
-            user.password
+            user.balance
           ]
         )
       )
@@ -398,9 +399,7 @@ async function fillTablesWithLocalData () {
             book.age,
             book.created_at,
             book.updated_at,
-            book.availability,
-            book.messages,
-            book.collections_ids
+            book.availability
           ]
         )
       )
@@ -439,14 +438,16 @@ async function fillTablesWithLocalData () {
       conversationData.map(conversation =>
         pool.query(
           `
-          INSERT INTO conversations (id, users, created_at, last_message)
-          VALUES ($1, $2, $3, $4);
+          INSERT INTO conversations (id, participants, messages_ids, last_message, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6);
         `,
           [
             conversation.id,
-            conversation.users,
+            conversation.participants,
+            conversation.messages_ids,
+            conversation.last_message,
             conversation.created_at,
-            conversation.last_message
+            conversation.updated_at
           ]
         )
       )
@@ -460,16 +461,18 @@ async function fillTablesWithLocalData () {
       messageData.map(message =>
         pool.query(
           `
-          INSERT INTO messages (id, conversation_id, user_id, message, created_at, read)
-          VALUES ($1, $2, $3, $4, $5, $6);
+          INSERT INTO messages (id, sender_id, receiver_id, conversation_id, content, created_at, read, metadata)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
         `,
           [
             message.id,
+            message.sender_id,
+            message.receiver_id,
             message.conversation_id,
-            message.user_id,
-            message.message,
+            message.content,
             message.created_at,
-            message.read
+            message.read,
+            message.metadata
           ]
         )
       )
@@ -483,21 +486,20 @@ async function fillTablesWithLocalData () {
       notificationData.map(notification =>
         pool.query(
           `
-          INSERT INTO notifications (id, title, priority, type, user_id, input, created_at, read, action_url, expires_at, message, metadata)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
+          INSERT INTO notifications (id, user_id, type, title, body, action_url, read, created_at, priority, expires_at, metadata)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
         `,
           [
             notification.id,
-            notification.title,
-            notification.priority,
-            notification.type,
             notification.user_id,
-            notification.input,
-            notification.created_at,
+            notification.type,
+            notification.title ?? '',
+            notification.body ?? '',
+            notification.action_url ?? '',
             notification.read,
-            notification.action_url,
+            notification.created_at,
+            notification.priority ?? 'medium',
             notification.expires_at,
-            notification.message,
             notification.metadata
           ]
         )
@@ -528,18 +530,21 @@ async function fillTablesWithLocalData () {
       transactionData.map(transaction =>
         pool.query(
           `
-          INSERT INTO transactions (id, user_id, book_id, seller_id, status, shipping_details, response, order)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
+          INSERT INTO transactions (id, from_id, to_id, book_id, amount, currency, status, method, metadata, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
         `,
           [
             transaction.id,
-            transaction.user_id,
+            transaction.from_id,
+            transaction.to_id,
             transaction.book_id,
-            transaction.seller_id,
+            transaction.amount,
+            transaction.currency,
             transaction.status,
-            transaction.shipping_details,
-            transaction.response,
-            transaction.order ?? {}
+            transaction.method ?? {},
+            transaction.metadata ?? {},
+            transaction.created_at,
+            transaction.updated_at
           ]
         )
       )
@@ -558,12 +563,12 @@ async function fillTablesWithLocalData () {
           [
             withdrawal.id,
             withdrawal.user_id,
-            withdrawal.account_number,
-            withdrawal.bank,
             withdrawal.amount,
-            withdrawal.created_at,
+            withdrawal.fee ?? 0,
             withdrawal.status,
-            withdrawal.phone_number
+            withdrawal.method ?? '',
+            withdrawal.created_at,
+            withdrawal.processed_at ?? null
           ]
         )
       )

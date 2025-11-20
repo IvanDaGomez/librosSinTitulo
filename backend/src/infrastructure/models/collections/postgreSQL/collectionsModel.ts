@@ -1,21 +1,22 @@
-import fs from 'node:fs/promises'
-import { collectionObject } from '../../../../domain/mappers/createCollection.js'
-import { calculateMatchScore } from '../../../assets/calculateMatchScore.js'
-import { CollectionObjectType } from '../../../domain/types/collection.js'
-import { ID } from '../../../domain/types/objects.js'
-import { changeToArray } from '../../../assets/changeToArray.js'
-import { pool } from '../../../assets/config.js'
+import { createCollection } from '@/domain/mappers/createCollection.js'
+import { calculateMatchScore } from '@/utils/calculateMatchScore.js'
+import { CollectionType } from '@/domain/entities/collection.js'
+import { ID } from '@/shared/types'
+import { changeToArray } from '@/utils/changeToArray.js'
+import { pool } from '@/utils/config'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
+import { ModelError } from '@/domain/exceptions/modelError'
+import { CollectionInterface } from '@/domain/interfaces/collection'
 import {
-  executeQuery,
-  executeSingleResultQuery,
-  DatabaseError
-} from '../../../utils/dbUtils.js'
+  StatusResponse,
+  StatusResponseType
+} from '@/domain/valueObjects/statusResponse'
 
 // __dirname is not available in ES modules, so we need to use import.meta.url
 
 class CollectionsModel {
-  static async getAllCollections (): Promise<CollectionObjectType[]> {
-    const data: CollectionObjectType[] = await executeQuery(
+  static async getAllCollections (): Promise<CollectionType[]> {
+    const data = await executeQuery<CollectionType>(
       pool,
       () => pool.query('SELECT * FROM collections;'),
       'Failed to fetch collections from PostgreSQL'
@@ -23,18 +24,20 @@ class CollectionsModel {
     return data
   }
 
-  static async getCollectionById (id: ID): Promise<CollectionObjectType> {
-    const data: CollectionObjectType = await executeSingleResultQuery(
+  static async getCollectionById (id: ID): Promise<CollectionType> {
+    const data = await executeSingleResultQuery<CollectionType>(
       pool,
       () => pool.query('SELECT * FROM collections WHERE id = $1;', [id]),
       'Failed to fetch collection from PostgreSQL'
     )
-
+    if (!data) {
+      throw new ModelError('No se encontró la colección')
+    }
     return data
   }
 
-  static async getCollectionsByUser (id: ID): Promise<CollectionObjectType[]> {
-    const data: CollectionObjectType[] = await executeQuery(
+  static async getCollectionsByUser (id: ID): Promise<CollectionType[]> {
+    const data = await executeQuery<CollectionType>(
       pool,
       () => pool.query('SELECT * FROM collections WHERE user_id = $1;', [id]),
       'Failed to fetch collection from PostgreSQL'
@@ -44,49 +47,50 @@ class CollectionsModel {
   }
 
   static async createCollection (
-    data: Partial<CollectionObjectType>
-  ): Promise<CollectionObjectType> {
-    const fullCollecion = collectionObject(data)
-    const newCollection: CollectionObjectType = await executeSingleResultQuery(
+    data: Partial<CollectionType>
+  ): Promise<CollectionType> {
+    const fullCollecion = createCollection(data)
+    const newCollection = await executeSingleResultQuery<CollectionType>(
       pool,
       () =>
         pool.query(
-          `INSERT INTO collections (id, foto, libros_ids, nombre, descripcion, seguidores, user_id, saga, creado_en) 
+          `INSERT INTO collections (id, photo, books_ids, name, description, followers, user_id, saga, created_at) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;`,
           [
             fullCollecion.id,
-            fullCollecion.foto,
-            fullCollecion.libros_ids,
-            fullCollecion.nombre,
-            fullCollecion.descripcion,
-            fullCollecion.seguidores,
+            fullCollecion.photo,
+            fullCollecion.books_ids,
+            fullCollecion.name,
+            fullCollecion.description,
+            fullCollecion.followers,
             fullCollecion.user_id,
             fullCollecion.saga,
-            fullCollecion.creado_en
+            fullCollecion.created_at
           ]
         ),
       'Failed to create collection in PostgreSQL'
     )
+    if (!newCollection) {
+      throw new ModelError('No se pudo crear la colección')
+    }
     return newCollection
   }
 
-  static async deleteCollection (id: ID): Promise<{ message: string }> {
+  static async deleteCollection (id: ID): Promise<StatusResponseType> {
     const collection = await this.getCollectionById(id)
-    if (!collection) {
-      throw new Error('No se encontró la colección')
-    }
+
     await executeQuery(
       pool,
       () => pool.query('DELETE FROM collections WHERE id = $1;', [id]),
       'Failed to delete collection from PostgreSQL'
     )
-    return { message: 'Colección eliminada con éxito' } // Mensaje de éxito
+    return StatusResponse.success('Colección eliminada con éxito') // Mensaje de éxito
   }
 
   static async updateCollection (
     id: ID,
-    data: Partial<CollectionObjectType>
-  ): Promise<CollectionObjectType> {
+    data: Partial<CollectionType>
+  ): Promise<CollectionType> {
     try {
       const keys = Object.keys(data)
       const values = Object.values(data)
@@ -110,10 +114,7 @@ class CollectionsModel {
 
       return result
     } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(`Error updating book with ID ${id}`, error)
+      throw new ModelError(`Error updating book with ID ${id}`)
     }
   }
 
@@ -121,13 +122,10 @@ class CollectionsModel {
   static async getCollectionByQuery (
     query: string,
     l: number = 24,
-    collections: CollectionObjectType[] = []
-  ): Promise<CollectionObjectType[]> {
-    console.log('Query:', query)
-    console.log('Collections:', collections)
-    console.log('Limit:', l)
+    collections: CollectionType[] = []
+  ): Promise<CollectionType[]> {
     if (collections.length === 0) {
-      collections = await executeQuery(
+      collections = await executeQuery<CollectionType>(
         pool,
         () =>
           pool.query(`SELECT * FROM collections ORDER BY RANDOM() LIMIT $1;`, [
@@ -162,8 +160,8 @@ class CollectionsModel {
     query: string
     where: Record<string, string> | {}
     l: number
-  }): Promise<CollectionObjectType[]> {
-    let collections = await executeQuery(
+  }): Promise<CollectionType[]> {
+    let collections = await executeQuery<CollectionType>(
       pool,
       () =>
         pool.query(`SELECT * FROM collections ORDER BY RANDOM() LIMIT $1;`, [
@@ -175,7 +173,7 @@ class CollectionsModel {
       throw new Error('No se encontraron colecciones para este usuario')
     collections = collections.filter(collection => {
       return Object.keys(query.where).some(filter => {
-        const key = filter as keyof CollectionObjectType
+        const key = filter as keyof CollectionType
         return (
           collection[key] === (query.where as Record<string, string>)[filter]
         )
@@ -191,15 +189,14 @@ class CollectionsModel {
     if (collections === undefined || !collections) {
       throw new Error('No se encontraron colecciones para este usuario')
     }
-    return collections.map(collection => collectionObject(collection))
+    return collections
   }
 
   static async getCollectionSaga (
     bookId: ID,
     userId: ID
-  ): Promise<CollectionObjectType> {
-    console.log('Book ID:', bookId)
-    const collection = await executeSingleResultQuery(
+  ): Promise<CollectionType> {
+    const collection = await executeSingleResultQuery<CollectionType>(
       pool,
       () =>
         pool.query(
@@ -216,8 +213,8 @@ class CollectionsModel {
   static async forYouPageCollections (
     userKeyInfo: any,
     sampleSize: number = 24
-  ): Promise<CollectionObjectType[]> {
-    const collections = await executeQuery(
+  ): Promise<CollectionType[]> {
+    const collections = await executeQuery<CollectionType>(
       pool,
       () =>
         pool.query(
@@ -226,7 +223,6 @@ class CollectionsModel {
         ),
       'Failed to fetch collections from PostgreSQL'
     )
-    console.log('Collections for you page:', collections)
     return collections
   }
 }

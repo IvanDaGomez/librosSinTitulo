@@ -1,17 +1,15 @@
 import Router, { RequestHandler } from 'express'
-import { CollectionsController } from '../../../application/controllers/collections/collectionsController.js'
-import { upload } from '../../../../utils/config.js'
-import {
-  IBooksModel,
-  ICollectionsModel
-} from '../../../../domain/types/models.js'
+import { CollectionsController } from '@/application/controllers/collections/collectionsController.js'
+import { upload } from '@/utils/config.js'
+import { CollectionInterface } from '@/domain/interfaces/collection'
+import { BookInterface } from '@/domain/interfaces/book'
 
 export const createCollectionsRouter = ({
   CollectionsModel,
   BooksModel
 }: {
-  CollectionsModel: ICollectionsModel
-  BooksModel: IBooksModel
+  CollectionsModel: CollectionInterface
+  BooksModel: BookInterface
 }) => {
   const collectionsRouter = Router()
   const collectionsController = new CollectionsController({

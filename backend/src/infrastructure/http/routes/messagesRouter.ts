@@ -1,13 +1,14 @@
 import { RequestHandler, Router } from 'express'
 // import { upload } from '../../assets/config.js'
-import { MessagesController } from '../../controllers/messages/messagesController.js'
-import { IConversationsModel, IMessagesModel } from '../../../../domain/types/models.js'
+import { MessagesController } from '@/application/controllers/messages/messagesController'
+import { MessageInterface } from '@/domain/interfaces/message'
+import { ConversationInterface } from '@/domain/interfaces/conversation'
 export const createMessagesRouter = ({
   MessagesModel,
   ConversationsModel
 }: {
-  MessagesModel: IMessagesModel
-  ConversationsModel: IConversationsModel
+  MessagesModel: MessageInterface
+  ConversationsModel: ConversationInterface
 }) => {
   // Crear una instancia del controlador de mensajes
   const messagesController = new MessagesController({

@@ -4,7 +4,7 @@ import { ShippingDetailsType } from '@/domain/entities/shippingDetails'
 import { TransactionType } from '@/domain/entities/transaction'
 
 // TODO: Revisar si es necesario desglosar más el objeto response para evitar exponer datos innecesarios
-const transactionObject = (data: Partial<TransactionType>): TransactionType => {
+const createTransaction = (data: any): any => {
   const { api_response, ...importantData } = data.response as PaymentResponse
   return {
     id: data.response?.id, // ID único de la transacción
@@ -77,4 +77,4 @@ const transactionObject = (data: Partial<TransactionType>): TransactionType => {
   }
 }
 
-export { transactionObject }
+export { createTransaction }

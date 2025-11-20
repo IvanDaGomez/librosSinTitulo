@@ -9,6 +9,7 @@ import { EmailsModel } from '@/infrastructure/models/emails/postgreSQL/emailsMod
 import { CollectionsModel } from '@/infrastructure/models/collections/postgreSQL/collectionsModel.js'
 import { pool } from '@/utils/config'
 import { BookInterface } from '@/domain/interfaces/book'
+import { UserInterface } from '@/domain/interfaces/user'
 
 // Maximum number of connection retries
 const MAX_RETRIES = 5
@@ -38,14 +39,14 @@ async function connectWithRetry (retries = 0): Promise<void> {
 // Attempt to connect to the database
 await connectWithRetry()
 
-const booksModel = new BooksModel() as BookInterface
-const usersModel = new UsersModel() as BookInterface
-const messagesModel = new MessagesModel() as BookInterface
-const conversationsModel = new ConversationsModel() as BookInterface
-const notificationsModel = new NotificationsModel() as BookInterface
-const transactionsModel = new TransactionsModel() as BookInterface
-const emailsModel = new EmailsModel() as BookInterface
-const collectionsModel = new CollectionsModel() as BookInterface
+const usersModel = new UsersModel()
+const booksModel = new BooksModel()
+const messagesModel = new MessagesModel()
+const conversationsModel = new ConversationsModel()
+const notificationsModel = new NotificationsModel()
+const transactionsModel = new TransactionsModel()
+const emailsModel = new EmailsModel()
+const collectionsModel = new CollectionsModel()
 // Create and start the application
 const server = createApp({
   BooksModel: booksModel,

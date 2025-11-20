@@ -1,4 +1,4 @@
-import { transactionObject } from '@/domain/mappers/createTransaction.js'
+import { createTransaction } from '@/domain/mappers/createTransaction.js'
 import { ID } from '@/shared/types'
 import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
 import { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes.js'
@@ -40,9 +40,9 @@ class TransactionsModel {
   }
 
   async createSuccessfullTransaction (
-    data: Partial<TransactionInputType>
+    data: Partial<TransactionType>
   ): Promise<TransactionType> {
-    const newTransaction = transactionObject(data)
+    const newTransaction = createTransaction(data)
 
     await executeQuery(
       pool,
@@ -128,7 +128,8 @@ class TransactionsModel {
   async createWithdrawTransaction (
     data: WithdrawMoneyType
   ): Promise<{ message: string }> {
-    data.status = 'pending'
+    const payload = data as any
+    payload.status = 'requested'
     await executeQuery(
       pool,
       () =>
@@ -138,14 +139,14 @@ class TransactionsModel {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `,
           [
-            data.id,
-            data.user_id,
-            data.numero_cuenta,
-            data.bank,
-            data.phone_number,
-            data.monto,
-            data.fecha,
-            data.status
+            payload.id,
+            payload.user_id,
+            payload.numero_cuenta ?? payload.account_number ?? null,
+            payload.bank ?? payload.bank_name ?? null,
+            payload.phone_number ?? payload.phone ?? null,
+            payload.monto ?? payload.amount ?? null,
+            payload.fecha ?? payload.date ?? null,
+            payload.status
           ]
         ),
       'Error creating withdraw transaction'
@@ -153,7 +154,7 @@ class TransactionsModel {
     return { message: 'Transacción de retiro creada con éxito' }
   }
   async markWithdrawTransaction (id: ID): Promise<WithdrawMoneyType> {
-    const transaction: WithdrawMoneyType = await executeSingleResultQuery(
+    const transaction = await executeSingleResultQuery(
       pool,
       () =>
         pool.query(

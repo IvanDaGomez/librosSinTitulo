@@ -1,18 +1,22 @@
 import { CollectionType } from '@/domain/entities/collection'
 import { ISOString } from '@/shared/types'
+import { parseValue } from '@/utils/parseValue'
 
-const collectionObject = (data: Partial<CollectionType>): CollectionType => {
+const createCollection = (data: Partial<CollectionType>): CollectionType => {
   return {
-    id: data.id ?? crypto.randomUUID(),
-    photo: data.photo ?? '',
-    book_ids: data.book_ids ?? [],
-    name: data.name ?? '',
-    description: data.description || '',
-    followers: data.followers || [],
-    user_id: data.user_id ?? crypto.randomUUID(),
-    saga: data.saga || false,
-    created_at: data.created_at || (new Date().toISOString() as ISOString)
+    id: parseValue(data.id, crypto.randomUUID()),
+    photo: parseValue(data.photo, ''),
+    books_ids: parseValue(data.books_ids, []),
+    name: parseValue(data.name, ''),
+    description: parseValue(data.description, ''),
+    followers: parseValue(data.followers, []),
+    user_id: parseValue(data.user_id, crypto.randomUUID()),
+    saga: parseValue(data.saga, false),
+    created_at: parseValue(
+      data.created_at,
+      new Date().toISOString() as ISOString
+    )
   }
 }
 
-export { collectionObject }
+export { createCollection }

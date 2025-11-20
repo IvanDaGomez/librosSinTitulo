@@ -1,75 +1,76 @@
 import fs from 'node:fs/promises'
-import { messageObject } from '../../../../domain/mappers/createMessage.js'
-import { MessageObjectType } from '../../../domain/types/message.js'
-import { ID } from '../../../domain/types/objects.js'
+import { createMessage } from '@/domain/mappers/createMessage.js'
+import { MessageType } from '@/domain/entities/message.js'
+import { ID } from '@/shared/types'
 import path from 'node:path'
 // __dirname is not available in ES modules, so we need to use import.meta.url
-import { __dirname } from '../../../assets/config.js'
+import { __dirname } from '@/utils/config'
+import { ModelError } from '@/domain/exceptions/modelError'
+import {
+  StatusResponse,
+  StatusResponseType
+} from '@/domain/valueObjects/statusResponse'
 const messagesPath = path.join(__dirname, 'data', 'messages.json')
 class MessagesModel {
-  static async getAllMessages (): Promise<MessageObjectType[]> {
+  static async getAllMessages (): Promise<MessageType[]> {
     const data = await fs.readFile(messagesPath, 'utf-8')
-    const messages: MessageObjectType[] = JSON.parse(data)
+    const messages: MessageType[] = JSON.parse(data)
     if (!messages) {
-      throw new Error('No se pudieron encontrar los mensajes')
+      throw new ModelError('No se pudieron encontrar los mensajes')
     }
-    return messages.map(message => messageObject(message))
+    return messages.map(message => createMessage(message))
   }
 
-  static async getAllMessagesByConversation (
-    id: ID
-  ): Promise<MessageObjectType[]> {
+  static async getAllMessagesByConversation (id: ID): Promise<MessageType[]> {
     const messages = await this.getAllMessages()
     const filteredMessages = messages.filter(
       message => message.conversation_id === id
     )
     if (!filteredMessages) {
-      throw new Error('No se pudieron encontrar los mensajes')
+      throw new ModelError('No se pudieron encontrar los mensajes')
     }
     // Return message with limited public information
-    return filteredMessages.map(message => messageObject(message))
+    return filteredMessages.map(message => createMessage(message))
   }
 
-  static async getMessageById (id: ID): Promise<MessageObjectType> {
+  static async getMessageById (id: ID): Promise<MessageType> {
     const messages = await this.getAllMessages()
     const message = messages.find(message => message.id === id)
     if (!message) {
-      throw new Error('No se pudo encontrar el mensaje')
+      throw new ModelError('No se pudo encontrar el mensaje')
     }
     // Return message with limited public information
-    return messageObject(message)
+    return createMessage(message)
   }
 
-  static async sendMessage (
-    data: Partial<MessageObjectType>
-  ): Promise<MessageObjectType> {
+  static async sendMessage (data: Partial<MessageType>): Promise<MessageType> {
     const messages = await this.getAllMessages()
     // Crear valores por defecto
-    const newMessage = messageObject(data)
+    const newMessage = createMessage(data)
     messages.push(newMessage)
     await fs.writeFile(messagesPath, JSON.stringify(messages, null, 2))
     return newMessage
   }
 
-  static async deleteMessage (id: ID): Promise<{ message: string }> {
+  static async deleteMessage (id: ID): Promise<StatusResponseType> {
     const messages = await this.getAllMessages()
     const messageIndex = messages.findIndex(message => message.id === id)
     if (messageIndex === -1) {
-      throw new Error('No se pudo encontrar el mensaje')
+      throw new ModelError('No se pudo encontrar el mensaje')
     }
     messages.splice(messageIndex, 1)
     await fs.writeFile(messagesPath, JSON.stringify(messages, null, 2))
-    return { message: 'Mensaje eliminado con éxito' } // Mensaje de éxito
+    return StatusResponse.success('Mensaje eliminado con éxito') // Mensaje de éxito
   }
 
   static async updateMessage (
     id: ID,
-    data: Partial<MessageObjectType>
-  ): Promise<MessageObjectType> {
+    data: Partial<MessageType>
+  ): Promise<MessageType> {
     const messages = await this.getAllMessages()
     const messageIndex = messages.findIndex(message => message.id === id)
     if (messageIndex === -1) {
-      throw new Error('No se pudo encontrar el mensaje')
+      throw new ModelError('No se pudo encontrar el mensaje')
     }
     // Actualiza los datos del usuario
     Object.assign(messages[messageIndex], data)

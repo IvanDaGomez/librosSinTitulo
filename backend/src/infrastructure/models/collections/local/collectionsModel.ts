@@ -1,34 +1,34 @@
 import fs from 'node:fs/promises'
-import { collectionObject } from '../../../../domain/mappers/createCollection.js'
-import { calculateMatchScore } from '../../../assets/calculateMatchScore.js'
-import { CollectionObjectType } from '../../../domain/types/collection.js'
-import { ID } from '../../../domain/types/objects.js'
-import { changeToArray } from '../../../assets/changeToArray.js'
+import { createCollection } from '@/domain/mappers/createCollection'
+import { calculateMatchScore } from '@/utils/calculateMatchScore'
+import { CollectionType } from '@/domain/entities/collection'
+import { ID } from '@/shared/types'
+import { changeToArray } from '@/utils/changeToArray'
 import path from 'node:path'
-import { __dirname } from '../../../assets/config.js'
-import { PartialUserInfoType } from '../../../domain/types/user.js'
+import { __dirname } from '@/utils/config'
+import { PartialUserType } from '@/domain/entities/user'
 // __dirname is not available in ES modules, so we need to use import.meta.url
 
 const collectionPath = path.join(__dirname, 'data', 'collections.json')
 class CollectionsModel {
-  static async getAllCollections (): Promise<CollectionObjectType[]> {
+  static async getAllCollections (): Promise<CollectionType[]> {
     const data = await fs.readFile(collectionPath, 'utf-8')
-    const collections: CollectionObjectType[] = JSON.parse(data)
+    const collections: CollectionType[] = JSON.parse(data)
 
     return collections
   }
 
-  static async getCollectionById (id: ID): Promise<CollectionObjectType> {
+  static async getCollectionById (id: ID): Promise<CollectionType> {
     const collections = await this.getAllCollections()
     const collection = collections.find(collection => collection.id === id)
     if (!collection) {
       throw new Error('Colección no encontrada')
     }
 
-    return collectionObject(collection)
+    return createCollection(collection)
   }
 
-  static async getCollectionsByUser (id: ID): Promise<CollectionObjectType[]> {
+  static async getCollectionsByUser (id: ID): Promise<CollectionType[]> {
     const collections = await this.getAllCollections()
     const filteredCollections = collections.filter(
       collection => collection.user_id === id
@@ -38,16 +38,16 @@ class CollectionsModel {
     }
 
     // Return collection with limited public information
-    return filteredCollections.map(collection => collectionObject(collection))
+    return filteredCollections.map(collection => createCollection(collection))
   }
 
   static async createCollection (
-    data: Partial<CollectionObjectType>
-  ): Promise<CollectionObjectType> {
+    data: Partial<CollectionType>
+  ): Promise<CollectionType> {
     const collections = await this.getAllCollections()
 
     // Crear valores por defecto
-    const newCollection = collectionObject(data)
+    const newCollection = createCollection(data)
     collections.push(newCollection)
     await fs.writeFile(collectionPath, JSON.stringify(collections, null, 2))
     return newCollection
@@ -68,8 +68,8 @@ class CollectionsModel {
 
   static async updateCollection (
     id: ID,
-    data: Partial<CollectionObjectType>
-  ): Promise<CollectionObjectType> {
+    data: Partial<CollectionType>
+  ): Promise<CollectionType> {
     const collections = await this.getAllCollections()
 
     const collectionIndex = collections.findIndex(
@@ -82,15 +82,15 @@ class CollectionsModel {
     Object.assign(collections[collectionIndex], data) // Modifica directamente el objeto en el array
     await fs.writeFile(collectionPath, JSON.stringify(collections, null, 2))
 
-    return collectionObject(collections[collectionIndex]) // Devuelve la colección actualizada
+    return createCollection(collections[collectionIndex]) // Devuelve la colección actualizada
   }
 
   // Pendiente desarrollar, una buena query para buscar varios patrones
   static async getCollectionByQuery (
     query: string,
     l: number,
-    collections: CollectionObjectType[] = []
-  ): Promise<CollectionObjectType[]> {
+    collections: CollectionType[] = []
+  ): Promise<CollectionType[]> {
     if (collections.length === 0) {
       collections = await this.getAllCollections()
     }
@@ -113,20 +113,20 @@ class CollectionsModel {
     collectionsWithScores.sort((a, b) => b.score - a.score)
 
     // Solo los datos del libro, no del puntaje
-    return collectionsWithScores.map(item => collectionObject(item.collection))
+    return collectionsWithScores.map(item => createCollection(item.collection))
   }
 
   static async getCollectionsByQueryWithFilters (query: {
     query: string
     where: Record<string, string> | {}
     l: number
-  }): Promise<CollectionObjectType[]> {
+  }): Promise<CollectionType[]> {
     let collections = await this.getAllCollections() // Fetch all collections (local data)
     if (Object.keys(query.where).length === 0)
       throw new Error('No se encontraron colecciones para este usuario')
     collections = collections.filter(collection => {
       return Object.keys(query.where).some(filter => {
-        const key = filter as keyof CollectionObjectType
+        const key = filter as keyof CollectionType
         return (
           collection[key] === (query.where as Record<string, string>)[filter]
         )
@@ -142,20 +142,20 @@ class CollectionsModel {
     if (collections === undefined || !collections) {
       throw new Error('No se encontraron colecciones para este usuario')
     }
-    return collections.map(collection => collectionObject(collection))
+    return collections.map(collection => createCollection(collection))
   }
 
   static async getCollectionSaga (
     bookId: ID,
     userId: ID
-  ): Promise<CollectionObjectType> {
+  ): Promise<CollectionType> {
     const collections = await this.getAllCollections()
 
     for (let i = 0; i < collections.length; i++) {
       const collection = collections[i]
       if (
-        collection.libros_ids.length > 1 &&
-        collection.libros_ids.includes(bookId) &&
+        collection.books_ids.length > 1 &&
+        collection.books_ids.includes(bookId) &&
         collection.user_id === userId &&
         collection.saga === true
       ) {
@@ -167,7 +167,7 @@ class CollectionsModel {
   static async forYouPageCollections (
     userKeyInfo: any,
     sampleSize: number
-  ): Promise<CollectionObjectType[]> {
+  ): Promise<CollectionType[]> {
     const collections = await this.getAllCollections()
     const filteredCollections = collections.filter(
       collection => collection.user_id !== userKeyInfo.user_id
@@ -175,7 +175,7 @@ class CollectionsModel {
     const randomCollections = filteredCollections
       .sort(() => Math.random() - 0.5)
       .slice(0, sampleSize)
-    return randomCollections.map(collection => collectionObject(collection))
+    return randomCollections.map(collection => createCollection(collection))
   }
 }
 

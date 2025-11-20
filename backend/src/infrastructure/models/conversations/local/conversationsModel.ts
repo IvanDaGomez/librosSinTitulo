@@ -1,19 +1,16 @@
 import fs from 'node:fs/promises'
-import { conversationObject } from '../../../../domain/mappers/createConversation.js'
-import { ConversationObjectType } from '../../../domain/types/conversation.js'
-import { ID } from '../../../domain/types/objects.js'
+import { createConversation } from '@/domain/mappers/createConversation.js'
+import { ConversationType } from '@/domain/entities/conversation'
+import { ID } from '@/shared/types'
 import path from 'node:path'
-import { __dirname } from '../../../assets/config.js'
-// __dirname is not available in ES modules, so we need to use import.meta.url
+import { __dirname } from '@/utils/config'
 
 const conversationPath = path.join(__dirname, 'data', 'conversations.json')
 export class ConversationsModel {
-  static async getAllConversations (
-    l: number = 0
-  ): Promise<ConversationObjectType[]> {
+  static async getAllConversations (l: number = 0): Promise<ConversationType[]> {
     const data = await fs.readFile(conversationPath, 'utf-8')
     // Handle empty file case
-    let conversations: ConversationObjectType[] = []
+    let conversations: ConversationType[] = []
     if (!data.trim()) {
       // Only parse if data is not an empty string
       throw new Error('No se encontraron conversaciones')
@@ -22,12 +19,12 @@ export class ConversationsModel {
     if (l !== 0) {
       conversations = conversations.slice(0, l)
     }
-    return conversations.map(conversation => conversationObject(conversation))
+    return conversations.map(conversation => createConversation(conversation))
   }
 
   static async getConversationsByList (
     conversationsIds: ID[]
-  ): Promise<ConversationObjectType[]> {
+  ): Promise<ConversationType[]> {
     // Load all conversations from the JSON file
     const allConversations = await this.getAllConversations()
     // For
@@ -41,7 +38,7 @@ export class ConversationsModel {
     return userConversations
   }
 
-  static async getConversationById (id: ID): Promise<ConversationObjectType> {
+  static async getConversationById (id: ID): Promise<ConversationType> {
     const conversations = await this.getAllConversations()
     const conversation = conversations.find(
       conversation => conversation.id === id
@@ -50,15 +47,15 @@ export class ConversationsModel {
       throw new Error('No se encontró la conversación')
     }
     // Return conversation with limited public information
-    return conversationObject(conversation)
+    return createConversation(conversation)
   }
 
   static async createConversation (
-    data: Partial<ConversationObjectType>
-  ): Promise<ConversationObjectType> {
+    data: Partial<ConversationType>
+  ): Promise<ConversationType> {
     const conversations = await this.getAllConversations()
     // Crear valores por defecto
-    const newConversation = conversationObject(data)
+    const newConversation = createConversation(data)
     conversations.push(newConversation)
     await fs.writeFile(conversationPath, JSON.stringify(conversations, null, 2))
     return newConversation
@@ -79,8 +76,8 @@ export class ConversationsModel {
 
   static async updateConversation (
     id: ID,
-    data: Partial<ConversationObjectType>
-  ): Promise<ConversationObjectType> {
+    data: Partial<ConversationType>
+  ): Promise<ConversationType> {
     const conversations = await this.getAllConversations()
     const conversationIndex = conversations.findIndex(
       conversation => conversation.id === id
@@ -93,6 +90,6 @@ export class ConversationsModel {
     // Hacer el path hacia aqui
     // const filePath = pat h.join()
     await fs.writeFile(conversationPath, JSON.stringify(conversations, null, 2))
-    return conversationObject(conversations[conversationIndex])
+    return createConversation(conversations[conversationIndex])
   }
 }

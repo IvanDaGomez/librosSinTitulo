@@ -1,20 +1,25 @@
-import { validateMessage } from '../../assets/validate.js'
-import { IConversationsModel, IMessagesModel } from '../../domain/types/models.js'
+import { validateMessage } from '@/utils/validate.js'
 import express from 'express'
-import { ID } from '../../domain/types/objects.js'
-import { MessageObjectType } from '../../domain/types/message.js'
+import { ID } from '@/shared/types'
+import { MessageType } from '@/domain/entities/message.js'
+import { ConversationInterface } from '@/domain/interfaces/conversation.js'
+import { MessageInterface } from '@/domain/interfaces/message.js'
+import { MessageService } from '@/application/services/messages/messageService'
+import { ApiResponse } from '@/domain/valueObjects/apiResponse'
+import { createMessage } from '@/domain/mappers/createMessage'
+import { ConversationService } from '@/application/services/conversations/conversationService'
 export class MessagesController {
-  private MessagesModel: IMessagesModel
-  private ConversationsModel: IConversationsModel
+  messageService: MessageInterface
+  conversationService: ConversationInterface
   constructor ({
     MessagesModel,
     ConversationsModel
   }: {
-    MessagesModel: IMessagesModel
-    ConversationsModel: IConversationsModel
+    MessagesModel: MessageInterface
+    ConversationsModel: ConversationInterface
   }) {
-    this.MessagesModel = MessagesModel
-    this.ConversationsModel = ConversationsModel
+    this.messageService = new MessageService(MessagesModel)
+    this.conversationService = new ConversationService(ConversationsModel)
   }
 
   getAllMessages = async (
@@ -23,8 +28,8 @@ export class MessagesController {
     next: express.NextFunction
   ) => {
     try {
-      const messages = await this.MessagesModel.getAllMessages()
-      res.json(messages)
+      const messages = await this.messageService.getAllMessages()
+      res.json(ApiResponse.success(messages))
     } catch (err) {
       next(err)
     }
@@ -40,12 +45,12 @@ export class MessagesController {
       if (!conversationId) {
         return res
           .status(400)
-          .json({ error: 'ID de conversación no proporcionado' })
+          .json(ApiResponse.error('ID de conversación no proporcionado', 400))
       }
-      const message = await this.MessagesModel.getAllMessagesByConversation(
+      const message = await this.messageService.getAllMessagesByConversation(
         conversationId
       )
-      res.json(message)
+      res.json(ApiResponse.success(message))
     } catch (err) {
       next(err)
     }
@@ -59,10 +64,12 @@ export class MessagesController {
     try {
       const messageId = req.params.message_id as ID | undefined
       if (!messageId) {
-        return res.status(400).json({ error: 'ID de mensaje no proporcionado' })
+        return res
+          .status(400)
+          .json(ApiResponse.error('ID de mensaje no proporcionado', 400))
       }
-      const message = await this.MessagesModel.getMessageById(messageId)
-      res.json(message)
+      const message = await this.messageService.getMessageById(messageId)
+      res.json(ApiResponse.success(message))
     } catch (err) {
       next(err)
     }
@@ -74,33 +81,41 @@ export class MessagesController {
     res: express.Response,
     next: express.NextFunction
   ) => {
-    const data = req.body as MessageObjectType
+    const data = req.body
+    const parsedData = createMessage(data)
     try {
       const validated = validateMessage(data)
       if (!validated.success) {
         console.dir(validated.error, { depth: null })
-        return res.status(400).json({ error: validated.error })
+        return res
+          .status(400)
+          .json(ApiResponse.error(String(validated.error), 400))
       }
 
       // Necesario actualizar la conversación en la que el mensaje se envía
-      const conversation = await this.ConversationsModel.getConversationById(
-        data.conversation_id
+      const conversation = await this.conversationService.getConversationById(
+        parsedData.conversation_id
       )
       // Validar el userId
-      if (!conversation.users.includes(data.user_id)) {
+      if (!conversation.participants.includes(parsedData.sender_id)) {
         return res
           .status(404)
-          .json({ error: 'El usuario no se encuentra en la conversación' })
+          .json(
+            ApiResponse.error(
+              'El usuario no se encuentra en la conversación',
+              404
+            )
+          )
       }
-      conversation.last_message = data
-      await this.ConversationsModel.updateConversation(
+      conversation.last_message = parsedData
+      await this.conversationService.updateConversation(
         conversation.id,
         conversation
       )
 
-      const message = await this.MessagesModel.sendMessage(data)
+      const message = await this.messageService.sendMessage(data)
 
-      res.json(message)
+      res.json(ApiResponse.success(message))
     } catch (err) {
       next(err)
     }
@@ -114,12 +129,14 @@ export class MessagesController {
     try {
       const messageId = req.params.message_id as ID | undefined
       if (!messageId) {
-        return res.status(400).json({ error: 'ID de mensaje no proporcionado' })
+        return res
+          .status(400)
+          .json(ApiResponse.error('ID de mensaje no proporcionado', 400))
       }
       // Eliminar el mensaje de la base de datos
-      await this.MessagesModel.deleteMessage(messageId)
+      await this.messageService.deleteMessage(messageId)
 
-      res.json({ message: 'Mensaje eliminado con éxito' })
+      res.json(ApiResponse.success({ message: 'Mensaje eliminado con éxito' }))
     } catch (err) {
       next(err)
     }
@@ -133,12 +150,16 @@ export class MessagesController {
     try {
       const messageId = req.params.message_id as ID | undefined
       if (!messageId) {
-        return res.status(400).json({ error: 'ID de mensaje no proporcionado' })
+        return res
+          .status(400)
+          .json(ApiResponse.error('ID de mensaje no proporcionado', 400))
       }
 
-      await this.MessagesModel.updateMessage(messageId, { read: true })
+      await this.messageService.updateMessage(messageId, { read: true })
 
-      res.json({ message: 'Mensaje actualizado con éxito' })
+      res.json(
+        ApiResponse.success({ message: 'Mensaje actualizado con éxito' })
+      )
     } catch (err) {
       next(err)
     }
@@ -151,10 +172,12 @@ export class MessagesController {
     try {
       const query = req.params.query as string | undefined
       if (!query) {
-        return res.status(400).json({ error: 'Consulta no proporcionada' })
+        return res
+          .status(400)
+          .json(ApiResponse.error('Consulta no proporcionada', 400))
       }
-      const messages = await this.MessagesModel.getMessagesByQuery(query)
-      res.json(messages)
+      const messages = await this.messageService.getMessagesByQuery(query)
+      res.json(ApiResponse.success(messages))
     } catch (err) {
       next(err)
     }

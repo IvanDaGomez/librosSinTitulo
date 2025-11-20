@@ -1,16 +1,16 @@
-import { BookObjectType } from '../../../domain/types/book'
+import { BookType } from '@/domain/entities/book'
 import { getBookKeyInfo } from './getBookKeyInfo.js'
 
 export function filterBooksByFilters (
-  books: BookObjectType[],
+  books: BookType[],
   preparedFilters: any
-): BookObjectType[] {
+): BookType[] {
   return books.filter(book => {
     const bookKeyInfo = getBookKeyInfo(book)
     const filterKeys = Object.keys(preparedFilters)
     return filterKeys.every((filterKey: string) => {
       if (filterKey === 'min_precio' || filterKey === 'max_precio') {
-        const price = book.precio as number
+        const price = book.price as number
         const minPrecio = preparedFilters['min_precio'] as number | undefined
         const maxPrecio = preparedFilters['max_precio'] as number | undefined
         if (
@@ -19,8 +19,8 @@ export function filterBooksByFilters (
         ) {
           return false
         }
-      } else if (filterKey === 'ciudad' || filterKey === 'departamento') {
-        const location = book.ubicacion?.[filterKey] ?? ''
+      } else if (filterKey === 'city' || filterKey === 'department') {
+        const location = book.location?.[filterKey] ?? ''
         const filterValues = preparedFilters[filterKey] as string[] | undefined
         if (filterValues && !filterValues.includes(location)) {
           return false

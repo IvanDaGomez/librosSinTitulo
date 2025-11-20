@@ -383,7 +383,7 @@ class UsersModel implements UserInterface {
     const user = await this.getUserById(id)
     return user.balance
   }
-  async banUser (value: ID | string): Promise<StatusResponseType> {
+  async banUser (value: ID): Promise<StatusResponseType> {
     // 1. Normalizar: obtener usuario por ID o por email
     const user =
       (await this.getUserById(value)) || (await this.getUserByEmail(value))

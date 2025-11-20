@@ -1,18 +1,17 @@
 import fs from 'node:fs/promises'
-import { ID } from '../../../domain/types/objects'
+import { ID } from '@/shared/types'
 import path from 'node:path'
 // __dirname is not available in ES modules, so we need to use import.meta.url
-import { __dirname } from '../../../assets/config.js'
+import { __dirname } from '@/utils/config.js'
 const emailPath = path.join(__dirname, 'data', 'emails.json')
-
 
 class EmailsModel {
   static async getAllEmails (): Promise<string[]> {
     const data = await fs.readFile(emailPath, 'utf-8')
-    return data.length > 0 ? JSON.parse(data) as string[] : [];
+    return data.length > 0 ? (JSON.parse(data) as string[]) : []
   }
 
-  static async getEmailById (id: ID): Promise<string>{
+  static async getEmailById (id: ID): Promise<string> {
     const emails = await this.getAllEmails()
     const email = emails.find(email => email === id)
     if (!email) {
@@ -21,7 +20,9 @@ class EmailsModel {
     return email
   }
 
-  static async createEmail (data: { email: string }): Promise<{ email: string }> {
+  static async createEmail (data: {
+    email: string
+  }): Promise<{ email: string }> {
     const emails = await this.getAllEmails()
     if (emails.some(email => email === data.email)) {
       throw new Error('Este correo ya fue ingresado')
@@ -41,6 +42,5 @@ class EmailsModel {
     await fs.writeFile(emailPath, JSON.stringify(emails, null, 2))
     return { message: 'Correo eliminado correctamente' }
   }
-
 }
 export { EmailsModel }

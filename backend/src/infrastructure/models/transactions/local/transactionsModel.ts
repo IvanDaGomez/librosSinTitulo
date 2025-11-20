@@ -1,14 +1,13 @@
 import fs from 'node:fs/promises'
-import { transactionObject } from '../../../../domain/mappers/createTransaction.js'
-import { TransactionObjectType } from '../../../domain/types/transaction.js'
-import { ID } from '../../../domain/types/objects.js'
+import { createTransaction } from '@/domain/mappers/createTransaction.js'
+import { ID } from '@/shared/types'
 import path from 'node:path'
-import { ShippingDetailsType } from '../../../domain/types/shippingDetails.js'
+import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
 import { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes.js'
-import { TransactionInputType } from '../../../domain/types/transactionInput.js'
+import { TransactionType } from '@/domain/entities/transaction.js'
 // __dirname is not available in ES modules, so we need to use import.meta.url
-import { __dirname } from '../../../assets/config.js'
-import { WithdrawMoneyType } from '../../../domain/types/withdrawMoney.js'
+import { __dirname } from '@/utils/config.js'
+import { WithdrawMoneyType } from '@/domain/entities/withdrawMoney.js'
 const transactionsPath = path.join(__dirname, 'data', 'transactions.json')
 const failureTransactionsPath = path.join(
   __dirname,
@@ -21,61 +20,59 @@ const withdrawTransactionsPath = path.join(
   'withdrawTransactions.json'
 )
 class TransactionsModel {
-  static async getAllTransactions (): Promise<TransactionObjectType[]> {
+  static async getAllTransactions (): Promise<TransactionType[]> {
     const [successData, failureData] = await Promise.all([
       fs.readFile(transactionsPath, 'utf-8'),
       fs.readFile(failureTransactionsPath, 'utf-8')
     ])
-    const successTransaction: TransactionObjectType[] = JSON.parse(successData)
-    const failureTransaction: TransactionObjectType[] = JSON.parse(failureData)
+    const successTransaction: TransactionType[] = JSON.parse(successData)
+    const failureTransaction: TransactionType[] = JSON.parse(failureData)
     return [...successTransaction, ...failureTransaction].map(transaction =>
-      transactionObject(transaction)
+      createTransaction(transaction)
     )
   }
 
-  static async getAllTransactionsByUser (
-    id: ID
-  ): Promise<TransactionObjectType[]> {
+  static async getAllTransactionsByUser (id: ID): Promise<TransactionType[]> {
     const transactions = await this.getAllTransactions()
     const filteredTransactions = transactions.filter(
-      transaction => transaction.user_id === id || transaction.seller_id === id
+      transaction => transaction.from_id === id || transaction.to_id === id
     )
     if (!filteredTransactions) {
       throw new Error('No se encontraron transacciones para este usuario')
     }
     // Return transaction with limited public information
     return filteredTransactions.map(transaction =>
-      transactionObject(transaction)
+      createTransaction(transaction)
     )
   }
 
-  static async getTransactionById (id: number): Promise<TransactionObjectType> {
+  static async getTransactionById (id: string): Promise<TransactionType> {
     const transactions = await this.getAllTransactions()
     // el id de la transacción como lo maneja mercadoPago es un número
     const transaction = transactions.find(transaction => transaction.id === id)
     if (!transaction) {
       throw new Error('No se encontró la transacción')
     }
-    return transactionObject(transaction)
+    return createTransaction(transaction)
   }
 
   static async createSuccessfullTransaction (
-    data: Partial<TransactionInputType>
-  ): Promise<TransactionObjectType> {
+    data: Partial<TransactionType>
+  ): Promise<TransactionType> {
     const transactions = await this.getAllTransactions()
     // Crear valores por defecto
-    const newTransaction = transactionObject(data)
+    const newTransaction = createTransaction(data)
     transactions.push(newTransaction)
     await fs.writeFile(transactionsPath, JSON.stringify(transactions, null, 2))
     return newTransaction
   }
 
   static async createFailureTransaction (
-    data: Partial<TransactionInputType>
-  ): Promise<TransactionObjectType> {
+    data: Partial<TransactionType>
+  ): Promise<TransactionType> {
     const transactions = await this.getAllTransactions()
     // Crear valores por defecto
-    const newTransaction = transactionObject(data)
+    const newTransaction = createTransaction(data)
     transactions.push(newTransaction)
     await fs.writeFile(
       failureTransactionsPath,
@@ -84,7 +81,7 @@ class TransactionsModel {
     return newTransaction
   }
 
-  static async deleteTransaction (id: number): Promise<{ message: string }> {
+  static async deleteTransaction (id: string): Promise<{ message: string }> {
     const transactions = await this.getAllTransactions()
     const transactionIndex = transactions.findIndex(
       transaction => transaction.id === id
@@ -97,9 +94,9 @@ class TransactionsModel {
     return { message: 'Transacción eliminada con éxito' } // Mensaje de éxito
   }
   static async updateFailureTransaction (
-    id: number,
-    data: Partial<TransactionObjectType>
-  ): Promise<TransactionObjectType> {
+    id: string,
+    data: Partial<TransactionType>
+  ): Promise<TransactionType> {
     const transactions = await this.getAllTransactions()
     const transactionIndex = transactions.findIndex(
       transaction => transaction.id === id
@@ -109,7 +106,7 @@ class TransactionsModel {
     }
     const transaction = transactions[transactionIndex]
     Object.assign(transaction, data)
-    if (transaction.status === 'approved') {
+    if (transaction.status === 'completed') {
       const successTransactions = await this.getAllTransactions()
       const successTransactionIndex = successTransactions.findIndex(
         transaction => transaction.id === id
@@ -127,12 +124,12 @@ class TransactionsModel {
       failureTransactionsPath,
       JSON.stringify(transactions, null, 2)
     )
-    return transactionObject(transaction)
+    return createTransaction(transaction)
   }
   static async updateSuccessfullTransaction (
-    id: number,
-    data: Partial<TransactionObjectType>
-  ): Promise<TransactionObjectType> {
+    id: string,
+    data: Partial<TransactionType>
+  ): Promise<TransactionType> {
     const transactions = await this.getAllTransactions()
     const transactionIndex = transactions.findIndex(
       transaction => transaction.id === id
@@ -157,12 +154,10 @@ class TransactionsModel {
     }
     transactions.splice(transactionIndex, 1)
     await fs.writeFile(transactionsPath, JSON.stringify(transactions, null, 2))
-    return transactionObject(transaction)
+    return createTransaction(transaction)
   }
 
-  static async getBookByTransactionId (
-    id: string
-  ): Promise<TransactionObjectType> {
+  static async getBookByTransactionId (id: string): Promise<TransactionType> {
     const transactions = await this.getAllTransactions()
     const transaction = transactions.find(
       transaction => transaction.book_id === id
@@ -170,7 +165,7 @@ class TransactionsModel {
     if (!transaction) {
       throw new Error('No se encontró la transacción')
     }
-    return transactionObject(transaction)
+    return createTransaction(transaction)
   }
 
   static async getAllWithdrawTransactions (): Promise<WithdrawMoneyType[]> {
@@ -182,7 +177,7 @@ class TransactionsModel {
     data: WithdrawMoneyType
   ): Promise<{ message: string }> {
     const transactions = await this.getAllWithdrawTransactions()
-    data.status = 'pending'
+    data.status = 'requested'
     transactions.push(data)
     await fs.writeFile(
       withdrawTransactionsPath,

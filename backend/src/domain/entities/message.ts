@@ -3,8 +3,8 @@ import { ID, ISOString } from '@/shared/types'
 export type MessageType = {
   id: ID
   sender_id: ID
-  receiver_id?: ID
-  conversation_id?: ID
+  receiver_id: ID
+  conversation_id: ID
   content: string
   created_at: ISOString
   read?: boolean
@@ -14,8 +14,8 @@ export type MessageType = {
 export class Message {
   public readonly id: ID
   private _sender_id: ID
-  private _receiver_id?: ID
-  private _conversation_id?: ID
+  private _receiver_id: ID
+  private _conversation_id: ID
   private _content: string
   private _created_at: ISOString
   private _read: boolean

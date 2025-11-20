@@ -18,8 +18,6 @@ import {
   StatusResponse,
   StatusResponseType
 } from '@/domain/valueObjects/statusResponse.js'
-import { UserType } from '@/domain/entities/user.js'
-import { User } from 'mercadopago'
 import { UserInterface } from '@/domain/interfaces/user.js'
 
 const bookPath = path.join(__dirname, 'data', 'books.json')
@@ -341,7 +339,7 @@ class BooksModel implements BookInterface {
 
       // Filtrar los libros que pertenecen a la colección
       const colecciones = books.filter(book =>
-        collection.book_ids.includes(book.id)
+        collection.books_ids.includes(book.id)
       )
 
       if (colecciones.length === 0) {

@@ -1,6 +1,6 @@
 import { createApp } from '@/index.js'
-import { BooksModel } from '@/infrastructure/models/books/local/booksLocal.js'
-import { UsersModel } from '@/infrastructure/models/users/local/usersLocal.js'
+import { BooksModel } from '@/infrastructure/models/books/local/booksModel.js'
+import { UsersModel } from '@/infrastructure/models/users/local/usersModel.js'
 import { MessagesModel } from '@/infrastructure/models/messages/local/messagesModel.js'
 import { ConversationsModel } from '@/infrastructure/models/conversations/local/conversationsModel.js'
 import { NotificationsModel } from '@/infrastructure/models/notifications/local/notificationsModel.js'
@@ -18,12 +18,12 @@ const emailsModel = new EmailsModel()
 const collectionsModel = new CollectionsModel()
 
 createApp({
-  booksModel,
-  usersModel,
-  messagesModel,
-  conversationsModel,
-  notificationsModel,
-  transactionsModel,
-  emailsModel,
-  collectionsModel
+  BooksModel: booksModel,
+  UsersModel: usersModel,
+  MessagesModel: messagesModel,
+  ConversationsModel: conversationsModel,
+  NotificationsModel: notificationsModel,
+  TransactionsModel: transactionsModel,
+  EmailsModel: emailsModel,
+  CollectionsModel: collectionsModel
 })

@@ -1,10 +1,10 @@
 /* eslint-disable camelcase */
-import { validateUser, validatePartialUser } from '../../assets/validate.js'
+import { validateUser, validatePartialUser } from '@/utils/validate'
 import jwt from 'jsonwebtoken'
-import { sendEmail } from '../../assets/email/sendEmail.js'
-import { createEmail } from '../../assets/email/htmlEmails.js'
-import { createNotification } from '../../assets/notifications/createNotification.js'
-import { sendNotification } from '../../assets/notifications/sendNotification.js'
+import { sendEmail } from '@/utils/email/sendEmail.js'
+import { createEmail } from '@/utils/email/htmlEmails.js'
+import { createNotification } from '@/utils/notifications/createNotification.js'
+import { sendNotification } from '@/utils/notifications/sendNotification.js'
 // eslint-disable-next-line no-unused-vars
 import bcrypt from 'bcrypt'
 import {
@@ -13,36 +13,40 @@ import {
   jwtPipeline,
   processUserUpdate,
   updateUserFavorites
-} from './helperFunctions.js'
+} from '../../handlers/helperFunctions.js'
 import express from 'express'
-import { cambiarGuionesAEspacio } from '../../assets/agregarMas.js'
-import { PartialUserInfoType, UserInfoType } from '../../domain/types/user.js'
-import { ID, ImageType, ISOString } from '../../domain/types/objects.js'
-import {
-  IBooksModel,
-  ITransactionsModel,
-  IUsersModel
-} from '../../domain/types/models.js'
-import { AuthToken } from '../../domain/types/authToken.js'
-import { SALT_ROUNDS } from '../../assets/config.js'
+import { replaceDashesWithSpaces } from '@/utils/parseSpaces'
+import { PartialUserType, UserType } from '@/domain/entities/user.js'
+import { ID, ImageType, ISOString } from '@/shared/types'
+
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { SALT_ROUNDS } from '@/utils/config.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { TransactionInterface } from '@/domain/interfaces/transaction.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { createUser } from '@/domain/mappers/createUser.js'
+import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
+import { UserService } from '@/application/services/users/userService.js'
+import { BookService } from '@/application/services/books/bookService.js'
+import { A } from '@upstash/redis/zmscore-CjoCv9kz.js'
+import { TransactionService } from '@/application/services/transactions/transactionService.js'
 const SECRET_KEY: string = process.env.JWT_SECRET ?? ''
 export class UsersController {
-  private UsersModel: IUsersModel
-  private TransactionsModel: ITransactionsModel
-  private BooksModel: IBooksModel
+  private userService: UserInterface
+  private transactionService: TransactionInterface
+  private bookService: BookInterface
   constructor ({
     UsersModel,
     TransactionsModel,
     BooksModel
   }: {
-    UsersModel: IUsersModel
-    TransactionsModel: ITransactionsModel
-    BooksModel: IBooksModel
+    UsersModel: UserInterface
+    TransactionsModel: TransactionInterface
+    BooksModel: BookInterface
   }) {
-    this.UsersModel = UsersModel as typeof UsersModel
-    this.TransactionsModel = TransactionsModel as typeof TransactionsModel
-    this.TransactionsModel = TransactionsModel
-    this.BooksModel = BooksModel
+    this.userService = new UserService(UsersModel)
+    this.transactionService = new TransactionService(TransactionsModel)
+    this.bookService = new BookService(BooksModel)
   }
 
   getAllUsers = async (
@@ -51,9 +55,9 @@ export class UsersController {
     next: express.NextFunction
   ): Promise<express.Response | void> => {
     try {
-      const users = await this.UsersModel.getAllUsers()
+      const users = await this.userService.getAllUsers()
 
-      res.json(users)
+      res.json(ApiResponse.success(users))
     } catch (err) {
       next(err)
     }
@@ -65,9 +69,9 @@ export class UsersController {
     next: express.NextFunction
   ): Promise<express.Response | void> => {
     try {
-      const users = await this.UsersModel.getAllUsersSafe()
+      const users = await this.userService.getAllUsersSafe()
 
-      res.json(users)
+      res.json(ApiResponse.success(users))
     } catch (err) {
       next(err)
     }
@@ -87,14 +91,15 @@ export class UsersController {
 
       const idsArray = ids.split(',').map(id => id.trim()) as ID[]
       if (!ids || ids.length === 0) {
-        return res.status(400).json({ error: 'No se proporcionaron IDs' })
+        return res
+          .status(400)
+          .json(ApiResponse.error('No se proporcionaron IDs', 400))
       }
-
-      const users = await this.UsersModel.getUsersByIdList(
+      const users = await this.userService.getUsersByIdList(
         idsArray,
         idsArray.length
       )
-      return res.json(users)
+      return res.json(ApiResponse.success(users))
     } catch (err) {
       next(err)
     }
@@ -106,9 +111,9 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const user = await this.UsersModel.getUserById(userId)
+      const user = await this.userService.getUserById(userId)
 
-      res.json(user)
+      res.json(ApiResponse.success(user))
     } catch (err) {
       next(err)
     }
@@ -121,8 +126,8 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const user = await this.UsersModel.getPhotoAndNameUser(userId)
-      res.json(user)
+      const user = await this.userService.getPhotoAndNameUser(userId)
+      res.json(ApiResponse.success(user))
     } catch (err) {
       next(err)
     }
@@ -135,9 +140,9 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const email = await this.UsersModel.getEmailById(userId)
+      const email = await this.userService.getEmailById(userId)
 
-      res.json(email)
+      res.json(ApiResponse.success(email))
     } catch (err) {
       next(err)
     }
@@ -150,16 +155,16 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       let q = req.query.q as string | undefined // Obtener el valor del parámetro de consulta 'q'
-      q = cambiarGuionesAEspacio(q)
+      q = replaceDashesWithSpaces(q)
       if (!q) {
         return res
           .status(400)
           .json({ error: 'El query parameter "q" es requerido' })
       }
 
-      const users = await this.UsersModel.getUserByQuery(q) // Asegurarse de implementar este método en this.UsersModel
+      const users = await this.userService.getUserByQuery(q) // Asegurarse de implementar este método en this.userService
 
-      res.json(users)
+      res.json(ApiResponse.success(users))
     } catch (err) {
       next(err)
     }
@@ -171,20 +176,22 @@ export class UsersController {
     next: express.NextFunction
   ): Promise<express.Response | void> => {
     try {
-      const { correo, contraseña }: { correo: string; contraseña: string } =
-        req.body
+      const { email, password }: { email: string; password: string } = req.body
 
-      if (!correo || !contraseña) {
+      if (!email || !password) {
         return res
           .status(400)
-          .json({ error: 'Algunos espacios están en blanco' })
+          .json(ApiResponse.error('Algunos espacios están en blanco', 400))
       }
 
-      const user = await this.UsersModel.login(correo, contraseña)
+      const user = await this.userService.login({
+        email,
+        password
+      })
 
       jwtPipeline(user, res)
 
-      res.json(user)
+      res.json(ApiResponse.success(user))
     } catch (err) {
       next(err)
     }
@@ -197,15 +204,15 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const data = req.body as {
-        correo: string
-        nombre: string
-        foto_perfil: ImageType
+        email: string
+        name: string
+        profile_picture: ImageType
       }
       // If there is a mail, no matter if is manually logged or google, the user is the same
-      const user = await this.UsersModel.googleLogin(data)
+      const user = await this.userService.googleLogin(data)
 
       jwtPipeline(user, res)
-      res.json(user)
+      res.json(ApiResponse.success(user))
     } catch (err) {
       next(err)
     }
@@ -217,25 +224,22 @@ export class UsersController {
     next: express.NextFunction
   ): Promise<express.Response | void> => {
     try {
-      const { nombre, correo, foto_perfil } = req.body as {
-        correo: string | undefined
-        nombre: string | undefined
-        foto_perfil?: ImageType
+      const { name, email, profile_picture } = req.body as {
+        email: string | undefined
+        name: string | undefined
+        profile_picture?: ImageType
       }
-      if (!nombre || !correo) {
-        return res.status(400).json({
-          error: 'Algunos espacios están en blanco',
-          details: 'Nombre y correo son requeridos'
-        })
+      if (!name || !email) {
+        return res.status(400).json(ApiResponse.error('Faltan datos', 400))
       }
-      const user = await this.UsersModel.facebookLogin({
-        nombre,
-        correo,
-        foto_perfil: foto_perfil ?? ''
+      const user = await this.userService.facebookLogin({
+        name,
+        email,
+        profile_picture: profile_picture ?? ''
       })
 
       jwtPipeline(user, res)
-      res.json(user)
+      res.json(ApiResponse.success(user))
     } catch (err) {
       next(err)
     }
@@ -246,20 +250,24 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ) => {
-    let data: UserInfoType = req.body
-    // Validación
+    let data = req.body
+    const parsedData = createUser(data, true)
+
     try {
+      // Validación
+
       const validated = validateUser(data)
       if (!validated.success) {
-        return res.status(400).json({ error: validated.error })
+        return res
+          .status(400)
+          .json(ApiResponse.error(String(validated.error), 400))
       }
       // Revisar si el correo ya está en uso
-      await checkEmailExists(data.correo, this.UsersModel)
+      await checkEmailExists(data.email, this.userService)
       // Inicializar los datos
       data = initializeDataCreateUser(data)
       // Crear usuario
-      const user = await this.UsersModel.createUser(data)
-
+      const user = await this.userService.createUser(data)
       // Enviar correo de agradecimiento por unirse a meridian
       await sendEmail(
         `${data.nombre} ${data.correo}`,
@@ -278,7 +286,7 @@ export class UsersController {
       )
       // Si todo es exitoso, devolver el usuario creado
       jwtPipeline(user, res)
-      res.json(user)
+      res.json(ApiResponse.success(user))
     } catch (err) {
       next(err)
     }
@@ -291,8 +299,8 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const result = await this.UsersModel.deleteUser(userId)
-      res.json(result)
+      const result = await this.userService.deleteUser(userId)
+      res.json(ApiResponse.success(result))
     } catch (err) {
       next(err)
     }
@@ -305,31 +313,30 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const data: Partial<UserInfoType> = req.body
+      const data: Partial<UserType> = req.body
       // Validar datos
       const validated = validatePartialUser(data)
       if (!validated.success) {
         console.dir(validated.error.errors, { depth: null })
-        return res.status(400).json({
-          error: 'Error validando usuario',
-          details: validated.error.errors
-        })
+        return res
+          .status(400)
+          .json(ApiResponse.error('Error validando usuario', 400))
       }
 
       const updatedData = await processUserUpdate(
         data,
         userId,
         req,
-        this.UsersModel
+        this.userService
       )
 
       // Actualizar usuario
       console.log('Updating user...')
-      const user = await this.UsersModel.updateUser(userId, updatedData)
+      const user = await this.userService.updateUser(userId, updatedData)
 
       jwtPipeline(user, res)
       // Enviar el nuevo token en la cookie
-      res.json(user)
+      res.json(ApiResponse.success(user))
     } catch (err) {
       next(err)
     }
@@ -346,20 +353,22 @@ export class UsersController {
       const { accion, book_id } = req.body as { accion: string; book_id: ID }
 
       if (!accion) {
-        return res.status(400).json({ error: 'Acción no proporcionada' })
+        return res
+          .status(400)
+          .json(ApiResponse.error('Acción no proporcionada', 400))
       }
       console.log('Updating favorites...')
       const updatedFavorites = await updateUserFavorites(
         userId,
         book_id,
         accion,
-        this.UsersModel
+        this.userService
       )
       console.log('Updated favorites:', updatedFavorites)
-      await this.UsersModel.updateUser(userId, {
-        favoritos: updatedFavorites
+      await this.userService.updateUser(userId, {
+        favorites: updatedFavorites
       })
-      res.json(updatedFavorites)
+      res.json(ApiResponse.success(updatedFavorites))
     } catch (err) {
       next(err)
     }
@@ -371,7 +380,7 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     res
       .clearCookie('access_token')
-      .json({ message: 'Se cerró exitosamente la sesión' })
+      .json(ApiResponse.success({ message: 'Se cerró exitosamente la sesión' }))
   }
 
   userData = async (
@@ -382,13 +391,13 @@ export class UsersController {
     try {
       if (req.session.user) {
         // Devolver los datos del usuario
-        const user = await this.UsersModel.getUserById(req.session.user.id)
-        if (user.estado_cuenta === 'Suspendido') {
-          return res.status(403).json({ message: 'Usuario baneado' })
+        const user = await this.userService.getUserById(req.session.user.id)
+        if (user.account_status === 'Suspendido') {
+          return res.status(403).json(ApiResponse.error('Usuario baneado', 403))
         }
-        return res.json(user)
+        return res.json(ApiResponse.success(user))
       } else {
-        res.status(401).json({ message: 'No autenticado' })
+        res.status(401).json(ApiResponse.error('No autenticado', 401))
       }
     } catch (err) {
       next(err)
@@ -407,13 +416,18 @@ export class UsersController {
       validated: string
     } = req.body
     if (!data || !data.nombre || !data.correo) {
-      return res.status(400).json({
-        error: 'No se proporcionaron todos los campos: nombre or correo'
-      })
+      return res
+        .status(400)
+        .json(
+          ApiResponse.error(
+            'No se proporcionaron todos los campos: nombre or correo',
+            400
+          )
+        )
     }
     if (data.validated === 'true') {
       // Si el usuario ya está validado, no se envía el correo
-      return res.json({ verified: true })
+      return res.json(ApiResponse.success({ verified: true }))
     }
     try {
       // Generate a token with user ID (or email) for validation
@@ -452,12 +466,14 @@ export class UsersController {
         'no-reply'
       )
 
-      res.json({
-        ok: true,
-        status: 'Validation email sent successfully',
-        token,
-        code: validation_code
-      })
+      res.json(
+        ApiResponse.success({
+          ok: true,
+          status: 'Validation email sent successfully',
+          token,
+          code: validation_code
+        })
+      )
     } catch (err) {
       next(err)
     }
@@ -479,14 +495,12 @@ export class UsersController {
       const data = jwt.verify(token, SECRET_KEY) as AuthToken
 
       // Retrieve the user and their email
-      const user: PartialUserInfoType = await this.UsersModel.getUserById(
-        data.id
-      )
-      const correo = await this.UsersModel.getEmailById(data.id)
+      const user = await this.userService.getUserById(data.id)
+      const correo = await this.userService.getEmailById(data.id)
 
       // Verify that the email matches
-      if (data.nombre !== correo.nombre) {
-        return res.status(400).json({ error: 'Email mismatch' })
+      if (data.name !== correo.name) {
+        return res.status(400).json(ApiResponse.error('Email mismatch', 400))
       }
 
       // Check if the user is already validated
@@ -495,13 +509,13 @@ export class UsersController {
       // }
 
       // Update the user's validation status
-      await this.UsersModel.updateUser(data.id, {
+      await this.userService.updateUser(data.id, {
         validated: true
       })
 
       jwtPipeline(user, res)
       // Set the new cookie
-      res.json({ validated: true })
+      res.json(ApiResponse.success({ validated: true }))
     } catch (err) {
       next(err)
     }
@@ -516,11 +530,13 @@ export class UsersController {
 
     try {
       if (!email) {
-        return res.status(400).json({ error: 'Correo no proveído', ok: false })
+        return res
+          .status(400)
+          .json(ApiResponse.error('Correo no proveído', 400))
       }
 
       // Verificar existencia del correo
-      const user = await this.UsersModel.getUserByEmail(email)
+      const user = await this.userService.getUserByEmail(email)
 
       // Generar token
       const tokenPayload = { id: user.id } // No incluir información sensible
@@ -539,7 +555,9 @@ export class UsersController {
         'no-reply'
       )
 
-      return res.json({ ok: true, message: 'Correo enviado con éxito' })
+      return res.json(
+        ApiResponse.success({ ok: true, message: 'Correo enviado con éxito' })
+      )
     } catch (err) {
       next(err)
     }
@@ -556,31 +574,41 @@ export class UsersController {
       if (!token) {
         return res
           .status(400)
-          .json({ error: 'Token no proporcionado', ok: false })
+          .json(ApiResponse.error('Token no proporcionado', 400))
       }
 
       if (!password) {
         return res
           .status(400)
-          .json({ error: 'Contraseña no proporcionada', ok: false })
+          .json(ApiResponse.error('Contraseña no proporcionada', 400))
       }
 
       const decodedToken = jwt.verify(token, SECRET_KEY) as AuthToken
 
       const id = decodedToken.id
-      const lastPassword = await this.UsersModel.getPassword(id)
+      const lastPassword = await this.userService.getPassword(id)
 
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
       const isSamePassword = await bcrypt.compare(password, lastPassword)
       if (isSamePassword) {
-        return res.status(400).json({
-          error: 'La nueva contraseña no puede ser igual a la anterior'
-        })
+        return res
+          .status(400)
+          .json(
+            ApiResponse.error(
+              'La nueva contraseña no puede ser igual a la anterior',
+              400
+            )
+          )
       }
       // Actualizar la contraseña (el hash se realiza en el modelo)
-      await this.UsersModel.updateUser(id, { contraseña: hashedPassword })
+      await this.userService.updateUser(id, { password: hashedPassword })
 
-      return res.json({ ok: true, message: 'Contraseña actualizada con éxito' })
+      return res.json(
+        ApiResponse.success({
+          ok: true,
+          message: 'Contraseña actualizada con éxito'
+        })
+      )
     } catch (err) {
       next(err)
     }
@@ -596,35 +624,36 @@ export class UsersController {
       if (!follower_id || !user_id) {
         return res
           .status(404)
-          .json({ ok: false, error: 'No se proporcionó usuario y seguidor' })
+          .json(ApiResponse.error('No se proporcionó usuario y seguidor', 404))
       }
       // Es necesario conseguir el usuario para saber que otros seguidores tenía
       const [follower, user] = await Promise.all([
-        this.UsersModel.getUserById(follower_id),
-        this.UsersModel.getUserById(user_id)
+        this.userService.getUserById(follower_id),
+        this.userService.getUserById(user_id)
       ])
 
       let action
       // Agregar el seguidor
-      if (!follower.seguidores.includes(user_id)) {
-        follower.seguidores = [...follower.seguidores, user_id]
-        user.siguiendo = [...user.siguiendo, follower_id]
-        action = 'Agregado'
+      if (follower.followers && user.following) {
+        if (!follower.followers.includes(user_id)) {
+          follower.followers = [...follower.followers, user_id]
+          user.following = [...user.following, follower_id]
+          action = 'Agregado'
 
-        // Eliminar el seguidor
-      } else {
-        follower.seguidores = follower.seguidores.filter(
-          seguidor_id => seguidor_id !== user_id
-        )
-        user.siguiendo = follower.seguidores.filter(
-          siguiendo_id => siguiendo_id !== follower_id
-        )
-        action = 'Eliminado'
+          // Eliminar el seguidor
+        } else {
+          follower.followers = follower.followers.filter(
+            follower_id => follower_id !== user_id
+          )
+          user.following = user.following.filter(
+            following_id => following_id !== follower_id
+          )
+          action = 'Eliminado'
+        }
       }
-
       await Promise.all([
-        this.UsersModel.updateUser(follower_id, follower),
-        this.UsersModel.updateUser(user_id, user)
+        this.userService.updateUser(follower_id, follower),
+        this.userService.updateUser(user_id, user)
       ])
 
       // Notificación de nuevo seguidor
@@ -633,7 +662,7 @@ export class UsersController {
       }
 
       jwtPipeline(user, res)
-      res.json({ ok: true, action, follower, user })
+      res.json(ApiResponse.success({ ok: true, action, follower, user }))
     } catch (err) {
       next(err)
     }
@@ -650,11 +679,11 @@ export class UsersController {
       if (!userId)
         return res
           .status(404)
-          .json({ error: 'No se proporcionó id de usuario' })
+          .json(ApiResponse.error('No se proporcionó id de usuario', 404))
 
-      const balance = await this.UsersModel.getBalance(userId)
+      const balance = await this.userService.getBalance(userId)
 
-      res.json({ balance })
+      res.json(ApiResponse.success({ balance }))
     } catch (err) {
       next(err)
     }
@@ -673,21 +702,21 @@ export class UsersController {
       if (!user_id || !collection_name) {
         return res
           .status(400)
-          .json({ error: 'No se entregaron todos los campos' })
+          .json(ApiResponse.error('No se entregaron todos los campos', 400))
       }
 
-      const user = await this.UsersModel.getUserById(user_id)
+      const user = await this.userService.getUserById(user_id)
 
       // Agregar la nueva colección
-      const updated = await this.UsersModel.updateUser(user_id, {
+      const updated = await this.userService.updateUser(user_id, {
         collections_ids: [
-          ...user.collections_ids,
-          { nombre: collection_name, libros_ids: [] }
+          ...(user.collections_ids || []),
+          { name: collection_name, books_ids: [] }
         ]
       })
 
       jwtPipeline(user, res)
-      res.json(updated)
+      res.json(ApiResponse.success(updated))
     } catch (err) {
       next(err)
     }
@@ -703,39 +732,45 @@ export class UsersController {
       if (!userId || !collectionName) {
         return res
           .status(400)
-          .json({ error: 'No se entregaron todos los campos' })
+          .json(ApiResponse.error('No se entregaron todos los campos', 400))
       }
 
-      const user = await this.UsersModel.getUserById(userId)
+      const user = await this.userService.getUserById(userId)
 
-      const collection = user.collections_ids.find(
-        coleccion => coleccion.nombre === collectionName
+      const collection = (user.collections_ids ?? []).find(
+        coleccion => coleccion.name === collectionName
       )
       if (!collection) {
-        return res.status(404).json({ error: 'No se encontró la colección' })
+        return res
+          .status(404)
+          .json(ApiResponse.error('No se encontró la colección', 404))
       }
 
       // Verificar si el libro ya está en la colección
-      if (collection.libros_ids.includes(bookId)) {
+      if (collection.books_ids.includes(bookId)) {
         return res
           .status(200)
-          .json({ message: 'El libro ya está en la colección' })
+          .json(
+            ApiResponse.success({ message: 'El libro ya está en la colección' })
+          )
       }
 
       // Actualizar colección
-      await this.UsersModel.updateUser(userId, {
+      await this.userService.updateUser(userId, {
         collections_ids: [
-          ...user.collections_ids.filter(
-            coleccion => coleccion.nombre !== collectionName
+          ...(user.collections_ids ?? []).filter(
+            coleccion => coleccion.name !== collectionName
           ),
           {
-            nombre: collection.nombre,
-            libros_ids: [...collection.libros_ids, bookId]
+            name: collection.name,
+            books_ids: [...collection.books_ids, bookId]
           }
         ]
       })
 
-      res.json({ message: 'Libro agregado a la colección' })
+      res.json(
+        ApiResponse.success({ message: 'Libro agregado a la colección' })
+      )
     } catch (err) {
       next(err)
     }
@@ -747,8 +782,8 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const { username } = req.body
-      const result = await this.UsersModel.banUser(username)
-      res.json(result)
+      const result = await this.userService.banUser(username)
+      res.json(ApiResponse.success(result))
     } catch (err) {
       next(err)
     }

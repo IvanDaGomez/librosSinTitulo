@@ -1,4 +1,4 @@
-import { ID, ImageType, ISOString } from '@/shared/types'
+import { ID, ISOString } from '@/shared/types'
 import {
   AgeType,
   AvailabilityType,
@@ -17,7 +17,7 @@ export type BookType = {
   price: number
   offer: number | null
   isbn: string
-  images: ImageType[]
+  images: string[]
   keywords: string[]
   description: string
   status: StateType
@@ -51,7 +51,7 @@ export type BookToReviewType = {
   price: number
   offer: number | null
   isbn: string
-  images: ImageType[]
+  images: string[]
   keywords: string[]
   id: ID
   description: string
@@ -91,7 +91,7 @@ export class Book {
   private _price: number
   private _offer: number | null
   private _isbn: string
-  private _images: ImageType[]
+  private _images: string[]
   private _keywords: string[]
   private _description: string
   private _status: StateType
@@ -190,7 +190,7 @@ export class Book {
   get isbn (): string {
     return this._isbn
   }
-  get images (): ImageType[] {
+  get images (): string[] {
     return [...this._images]
   }
   get keywords (): string[] {
@@ -301,13 +301,13 @@ export class Book {
     this.touch(updatedAt)
   }
 
-  public addImage (img: ImageType, updatedAt?: ISOString): void {
+  public addImage (img: string, updatedAt?: ISOString): void {
     this._images.push(img)
     this.touch(updatedAt)
   }
 
   public removeImage (
-    predicate: (img: ImageType) => boolean,
+    predicate: (img: string) => boolean,
     updatedAt?: ISOString
   ): void {
     this._images = this._images.filter(i => !predicate(i))

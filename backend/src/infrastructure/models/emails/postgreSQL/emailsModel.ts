@@ -1,9 +1,6 @@
-import { ID } from '../../../domain/types/objects'
-import {
-  executeQuery,
-  executeSingleResultQuery
-} from '../../../utils/dbUtils.js'
-import { pool } from '../../../assets/config.js'
+import { ID } from '@/shared/types'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
+import { pool } from '@/utils/config.js'
 
 class EmailsModel {
   static async getAllEmails (): Promise<string[]> {

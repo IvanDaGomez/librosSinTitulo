@@ -1,16 +1,17 @@
 import { PaymentCreateRequest } from 'mercadopago/dist/clients/payment/create/types'
 import type { Options } from 'mercadopago/dist/types.d.ts'
-import { MercadoPagoInput } from '../../domain/types/mercadoPagoInput'
+
 import { Shipments } from 'mercadopago/dist/clients/commonTypes'
-import { BookObjectType } from '../../domain/types/book'
-import { PartialUserInfoType } from '../../domain/types/user'
+import { BookType } from '@/domain/entities/book'
+import { UserType } from '@/domain/entities/user'
+import { MercadoPagoInput } from '@/domain/entities/mercadoPago'
 export function createMercadoPagoPayment ({
   form_data,
   partial_data,
   payment_method,
   book,
   user
-}: MercadoPagoInput & { book: BookObjectType; user: PartialUserInfoType }): {
+}: MercadoPagoInput & { book: BookType; user: UserType }): {
   body: PaymentCreateRequest
   requestOptions: Options
 } {
@@ -34,21 +35,22 @@ export function createMercadoPagoPayment ({
         items: [
           {
             id: book.id,
-            title: book.titulo,
-            description: book.descripcion,
+            title: book.title,
+            description: book.description,
             picture_url: book.images[0],
-            category_id: book.genero,
+            category_id: book.genre,
             quantity: 1,
-            unit_price: book?.oferta || book?.precio
+            unit_price: book?.offer || book?.price
           }
         ],
-        ip_address: partial_data.shipping_details.additional_info.ip_address,
+        ip_address: partial_data.shipping_details.user_id,
         shipments: {
           receiver_address: {
-            zip_code: partial_data.shipping_details.address.zip_code,
-            street_name: partial_data.shipping_details.address.street_name,
+            zip_code: partial_data.shipping_details.address.postal_code,
+            street_name: partial_data.shipping_details.address.street,
             street_number: parseInt(
-              partial_data.shipping_details.address.street_number,
+              partial_data.shipping_details.address.street.match(/\d+/)?.[0] ||
+                '0',
               10
             ),
             // apartment: partialData.shippingDetails.apartment,

@@ -1,50 +1,51 @@
 import crypto from 'node:crypto'
 import jwt from 'jsonwebtoken'
-import { AuthToken } from '../../domain/types/authToken.js'
+import { AuthToken } from '@/domain/entities/authToken.js'
 import express from 'express'
-import { PartialUserInfoType, UserInfoType } from '../../domain/types/user.js'
-import { ID, ImageType, ISOString } from '../../domain/types/objects.js'
+import { PartialUserType, UserType } from '@/domain/entities/user.js'
+import { ID, ImageType, ISOString } from '@/shared/types'
 import path from 'node:path'
 import { Multer } from 'multer'
-import saveOptimizedImages from '../../assets/saveOptimizedImages.js'
-import { userObject } from '../../models/users/userObject.js'
-import { IUsersModel } from '../../domain/types/models.js'
+import saveOptimizedImages from '@/utils/saveOptimizedImages.js'
+import { createUser } from '@/domain/mappers/createUser.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
 
-async function checkEmailExists (email: string, UsersModel: IUsersModel) {
+async function checkEmailExists (email: string, UsersModel: UserInterface) {
   const correo = await UsersModel.getUserByEmail(email)
 
-  if (correo?.correo) {
+  if (correo?.email) {
     throw new Error('El correo ya existe')
   }
 }
-function initializeDataCreateUser (data: UserInfoType) {
+function initializeDataCreateUser (data: UserType) {
   const time = new Date().toISOString() as ISOString
-  data.fecha_registro = time
-  data.actualizado_en = time
+  data.created_at = time
+  data.updated_at = time
   data.validated = false
   data.id = crypto.randomUUID()
   data.balance = {
-    disponible: 0,
-    pendiente: 0
+    available: 0,
+    pending: 0,
+    incoming: 0
   }
   return data
 }
 async function processUserUpdate (
-  data: Partial<UserInfoType> & { accion?: string },
+  data: Partial<UserType> & { accion?: string },
   userId: ID,
   req: express.Request,
-  UsersModel: IUsersModel
+  UsersModel: UserInterface
 ) {
   const file: Express.MulterS3.File | undefined = req.file as
     | Express.MulterS3.File
     | undefined
   if (file) {
-    data.foto_perfil = file.location as ImageType
-    await saveOptimizedImages([data.foto_perfil])
+    data.profile_picture = file.location as ImageType
+    await saveOptimizedImages([data.profile_picture])
   }
 
-  if (data.correo) {
-    await checkEmailExists(data.correo, UsersModel)
+  if (data.email) {
+    await checkEmailExists(data.email, UsersModel)
     data.validated = false
   }
 
@@ -55,13 +56,13 @@ async function updateUserFavorites (
   userId: ID,
   bookId: ID,
   accion: string,
-  UsersModel: IUsersModel
+  UsersModel: UserInterface
 ): Promise<ID[]> {
   const user = await UsersModel.getUserById(userId)
   console.log('User found:', user)
   if (!user) throw new Error('Usuario no encontrado')
 
-  let updatedFavorites = user.favoritos || []
+  let updatedFavorites = user.favorites || []
 
   if (accion === 'agregar' && !updatedFavorites.includes(bookId)) {
     updatedFavorites.push(bookId)
@@ -72,27 +73,25 @@ async function updateUserFavorites (
   return updatedFavorites
 }
 
-function filterAllowedFields (
-  data: Partial<UserInfoType>
-): Partial<UserInfoType> {
-  const allowedFields: (keyof UserInfoType)[] = Object.keys(
-    userObject({}, true)
-  ) as (keyof UserInfoType)[]
-  const filteredData: Partial<UserInfoType> = {}
+function filterAllowedFields (data: Partial<UserType>): Partial<UserType> {
+  const allowedFields: (keyof UserType)[] = Object.keys(
+    createUser({}, true)
+  ) as (keyof UserType)[]
+  const filteredData: Partial<UserType> = {}
 
   allowedFields.forEach(key => {
     if (data[key] !== undefined) filteredData[key] = data[key] as any
   })
 
-  filteredData.actualizado_en = new Date().toISOString() as ISOString
+  filteredData.updated_at = new Date().toISOString() as ISOString
   return filteredData
 }
 
-function generateAuthToken (user: PartialUserInfoType | UserInfoType): string {
+function generateAuthToken (user: PartialUserType | UserType): string {
   try {
-    const tokenPayload: AuthToken = {
+    const tokenPayload = {
       id: user.id,
-      nombre: user.nombre
+      name: user.name
     }
     return jwt.sign(tokenPayload, process.env.JWT_SECRET ?? '', {
       expiresIn: '3h'
@@ -110,10 +109,7 @@ function setAuthCookie (res: express.Response, token: string) {
     maxAge: 1000 * 60 * 60 * 3 // 3 horas
   })
 }
-function jwtPipeline (
-  user: PartialUserInfoType | UserInfoType,
-  res: express.Response
-) {
+function jwtPipeline (user: PartialUserType | UserType, res: express.Response) {
   const newToken = generateAuthToken(user)
   if (!newToken) {
     throw new Error('Error generando el token')

@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
-import { notificationObject } from '../../../../domain/mappers/createNotification.js'
-import { NotificationType } from '../../../domain/types/notification.js'
-import { ID } from '../../../domain/types/objects.js'
-import { __dirname } from '../../../assets/config.js'
+import { createNotification } from '@/domain/mappers/createNotification.js'
+import { NotificationType } from '@/domain/entities/notification'
+import { ID } from '@/shared/types'
+import { __dirname } from '@/utils/config'
 import path from 'node:path'
 // __dirname is not available in ES modules, so we need to use import.meta.url
 
@@ -18,7 +18,7 @@ export class NotificationsModel {
     if (l !== 0) {
       notifications = notifications.slice(0, l)
     }
-    return notifications.map(notification => notificationObject(notification))
+    return notifications.map(notification => createNotification(notification))
   }
 
   static async getAllNotificationsByUserId (
@@ -41,7 +41,7 @@ export class NotificationsModel {
     if (!notification) {
       throw new Error('No se encontró la notificación')
     }
-    return notificationObject(notification)
+    return createNotification(notification)
   }
 
   static async createNotification (
@@ -49,11 +49,11 @@ export class NotificationsModel {
   ): Promise<NotificationType> {
     let notifications = await this.getAllNotifications()
     // Crear valores por defecto
-    const newNotification = notificationObject(data)
+    const newNotification = createNotification(data)
     notifications.push(newNotification)
     // Elimina las notificaciones que ya han expirado
     notifications = notifications.filter(notification => {
-      if (new Date(notification.expires_at) < new Date()) {
+      if (new Date(notification.expires_at ?? '') < new Date()) {
         return false
       }
       return true

@@ -2,24 +2,24 @@ import dotenv from 'dotenv'
 import { BookType } from '@/domain/entities/book'
 import { NotificationType } from '@/domain/entities/notification'
 import NotificationCategory from '@/domain/valueObjects/notificationCategories'
-import { ID, ImageType, ISOString } from '@/shared/types'
-import { PartialUserType } from '@/domain/entities/user'
+import { ID, ISOString } from '@/shared/types'
+import { PartialUserType, UserType } from '@/domain/entities/user'
 dotenv.config()
 // PROBLEMS I HAVE WITH THE TYPE OF NOTIFICATION
 export type NotificationInfoNeeded = Partial<
   {
     id: ID
     id_vendedor: ID
-    images: ImageType[]
+    images: string[]
     titulo: string
     created_in: ISOString
     expires_at: ISOString
-    follower: PartialUserType
+    follower: PartialUserType | UserType
     order: string
     metadata: Partial<{
       book_id: ID
       book_title: string
-      photo: ImageType
+      photo: string
       guide: string
       question: string
       answer: string

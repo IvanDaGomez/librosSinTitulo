@@ -1,16 +1,10 @@
-// import crypto from 'node:crypto'
 import { validateBook, validatePartialBook } from '@/utils/validate.js'
-import { cambiarGuionesAEspacio } from '@/utils/parseSpaces.js'
-// import { chromium } from 'playwright'
+import { replaceDashesWithSpaces } from '@/utils/parseSpaces.js'
 import { sendEmail } from '@/utils/email/sendEmail.js'
 import { createEmail } from '@/utils/email/htmlEmails.js'
 import { sendNotification } from '@/utils/notifications/sendNotification.js'
 import { createNotification } from '@/utils/notifications/createNotification.js'
-import {
-  filterData,
-  prepareCreateBookData,
-  prepareUpdateBookData
-} from '@/utils/prepareCreateBookData'
+import { extractImageUrlsFromFiles } from '@/application/handlers/prepare.js'
 import { updateData } from '../../handlers/updateData.js'
 import { BookInterface } from '@/domain/interfaces/book'
 import { BookToReviewType, BookType } from '@/domain/entities/book'
@@ -23,6 +17,7 @@ import { CollectionType } from '@/domain/entities/collection'
 import { BookService } from '@/application/services/books/bookService.js'
 import { UserService } from '@/application/services/users/userService.js'
 import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
+import { createBook, createBookToReview } from '@/domain/mappers/createBook.js'
 
 // import { helperImg } from '../../assets/helperImg.js'
 
@@ -69,7 +64,7 @@ export class BooksController {
       const user = req.session.user as AuthToken | undefined
       if (update && user) {
         const bookCopy = JSON.parse(JSON.stringify(book)) // aseguro que es limpio y plano
-        await updateData(user, bookCopy, 'openedBook')
+        await updateData(user, bookCopy, 'openedBook', this.userService)
       }
       return res.json(ApiResponse.success(book))
     } catch (err) {
@@ -90,7 +85,9 @@ export class BooksController {
 
       const idsArray = ids.split(',').map(id => id.trim()) as ID[]
       if (!ids || ids.length === 0) {
-        return res.status(400).json({ error: 'No se proporcionaron IDs' })
+        return res
+          .status(400)
+          .json(ApiResponse.error('No se proporcionaron IDs', 400))
       }
 
       const books = await this.bookService.getBooksByIdList(
@@ -117,13 +114,16 @@ export class BooksController {
       let { q, l } = req.query as { q: string; l: string | ParsedQs | number }
       // Validación de la query
       if (q) {
-        q = cambiarGuionesAEspacio(q as string)
+        q = replaceDashesWithSpaces(q)
       } else {
         return res
           .status(400)
-          .json({ error: 'El parámetro de consulta "q" es requerido' })
+          .json(
+            ApiResponse.error('El parámetro de consulta "q" es requerido', 400)
+          )
       }
-      if (!l) l = 24
+      if (l) l = Number(l)
+      else l = 24
       // Consigue los libros del modelo
 
       const books = await this.bookService.getBooksByQuery(q, l)
@@ -133,10 +133,10 @@ export class BooksController {
       if (user) {
         for (const book of books.slice(0, 3)) {
           const bookCopy: Partial<BookType> = JSON.parse(JSON.stringify(book))
-          // await updateData(user, bookCopy, 'query')
+          await updateData(user, bookCopy, 'query', this.userService)
         }
       }
-      return res.json(books)
+      return res.json(ApiResponse.success(books))
     } catch (err) {
       next(err)
     }
@@ -159,12 +159,14 @@ export class BooksController {
       if (!q || typeof q !== 'string') {
         return res
           .status(400)
-          .json({ error: 'El parámetro de consulta "q" es requerido' })
+          .json(
+            ApiResponse.error('El parámetro de consulta "q" es requerido', 400)
+          )
       }
       Object.keys(filters).forEach(key => {
         const filterKey = key as keyof typeof filters
         if (filters[filterKey]) {
-          filters[filterKey] = cambiarGuionesAEspacio(
+          filters[filterKey] = replaceDashesWithSpaces(
             filters[filterKey] as string
           )
         }
@@ -179,10 +181,12 @@ export class BooksController {
       )
 
       if (books.length === 0) {
-        return res.status(404).json({ error: 'No se encontraron libros' })
+        return res
+          .status(404)
+          .json(ApiResponse.error('No se encontraron libros', 404))
       }
 
-      res.status(200).json(books)
+      res.json(ApiResponse.success(books))
     } catch (err) {
       next(err)
     }
@@ -199,20 +203,25 @@ export class BooksController {
       Se valida el libro y se envía una notificación al vendedor.
     */
 
-    let data: BookType = req.body
+    let data = req.body
+    data = extractImageUrlsFromFiles(data, req.files as Express.MulterS3.File[])
+    data = createBook
     try {
       const session = req.session
       if (!session.user) {
-        return res.status(401).json({ error: 'No autenticado' })
+        return res.status(401).json(ApiResponse.error('No autenticado', 401))
       }
-      data = await prepareCreateBookData(data, req)
 
       const validated = validateBook(data)
       if (!validated.success) {
         if (validated.error.errors && process.env.NODE_ENV === 'development') {
           console.dir(validated.error.errors, { depth: null })
         }
-        return res.status(400).json({ error: validated.error })
+        return res
+          .status(400)
+          .json(
+            ApiResponse.error(String(validated.error), 400, 'Invalid book data')
+          )
       }
       // Recibe el usuario para actualizar sus librosIds
       const user = await this.userService.getUserById(data.seller_id)
@@ -231,7 +240,6 @@ export class BooksController {
       await sendNotification(
         createNotification(notificationData, 'bookPublished')
       )
-      console.log('Book created:', book)
       const email = (await this.userService.getEmailById(data.seller_id)).email
 
       await sendEmail(
@@ -241,7 +249,7 @@ export class BooksController {
         'no-reply'
       )
 
-      res.json(book)
+      res.json(ApiResponse.success(book))
     } catch (err) {
       next(err)
     }
@@ -268,7 +276,7 @@ export class BooksController {
       if (!data.question || !data.type)
         return res
           .status(400)
-          .json({ error: 'No se proporcionó mensaje o tipo' })
+          .json(ApiResponse.error('No se proporcionó mensaje o tipo', 400))
       const existingBook = await this.bookService.getBookById(data.book_id)
       const existingMessages = existingBook.messages ?? []
       const messagesArray = existingMessages ?? []
@@ -284,7 +292,9 @@ export class BooksController {
         )
         console.log('A')
         if (!message)
-          return res.status(400).json({ error: 'No se encontró la pregunta' })
+          return res
+            .status(400)
+            .json(ApiResponse.error('No se encontró la pregunta', 400))
         message['answer'] = data.answer
       }
 
@@ -364,7 +374,7 @@ export class BooksController {
         messages: messagesArray
       }
       const book = await this.bookService.updateBook(data.book_id, dataToUpdate)
-      res.json(book)
+      res.json(ApiResponse.success(book))
     } catch (err) {
       next(err)
     }
@@ -389,7 +399,7 @@ export class BooksController {
 
       const result = await this.bookService.deleteBook(bookId)
 
-      return res.json(result)
+      return res.json(ApiResponse.success(result))
     } catch (err) {
       next(err)
     }
@@ -404,15 +414,19 @@ export class BooksController {
       const bookId = req.params.bookId as ID
       const rawData = req.body
       const existingBook = await this.bookService.getBookById(bookId)
-      const data = await prepareUpdateBookData(rawData, req, existingBook)
-
+      const parsedData = extractImageUrlsFromFiles(
+        rawData,
+        req.files as Express.MulterS3.File[]
+      )
+      const data = createBook(parsedData, false)
       const validated = validatePartialBook(data)
       if (!validated.success) {
-        return res.status(400).json({ error: validated.error.errors })
+        return res
+          .status(400)
+          .json(ApiResponse.error(String(validated.error.errors), 400))
       }
 
-      const filteredData = filterData(data)
-      const book = await this.bookService.updateBook(bookId, filteredData)
+      const book = await this.bookService.updateBook(bookId, data)
 
       if (!rawData.mensaje && !rawData.tipo) {
         const notificationData = {}
@@ -421,7 +435,7 @@ export class BooksController {
         )
       }
 
-      res.status(200).json(book)
+      res.json(ApiResponse.success(book))
     } catch (err) {
       next(err)
     }
@@ -460,7 +474,7 @@ export class BooksController {
   ): Promise<express.Response | void | RequestHandler> => {
     try {
       const books = await this.bookService.getAllReviewBooks()
-      return res.json(books)
+      return res.json(ApiResponse.success(books))
     } catch (err) {
       next(err)
     }
@@ -473,17 +487,28 @@ export class BooksController {
   ): Promise<express.Response | void | RequestHandler> => {
     try {
       let data: Partial<BookToReviewType> = req.body
-
-      data = await prepareCreateBookData(data, req)
-      const validated = validateBook(data)
+      let extractedData = extractImageUrlsFromFiles(
+        data,
+        req.files as Express.MulterS3.File[]
+      )
+      const parsedData = createBookToReview(extractedData)
+      const validated = validateBook(parsedData)
       if (!validated.success) {
         console.dir(validated.error, { depth: null })
-        return res.status(400).json({ error: validated.error })
+        return res
+          .status(400)
+          .json(
+            ApiResponse.error(
+              String(validated.error),
+              400,
+              'Invalid review book data'
+            )
+          )
       }
 
-      const book = await this.bookService.createReviewBook(data)
+      const book = await this.bookService.createReviewBook(parsedData)
 
-      res.send(book)
+      res.json(ApiResponse.success(book))
     } catch (err) {
       next(err)
     }
@@ -497,7 +522,7 @@ export class BooksController {
     try {
       const bookId = req.params.book_id as ID
       const result = await this.bookService.deleteReviewBook(bookId)
-      return res.json(result)
+      return res.json(ApiResponse.success(result))
     } catch (err) {
       next(err)
     }
@@ -513,20 +538,21 @@ export class BooksController {
       let rawData = req.body as Partial<BookType>
       const existingBook = await this.bookService.getBookById(bookId)
 
-      const data: BookType = await prepareUpdateBookData(
+      const parsedData = extractImageUrlsFromFiles(
         rawData,
-        req,
-        existingBook
+        req.files as Express.MulterS3.File[]
       )
+      const data = createBookToReview(parsedData)
       const validated = validatePartialBook(data)
       if (!validated.success) {
-        return res.status(400).json({ error: validated.error.errors })
+        return res
+          .status(400)
+          .json(ApiResponse.error(String(validated.error.errors), 400))
       }
-      const filteredData = filterData(data)
-      filteredData.actualizado_en = new Date().toISOString() as ISOString
-      const book = await this.bookService.updateReviewBook(bookId, filteredData)
+      data.updated_at = new Date().toISOString() as ISOString
+      const book = await this.bookService.updateReviewBook(bookId, data)
 
-      res.status(200).json(book)
+      res.json(ApiResponse.success(book))
     } catch (err) {
       next(err)
     }
@@ -552,7 +578,7 @@ export class BooksController {
         this.userService
       )
 
-      return res.json(results)
+      return res.json(ApiResponse.success(results))
     } catch (err) {
       next(err)
     }
@@ -566,14 +592,14 @@ export class BooksController {
     const userId = req.params.userId as ID | undefined
     try {
       if (!userId)
-        return res.status(401).json({ error: 'No se proporcionó userId' })
+        return res
+          .status(401)
+          .json(ApiResponse.error('No se proporcionó userId', 401))
       const user = await this.userService.getUserById(userId)
 
-      const favorites = await this.bookService.getFavoritesByUser(
-        user.favorites
-      )
+      const favorites = await this.bookService.getBooksByIdList(user.favorites)
 
-      return res.json(favorites)
+      return res.json(ApiResponse.success(favorites))
     } catch (err) {
       next(err)
     }
@@ -587,12 +613,14 @@ export class BooksController {
     const collection = req.body.collection as CollectionType | undefined
     try {
       if (!collection) {
-        return res.status(400).json({ error: 'No se proporcionó la colección' })
+        return res
+          .status(400)
+          .json(ApiResponse.error('No se proporcionó la colección', 400))
       }
 
       const books = await this.bookService.getBooksByCollection(collection)
 
-      return res.json(books)
+      return res.json(ApiResponse.success(books))
     } catch (err) {
       next(err)
     }

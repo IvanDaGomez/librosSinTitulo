@@ -1,19 +1,17 @@
 import { RequestHandler, Router } from 'express'
-import { TransactionsController } from '../../controllers/transactions/transactionsController.js'
-import {
-  IBooksModel,
-  ITransactionsModel,
-  IUsersModel
-} from '../../../../domain/types/models.js'
+import { TransactionsController } from '@/application/controllers/transactions/transactionsController.js'
+import { TransactionInterface } from '@/domain/interfaces/transaction'
+import { UserInterface } from '@/domain/interfaces/user'
+import { BookInterface } from '@/domain/interfaces/book'
 
 export const createTransactionsRouter = ({
   TransactionsModel,
   UsersModel,
   BooksModel
 }: {
-  TransactionsModel: ITransactionsModel
-  UsersModel: IUsersModel
-  BooksModel: IBooksModel
+  TransactionsModel: TransactionInterface
+  UsersModel: UserInterface
+  BooksModel: BookInterface
 }) => {
   const transactionsController = new TransactionsController({
     TransactionsModel,

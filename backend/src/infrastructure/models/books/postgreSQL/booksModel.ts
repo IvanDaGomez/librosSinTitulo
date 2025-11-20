@@ -4,16 +4,12 @@ import { calculateMatchScore } from '@/utils/calculateMatchScore'
 import * as tf from '@tensorflow/tfjs'
 import { getBookKeyInfo } from '../local/getBookKeyInfo.js'
 import { getTrends } from '@/utils/getTrends'
-import { createBook } from '@/domain/mappers/createBook'
+import { createBook, createBookToReview } from '@/domain/mappers/createBook'
 import { ID, ISOString } from '@/shared/types'
 import { AuthToken } from '@/domain/entities/authToken'
 import { CollectionType } from '@/domain/entities/collection'
 import { Book, BookToReviewType, BookType } from '@/domain/entities/book'
-import {
-  executeQuery,
-  executeSingleResultQuery,
-  DatabaseError
-} from '@/utils/dbUtils'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils'
 import { filterBooksByFilters } from '../local/filterBooksByFilters.js'
 import { pool } from '@/utils/config'
 import { BookInterface } from '@/domain/interfaces/book.js'
@@ -23,7 +19,6 @@ import {
   StatusResponse,
   StatusResponseType
 } from '@/domain/valueObjects/statusResponse.js'
-import { UserType } from '@/domain/entities/user.js'
 class BooksModel implements BookInterface {
   private getEssencialFields (): string[] {
     return Object.keys(createBook({}, false))
@@ -257,7 +252,7 @@ class BooksModel implements BookInterface {
     }, `Error deleting book with ID ${id}`)
   }
 
-  async getAllReviewBooks (): Promise<BookType[]> {
+  async getAllReviewBooks (): Promise<BookToReviewType[]> {
     return this.handle(async () => {
       return await executeQuery(
         pool,
@@ -267,27 +262,27 @@ class BooksModel implements BookInterface {
     }, 'Error retrieving all review books')
   }
 
-  async createReviewBook (data: Partial<BookType>): Promise<BookType> {
+  async createReviewBook (
+    data: Partial<BookToReviewType>
+  ): Promise<BookToReviewType> {
     return this.handle(async () => {
-      let book = createBook(data, true)
-      const response = await executeSingleResultQuery<BookType>(
+      let book = createBookToReview(data)
+      const response = await executeSingleResultQuery<BookToReviewType>(
         pool,
         () =>
           pool.query(
             `INSERT INTO books_backstage (id, title, author, price, offer, isbn, images, keywords, 
           description, status, genre, format, seller, seller_id, edition, language, 
-          location, cover, age, created_at, updated_at, availability,
-          messages, collections_ids)
+          location, cover, age, created_at, updated_at, availability)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-          $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
-          RETURNING *
-          ;`,
+          $14, $15, $16, $17, $18, $19, $20, $21, $22)
+          RETURNING *;`,
             [
               book.id,
               book.title,
               book.author,
               book.price,
-              book.offer,
+              book.offer ?? null,
               book.isbn,
               book.images,
               book.keywords,
@@ -297,20 +292,23 @@ class BooksModel implements BookInterface {
               book.format,
               book.seller,
               book.seller_id,
-              book.edition,
-              book.language,
-              book.location,
-              book.cover,
-              book.age,
+              book.edition ?? null,
+              book.language ?? null,
+              book.location ?? null,
+              book.cover ?? null,
+              book.age ?? null,
               book.created_at,
               book.updated_at,
-              book.availability,
-              book.messages,
-              book.collections_ids
+              'En revisión'
             ]
           ),
         'Failed to create review book'
       )
+      if (!response) {
+        throw new ModelError('Failed to create review book')
+      }
+      // Use the inserted row as the canonical returned book
+      book = response
       return book
     }, 'Error creating review book')
   }
@@ -349,7 +347,7 @@ class BooksModel implements BookInterface {
       )
 
       if (!result) {
-        throw new DatabaseError('Review book not found')
+        throw new ModelError('Review book not found')
       }
 
       return result
@@ -495,7 +493,7 @@ class BooksModel implements BookInterface {
   }
   async getBooksByCollection (collection: CollectionType): Promise<BookType[]> {
     return this.handle(async () => {
-      const ids = collection.book_ids
+      const ids = collection.books_ids
       return this.getBooksByIdList(ids)
     }, `Error getting books for collection with ID ${collection.id}`)
   }

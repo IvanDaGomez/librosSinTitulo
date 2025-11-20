@@ -1,5 +1,5 @@
 import { getBookKeyInfo } from '@/infrastructure/models/books/local/getBookKeyInfo'
-import { UsersModel } from '@/infrastructure/models/users/local/usersLocal'
+import { UsersModel } from '@/infrastructure/models/users/local/usersModel'
 import { AuthToken } from '@/domain/entities/authToken'
 import { BookType } from '@/domain/entities/book'
 import { UserInterface } from '@/domain/interfaces/user'

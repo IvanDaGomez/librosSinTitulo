@@ -1,13 +1,13 @@
 import { createNotification } from '@/domain/mappers/createNotification'
 import { NotificationType } from '@/domain/entities/notification'
 import { ID } from '@/shared/types'
-import {
-  DatabaseError,
-  executeQuery,
-  executeSingleResultQuery
-} from '@/utils/dbUtils'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils'
 import { pool } from '@/utils/config.js'
 import { ModelError } from '@/domain/exceptions/modelError'
+import {
+  StatusResponse,
+  StatusResponseType
+} from '@/domain/valueObjects/statusResponse'
 
 export class NotificationsModel {
   static async getAllNotifications (): Promise<NotificationType[]> {
@@ -30,7 +30,7 @@ export class NotificationsModel {
     userId: ID
   ): Promise<NotificationType[]> {
     // Load all notifications from the JSON file
-    const notifications = await executeQuery(
+    const notifications = await executeQuery<NotificationType>(
       pool,
       () =>
         pool.query('SELECT * FROM notifications WHERE user_id = $1;', [userId]),
@@ -79,13 +79,13 @@ export class NotificationsModel {
     return newNotification
   }
 
-  static async deleteNotification (id: ID): Promise<{ message: string }> {
+  static async deleteNotification (id: ID): Promise<StatusResponseType> {
     await executeQuery(
       pool,
       () => pool.query('DELETE FROM notifications WHERE id = $1;', [id]),
       'Error deleting notification'
     )
-    return { message: 'Notificación eliminada con éxito' } // Mensaje de éxito
+    return StatusResponse.success('Notificación eliminada con éxito') // Mensaje de éxito
   }
 
   static async updateNotification (
@@ -99,7 +99,7 @@ export class NotificationsModel {
         return `${last}${prefix}${key} = $${index + 1}`
       })
 
-      const result = await executeSingleResultQuery(
+      const result = await executeSingleResultQuery<NotificationType>(
         pool,
         () =>
           pool.query(
@@ -110,18 +110,17 @@ export class NotificationsModel {
           ),
         `Failed to update book with ID ${id}`
       )
-
+      if (!result) {
+        throw new ModelError(`Notification with ID ${id} not found`)
+      }
       return result
     } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(`Error updating book with ID ${id}`, error)
+      throw new ModelError(`Error updating notification with ID ${id}`)
     }
   }
 
   static async markNotificationAsRead (id: ID): Promise<NotificationType> {
-    const notification: NotificationType = await executeSingleResultQuery(
+    const notification = await executeSingleResultQuery<NotificationType>(
       pool,
       () =>
         pool.query(
@@ -130,6 +129,9 @@ export class NotificationsModel {
         ),
       'Error marking notification as read'
     )
+    if (!notification) {
+      throw new ModelError(`Notification with ID ${id} not found`)
+    }
     return notification
   }
 }

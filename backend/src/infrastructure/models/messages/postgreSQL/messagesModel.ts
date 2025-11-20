@@ -1,20 +1,21 @@
 import fs from 'node:fs/promises'
-import { messageObject } from '../../../../domain/mappers/createMessage.js'
-import { MessageObjectType } from '../../../domain/types/message.js'
-import { ID } from '../../../domain/types/objects.js'
+import { createMessage } from '@/domain/mappers/createMessage.js'
+import { MessageType } from '@/domain/entities/message.js'
+import { ID } from '@/shared/types'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
+import { pool } from '@/utils/config.js'
+import { ModelError } from '@/domain/exceptions/modelError'
 import {
-  executeQuery,
-  DatabaseError,
-  executeSingleResultQuery
-} from '../../../utils/dbUtils.js'
-import { pool } from '../../../assets/config.js'
+  StatusResponse,
+  StatusResponseType
+} from '@/domain/valueObjects/statusResponse'
 
 // __dirname is not available in ES modules, so we need to use import.meta.url
 
 class MessagesModel {
-  static async getAllMessages (): Promise<MessageObjectType[]> {
+  static async getAllMessages (): Promise<MessageType[]> {
     try {
-      const messages = await executeQuery(
+      const messages = await executeQuery<MessageType>(
         pool,
         () => pool.query('SELECT * FROM messages;'),
         'Failed to fetch books from database'
@@ -22,17 +23,12 @@ class MessagesModel {
 
       return messages
     } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error retrieving books', error)
+      throw new ModelError('Error retrieving books')
     }
   }
 
-  static async getAllMessagesByConversation (
-    id: ID
-  ): Promise<MessageObjectType[]> {
-    const data: MessageObjectType[] = await executeQuery(
+  static async getAllMessagesByConversation (id: ID): Promise<MessageType[]> {
+    const data = await executeQuery<MessageType>(
       pool,
       () =>
         pool.query('SELECT * FROM messages WHERE conversation_id = $1;', [id]),
@@ -42,32 +38,35 @@ class MessagesModel {
     return data
   }
 
-  static async getMessageById (id: ID): Promise<MessageObjectType> {
-    const messages = await executeSingleResultQuery(
+  static async getMessageById (id: ID): Promise<MessageType> {
+    const messages = await executeSingleResultQuery<MessageType>(
       pool,
       () => pool.query('SELECT * FROM messages WHERE id = $1;', [id]),
       'Failed to fetch message from PostgreSQL'
     )
+    if (!messages) {
+      throw new ModelError('Message not found')
+    }
     return messages
   }
 
-  static async sendMessage (
-    data: Partial<MessageObjectType>
-  ): Promise<MessageObjectType> {
-    const message = messageObject(data)
-    await executeQuery(
+  static async sendMessage (data: Partial<MessageType>): Promise<MessageType> {
+    const message = createMessage(data)
+    await executeQuery<MessageType>(
       pool,
       () =>
         pool.query(
-          `INSERT INTO messages (id, conversation_id, user_id, message, created_in, read) 
-        VALUES ($1, $2, $3, $4, $5, $6);`,
+          `INSERT INTO messages (id, conversation_id, sender_id, receiver_id, content, created_at, read, metadata) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`,
           [
             message.id,
+            message.sender_id,
+            message.receiver_id,
             message.conversation_id,
-            message.user_id,
-            message.message,
-            message.created_in,
-            message.read
+            message.content,
+            message.created_at,
+            message.read,
+            message.metadata
           ]
         ),
       'Error creating message'
@@ -75,33 +74,24 @@ class MessagesModel {
     return message
   }
 
-  static async deleteMessage (id: ID): Promise<{ message: string }> {
+  static async deleteMessage (id: ID): Promise<StatusResponseType> {
     // Check if the message exists
     try {
-      const result = await executeSingleResultQuery(
-        pool,
-        () => pool.query('SELECT * FROM messages WHERE id = $1;', [id]),
-        'Failed to find message to delete'
-      )
-      if (!result) throw new Error('Message not found')
-      await executeQuery(
+      await executeQuery<MessageType>(
         pool,
         () => pool.query('DELETE FROM messages WHERE id = $1;', [id]),
         'Error deleting message'
       )
-      return { message: 'Mensaje eliminado con éxito' } // Mensaje de éxito
+      return StatusResponse.success('Message deleted successfully') // Mensaje de éxito
     } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(`Error deleting message with ID ${id}`, error)
+      throw new ModelError(`Error deleting message with ID ${id}`)
     }
   }
 
   static async updateMessage (
     id: ID,
-    data: Partial<MessageObjectType>
-  ): Promise<MessageObjectType> {
+    data: Partial<MessageType>
+  ): Promise<MessageType> {
     try {
       const [keys, values] = Object.entries(data)
       const updateString = keys.reduce((last, key, index) => {
@@ -109,7 +99,7 @@ class MessagesModel {
         return `${last}${prefix}${key} = $${index + 1}`
       })
 
-      const result = await executeSingleResultQuery(
+      const result = await executeSingleResultQuery<MessageType>(
         pool,
         () =>
           pool.query(
@@ -120,18 +110,17 @@ class MessagesModel {
           ),
         `Failed to update message with ID ${id}`
       )
-
+      if (!result) {
+        throw new ModelError('Message not found')
+      }
       return result
     } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError(`Error updating message with ID ${id}`, error)
+      throw new ModelError(`Error updating message with ID ${id}`)
     }
   }
-  static async getMessagesByQuery (query: string): Promise<MessageObjectType[]> {
+  static async getMessagesByQuery (query: string): Promise<MessageType[]> {
     try {
-      const messages = await executeQuery(
+      const messages = await executeQuery<MessageType>(
         pool,
         () =>
           pool.query('SELECT * FROM messages WHERE message ILIKE $1;', [
@@ -141,10 +130,7 @@ class MessagesModel {
       )
       return messages
     } catch (error) {
-      if (error instanceof DatabaseError) {
-        throw error
-      }
-      throw new DatabaseError('Error retrieving messages by query', error)
+      throw new ModelError('Error retrieving messages by query')
     }
   }
 }

@@ -1,9 +1,9 @@
-import { IEmailsModel } from '../../domain/types/models'
 import express from 'express'
-import { ID } from '../../domain/types/objects'
+import { ID } from '@/shared/types'
+import { EmailInterface } from '@/domain/interfaces/email'
 export class EmailsController {
-  private EmailsModel: IEmailsModel
-  constructor ({ EmailsModel }: { EmailsModel: IEmailsModel }) {
+  private EmailsModel: EmailInterface
+  constructor ({ EmailsModel }: { EmailsModel: EmailInterface }) {
     this.EmailsModel = EmailsModel
   }
 

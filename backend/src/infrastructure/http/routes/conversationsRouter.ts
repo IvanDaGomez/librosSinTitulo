@@ -1,13 +1,14 @@
 import { RequestHandler, Router } from 'express'
-import { ConversationsController } from '../../controllers/conversations/conversationsController.js'
-import { IConversationsModel, IUsersModel } from '../../../../domain/types/models.js'
+import { ConversationsController } from '@/application/controllers/conversations/conversationsController.js'
+import { ConversationInterface } from '@/domain/interfaces/conversation'
+import { UserInterface } from '@/domain/interfaces/user'
 
 export const createConversationsRouter = ({
   ConversationsModel,
   UsersModel
 }: {
-  ConversationsModel: IConversationsModel
-  UsersModel: IUsersModel
+  ConversationsModel: ConversationInterface
+  UsersModel: UserInterface
 }) => {
   // Crear una instancia del controlador de conversaciones
   const conversationsController = new ConversationsController({

@@ -1,7 +1,8 @@
 import { PartialUserType, UserType } from '@/domain/entities/user'
 import { ServiceError } from '@/domain/exceptions/serviceError'
 import { UserInterface } from '@/domain/interfaces/user'
-import { ID } from '@/shared/types'
+import { ID, ImageType } from '@/shared/types'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
 
 export class UserService implements UserInterface {
   private usersModel: UserInterface
@@ -42,6 +43,127 @@ export class UserService implements UserInterface {
     return this.handle(
       () => this.usersModel.getUserById(id),
       `Error getting user with id: ${id}`
+    )
+  }
+
+  async getPhotoAndNameUser (id: ID): Promise<{
+    id: ID
+    profile_picture: ImageType
+    name: string
+  }> {
+    return this.handle(
+      () => this.usersModel.getPhotoAndNameUser(id),
+      `Error getting photo and name for user with id: ${id}`
+    )
+  }
+
+  async getEmailById (id: ID): Promise<{ email: string; name: string }> {
+    return this.handle(
+      () => this.usersModel.getEmailById(id),
+      `Error getting email for user with id: ${id}`
+    )
+  }
+
+  async getUserByQuery (query: string): Promise<PartialUserType[]> {
+    return this.handle(
+      () => this.usersModel.getUserByQuery(query),
+      `Error getting users by query: ${query}`
+    )
+  }
+
+  async login (data: {
+    email: string
+    password: string
+  }): Promise<PartialUserType> {
+    return this.handle(
+      () => this.usersModel.login(data),
+      `Error logging in user with email: ${data.email}`
+    )
+  }
+
+  async getPassword (id: ID): Promise<string> {
+    return this.handle(
+      () => this.usersModel.getPassword(id),
+      `Error getting password for user with id: ${id}`
+    )
+  }
+
+  async googleLogin (data: {
+    name: string
+    email: string
+    profile_picture: ImageType
+  }): Promise<PartialUserType> {
+    return this.handle(
+      () => this.usersModel.googleLogin(data),
+      `Error with google login for email: ${data.email}`
+    )
+  }
+
+  async facebookLogin (data: {
+    name: string
+    email: string
+    profile_picture: ImageType
+  }): Promise<PartialUserType> {
+    return this.handle(
+      () => this.usersModel.facebookLogin(data),
+      `Error with facebook login for email: ${data.email}`
+    )
+  }
+
+  async getUserByEmail (email: string): Promise<UserType> {
+    return this.handle(
+      () => this.usersModel.getUserByEmail(email),
+      `Error getting user by email: ${email}`
+    )
+  }
+
+  async getUsersByIdList (list: ID[], l: number): Promise<UserType[]> {
+    return this.handle(
+      () => this.usersModel.getUsersByIdList(list, l),
+      `Error getting users by id list`
+    )
+  }
+
+  async banUser (value: ID): Promise<StatusResponseType> {
+    return this.handle(
+      () => this.usersModel.banUser(value),
+      `Error banning user with id: ${value}`
+    )
+  }
+
+  async createUser (data: {
+    name: string
+    email: string
+    password: string
+  }): Promise<UserType> {
+    return this.handle(
+      () => this.usersModel.createUser(data),
+      `Error creating user with email: ${data.email}`
+    )
+  }
+
+  async updateUser (id: ID, data: Partial<UserType>): Promise<UserType> {
+    return this.handle(
+      () => this.usersModel.updateUser(id, data),
+      `Error updating user with id: ${id}`
+    )
+  }
+
+  async deleteUser (id: ID): Promise<StatusResponseType> {
+    return this.handle(
+      () => this.usersModel.deleteUser(id),
+      `Error deleting user with id: ${id}`
+    )
+  }
+
+  async getBalance (id: ID): Promise<{
+    pending: number
+    available: number
+    incoming: number
+  }> {
+    return this.handle(
+      () => this.usersModel.getBalance(id),
+      `Error getting balance for user with id: ${id}`
     )
   }
 }
