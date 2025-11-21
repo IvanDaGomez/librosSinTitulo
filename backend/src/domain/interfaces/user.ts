@@ -1,6 +1,6 @@
 import { ID, ImageType } from '@/shared/types'
-import { PartialUserType, UserType } from '@/domain/entities/user'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { PartialUserType, UserType } from '@/domain/entities/user.js'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 
 export interface UserInterface {
   getAllUsers(): Promise<UserType[]>
@@ -15,10 +15,11 @@ export interface UserInterface {
   getUserByQuery(query: string): Promise<PartialUserType[]>
   login(data: { email: string; password: string }): Promise<PartialUserType>
   getPassword(id: ID): Promise<string>
-  googleLogin(data: { 
-    name: string 
+  googleLogin(data: {
+    name: string
     email: string
-    profile_picture: ImageType }): Promise<PartialUserType>
+    profile_picture: ImageType
+  }): Promise<PartialUserType>
   facebookLogin(data: {
     name: string
     email: string

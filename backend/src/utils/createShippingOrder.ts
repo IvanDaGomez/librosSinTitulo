@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 
-import { ShippingDetailsType } from '@/domain/entities/shippingDetails'
-import { executeQuery } from '@/utils/dbUtils'
+import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
+import { executeQuery } from '@/utils/dbUtils.js'
 
 // Create an order in Interrapidisimo
 async function createInterrapidisimoOrder (orderData: {

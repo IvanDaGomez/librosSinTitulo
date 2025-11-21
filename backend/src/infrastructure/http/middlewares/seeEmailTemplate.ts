@@ -1,6 +1,6 @@
 import express from 'express'
 import { templates, DataType } from '@/utils/email/htmlTemplates.js'
-import { mockEmailData } from './mockEmailData'
+import { mockEmailData } from './mockEmailData.js'
 
 export function seeEmailTemplate (
   req: express.Request,

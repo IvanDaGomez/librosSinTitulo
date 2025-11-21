@@ -1,14 +1,14 @@
 import fs from 'node:fs/promises'
 import { createConversation } from '@/domain/mappers/createConversation.js'
-import { ConversationType } from '@/domain/entities/conversation'
+import { ConversationType } from '@/domain/entities/conversation.js'
 import { ID } from '@/shared/types'
 import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
-import { pool } from '@/utils/config'
-import { ModelError } from '@/domain/exceptions/modelError'
+import { pool } from '@/utils/config.js'
+import { ModelError } from '@/domain/exceptions/modelError.js'
 import {
   StatusResponse,
   StatusResponseType
-} from '@/domain/valueObjects/statusResponse'
+} from '@/domain/valueObjects/statusResponse.js'
 
 // __dirname is not available in ES modules, so we need to use import.meta.url
 

@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 import { createNotification } from '@/domain/mappers/createNotification.js'
-import { NotificationType } from '@/domain/entities/notification'
+import { NotificationType } from '@/domain/entities/notification.js'
 import { ID } from '@/shared/types'
-import { __dirname } from '@/utils/config'
+import { __dirname } from '@/utils/config.js'
 import path from 'node:path'
 // __dirname is not available in ES modules, so we need to use import.meta.url
 

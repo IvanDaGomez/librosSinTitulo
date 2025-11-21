@@ -4,9 +4,9 @@ import {
   UserType,
   LocationType,
   CollectionItem
-} from '@/domain/entities/user'
-import { parseValue } from '@/utils/parseValue'
-import UserCategories from '../valueObjects/userCategories'
+} from '@/domain/entities/user.js'
+import { parseValue } from '@/utils/parseValue.js'
+import UserCategories from '../valueObjects/userCategories.js'
 
 function createUser(data: Partial<UserType>, fullInfo: false): PartialUserType
 function createUser(data: Partial<UserType>, fullInfo: true): UserType

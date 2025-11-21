@@ -1,8 +1,8 @@
 import { RequestHandler, Router } from 'express'
 import { TransactionsController } from '@/application/controllers/transactions/transactionsController.js'
-import { TransactionInterface } from '@/domain/interfaces/transaction'
-import { UserInterface } from '@/domain/interfaces/user'
-import { BookInterface } from '@/domain/interfaces/book'
+import { TransactionInterface } from '@/domain/interfaces/transaction.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
 
 export const createTransactionsRouter = ({
   TransactionsModel,

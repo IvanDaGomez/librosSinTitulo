@@ -1,13 +1,13 @@
-import { createNotification } from '@/domain/mappers/createNotification'
-import { NotificationType } from '@/domain/entities/notification'
+import { createNotification } from '@/domain/mappers/createNotification.js'
+import { NotificationType } from '@/domain/entities/notification.js'
 import { ID } from '@/shared/types'
-import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
 import { pool } from '@/utils/config.js'
-import { ModelError } from '@/domain/exceptions/modelError'
+import { ModelError } from '@/domain/exceptions/modelError.js'
 import {
   StatusResponse,
   StatusResponseType
-} from '@/domain/valueObjects/statusResponse'
+} from '@/domain/valueObjects/statusResponse.js'
 
 export class NotificationsModel {
   static async getAllNotifications (): Promise<NotificationType[]> {

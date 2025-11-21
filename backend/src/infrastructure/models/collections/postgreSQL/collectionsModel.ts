@@ -3,14 +3,14 @@ import { calculateMatchScore } from '@/utils/calculateMatchScore.js'
 import { CollectionType } from '@/domain/entities/collection.js'
 import { ID } from '@/shared/types'
 import { changeToArray } from '@/utils/changeToArray.js'
-import { pool } from '@/utils/config'
+import { pool } from '@/utils/config.js'
 import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
-import { ModelError } from '@/domain/exceptions/modelError'
-import { CollectionInterface } from '@/domain/interfaces/collection'
+import { ModelError } from '@/domain/exceptions/modelError.js'
+import { CollectionInterface } from '@/domain/interfaces/collection.js'
 import {
   StatusResponse,
   StatusResponseType
-} from '@/domain/valueObjects/statusResponse'
+} from '@/domain/valueObjects/statusResponse.js'
 
 // __dirname is not available in ES modules, so we need to use import.meta.url
 

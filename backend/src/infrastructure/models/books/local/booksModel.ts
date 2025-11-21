@@ -11,8 +11,8 @@ import { AuthToken } from '@/domain/entities/authToken.js'
 import { CollectionType } from '@/domain/entities/collection.js'
 import { BookToReviewType, BookType } from '@/domain/entities/book.js'
 import path from 'node:path'
-import { __dirname } from '@/utils/config'
-import { filterBooksByFilters } from '@/infrastructure/models/books/local/filterBooksByFilters'
+import { __dirname } from '@/utils/config.js'
+import { filterBooksByFilters } from '@/infrastructure/models/books/local/filterBooksByFilters.js'
 import { BookInterface } from '@/domain/interfaces/book.js'
 import {
   StatusResponse,
@@ -51,6 +51,7 @@ class BooksModel implements BookInterface {
   async getBooksByQuery (
     query: string,
     l: number,
+    user?: AuthToken,
     books: BookType[] = []
   ): Promise<Partial<BookType>[]> {
     if (books.length === 0) {
@@ -130,6 +131,7 @@ class BooksModel implements BookInterface {
     const resultBooks: Partial<BookType>[] = await this.getBooksByQuery(
       query,
       limit,
+      undefined,
       books
     )
 

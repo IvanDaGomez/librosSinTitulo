@@ -1,5 +1,5 @@
 import { ID, ISOString } from '@/shared/types'
-import { MessageType } from './message'
+import { MessageType } from './message.js'
 
 export type ConversationType = {
   id: ID

@@ -1,4 +1,4 @@
-import { BookType } from '@/domain/entities/book'
+import { BookType } from '@/domain/entities/book.js'
 
 export function getBookKeyInfo (book: Partial<BookType>): string[] {
   return [

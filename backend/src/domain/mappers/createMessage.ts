@@ -1,6 +1,6 @@
-import { MessageType } from '@/domain/entities/message'
+import { MessageType } from '@/domain/entities/message.js'
 import { ID, ISOString } from '@/shared/types'
-import { parseValue } from '@/utils/parseValue'
+import { parseValue } from '@/utils/parseValue.js'
 
 const createMessage = (data: Partial<MessageType>): MessageType => {
   return {

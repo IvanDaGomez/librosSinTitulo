@@ -12,7 +12,7 @@ import {
   DataType,
   messageResponseTemplate,
   messageQuestionTemplate
-} from '@/utils/email/htmlTemplates'
+} from '@/utils/email/htmlTemplates.js'
 dotenv.config()
 
 type emailToSendType =

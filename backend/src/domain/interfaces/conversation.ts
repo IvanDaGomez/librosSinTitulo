@@ -1,6 +1,6 @@
 import { ID } from '@/shared/types'
-import { ConversationType } from '@/domain/entities/conversation'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { ConversationType } from '@/domain/entities/conversation.js'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 
 export interface ConversationInterface {
   getAllConversations(l?: number): Promise<ConversationType[]>

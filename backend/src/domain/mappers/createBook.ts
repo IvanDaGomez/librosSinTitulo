@@ -1,6 +1,6 @@
-import { BookToReviewType, BookType } from '@/domain/entities/book'
+import { BookToReviewType, BookType } from '@/domain/entities/book.js'
 import { ISOString } from '@/shared/types'
-import { parseValue } from '@/utils/parseValue'
+import { parseValue } from '@/utils/parseValue.js'
 
 // Overload signatures
 function createBook(data: Partial<BookType>, fullInfo: true): BookType

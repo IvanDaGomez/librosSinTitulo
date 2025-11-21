@@ -2,9 +2,9 @@ import { PaymentCreateRequest } from 'mercadopago/dist/clients/payment/create/ty
 import type { Options } from 'mercadopago/dist/types.d.ts'
 
 import { Shipments } from 'mercadopago/dist/clients/commonTypes'
-import { BookType } from '@/domain/entities/book'
-import { UserType } from '@/domain/entities/user'
-import { MercadoPagoInput } from '@/domain/entities/mercadoPago'
+import { BookType } from '@/domain/entities/book.js'
+import { UserType } from '@/domain/entities/user.js'
+import { MercadoPagoInput } from '@/domain/entities/mercadoPago.js'
 export function createMercadoPagoPayment ({
   form_data,
   partial_data,

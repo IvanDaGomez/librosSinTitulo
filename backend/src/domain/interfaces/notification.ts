@@ -1,6 +1,6 @@
-import { NotificationType } from '@/domain/entities/notification'
+import { NotificationType } from '@/domain/entities/notification.js'
 import { ID } from '@/shared/types'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 
 export interface NotificationInterface {
   getAllNotifications(l?: number): Promise<NotificationType[]>

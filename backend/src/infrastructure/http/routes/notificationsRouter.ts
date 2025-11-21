@@ -1,7 +1,7 @@
 import Router, { RequestHandler } from 'express'
 import { NotificationsController } from '@/application/controllers/notifications/notificationsController.js'
-import { NotificationInterface } from '@/domain/interfaces/notification'
-import { UserInterface } from '@/domain/interfaces/user'
+import { NotificationInterface } from '@/domain/interfaces/notification.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
 export const createNotificationsRouter = ({
   NotificationsModel,
   UsersModel

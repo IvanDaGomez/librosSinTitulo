@@ -1,7 +1,8 @@
 import multer from 'multer'
 import path from 'node:path'
-import { Pool } from 'pg'
+import pg from 'pg'
 import dotenv from 'dotenv'
+const { Pool } = pg
 dotenv.config()
 import { fileURLToPath } from 'node:url'
 import { Payment, MercadoPagoConfig, Preference } from 'mercadopago'

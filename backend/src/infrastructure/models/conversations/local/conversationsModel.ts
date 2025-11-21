@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises'
 import { createConversation } from '@/domain/mappers/createConversation.js'
-import { ConversationType } from '@/domain/entities/conversation'
+import { ConversationType } from '@/domain/entities/conversation.js'
 import { ID } from '@/shared/types'
 import path from 'node:path'
-import { __dirname } from '@/utils/config'
+import { __dirname } from '@/utils/config.js'
 
 const conversationPath = path.join(__dirname, 'data', 'conversations.json')
 export class ConversationsModel {

@@ -1,6 +1,6 @@
 import express from 'express'
 import { ID } from '@/shared/types'
-import { EmailInterface } from '@/domain/interfaces/email'
+import { EmailInterface } from '@/domain/interfaces/email.js'
 export class EmailsController {
   private EmailsModel: EmailInterface
   constructor ({ EmailsModel }: { EmailsModel: EmailInterface }) {

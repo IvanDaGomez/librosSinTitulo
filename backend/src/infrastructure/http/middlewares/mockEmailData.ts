@@ -1,4 +1,4 @@
-import { DataType } from '@/utils/email/htmlTemplates'
+import { DataType } from '@/utils/email/htmlTemplates.js'
 
 export const mockEmailData: Required<DataType> = {
   book: {

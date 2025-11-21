@@ -1,10 +1,10 @@
-import { AuthToken } from '@/domain/entities/authToken'
-import { BookToReviewType, BookType } from '@/domain/entities/book'
-import { CollectionType } from '@/domain/entities/collection'
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { BookToReviewType, BookType } from '@/domain/entities/book.js'
+import { CollectionType } from '@/domain/entities/collection.js'
 import { ID } from '@/shared/types'
-import { UserType } from '@/domain/entities/user'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
-import { UserInterface } from './user'
+import { UserType } from '@/domain/entities/user.js'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
+import { UserInterface } from './user.js'
 
 export interface BookInterface {
   getAllBooks(): Promise<BookType[]>
@@ -12,7 +12,9 @@ export interface BookInterface {
   getBooksByQuery(
     query: string,
     l: number,
-    books?: BookType[]
+    user?: AuthToken,
+    books?: BookType[],
+    userService?: UserInterface
   ): Promise<Partial<BookType>[]>
   getBooksByQueryWithFilters(
     query: string,

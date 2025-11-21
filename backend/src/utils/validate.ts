@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import BookCategories from '@/domain/valueObjects/bookCategories'
-import UserCategories from '@/domain/valueObjects/userCategories'
-import NotificationCategories from '@/domain/valueObjects/notificationCategories'
+import BookCategories from '@/domain/valueObjects/bookCategories.js'
+import UserCategories from '@/domain/valueObjects/userCategories.js'
+import NotificationCategories from '@/domain/valueObjects/notificationCategories.js'
 // PENDIENTE EL PATCH
 
 const userSchema = z.object({

@@ -1,11 +1,12 @@
-import { getBookKeyInfo } from '@/infrastructure/models/books/local/getBookKeyInfo'
-import { UsersModel } from '@/infrastructure/models/users/local/usersModel'
-import { AuthToken } from '@/domain/entities/authToken'
-import { BookType } from '@/domain/entities/book'
-import { UserInterface } from '@/domain/interfaces/user'
+import { getBookKeyInfo } from '@/infrastructure/models/books/local/getBookKeyInfo.js'
+import { UsersModel } from '@/infrastructure/models/users/local/usersModel.js'
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { BookType } from '@/domain/entities/book.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { UserType } from '@/domain/entities/user.js'
 
 export async function updateUserSearchHistory (
-  userObj: AuthToken,
+  user: UserType,
   book: Partial<BookType>,
   action: 'query' | 'openedBook',
   userService: UserInterface
@@ -16,8 +17,6 @@ export async function updateUserSearchHistory (
   const openedBookIncrement: number = 5
   const decrement: number = 2
 
-  const userId = userObj.id
-  const user = await userService.getUserById(userId)
   const bookKeyInfo = getBookKeyInfo(book)
   const userPreferences = user.search_history || {}
   // 🔹 Restar 1 punto a todos (mínimo 0)
@@ -37,5 +36,5 @@ export async function updateUserSearchHistory (
     )
   }
   // Guardar los cambios en la base de datos
-  await userService.updateUser(userId, { search_history: userPreferences })
+  await userService.updateUser(user.id, { search_history: userPreferences })
 }

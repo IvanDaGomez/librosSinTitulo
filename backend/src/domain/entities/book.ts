@@ -8,7 +8,7 @@ import {
   GenreType,
   LanguageType,
   StateType
-} from '@/domain/valueObjects/bookCategories'
+} from '@/domain/valueObjects/bookCategories.js'
 
 export type BookType = {
   id: ID

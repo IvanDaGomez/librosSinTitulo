@@ -1,10 +1,10 @@
-import { validateTransaction } from '@/utils/validate'
+import { validateTransaction } from '@/utils/validate.js'
 
 import express from 'express'
 import { ID, ISOString } from '@/shared/types'
 import { TransactionType } from '@/domain/entities/transaction.js'
-import { validateSignature } from '@/utils/validateSignature'
-import { payment, preference } from '@/utils/config'
+import { validateSignature } from '@/utils/validateSignature.js'
+import { payment, preference } from '@/utils/config.js'
 import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
 import { TransactionInterface } from '@/domain/interfaces/transaction.js'
 import { UserInterface } from '@/domain/interfaces/user.js'
@@ -13,7 +13,7 @@ import { TransactionService } from '@/application/services/transactions/transact
 import { UserService } from '@/application/services/users/userService.js'
 import { BookService } from '@/application/services/books/bookService.js'
 import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
-import { createMercadoPagoPayment } from '../../handlers/createMercadoPagoPayment'
+import { createMercadoPagoPayment } from '../../handlers/createMercadoPagoPayment.js'
 
 /**
  * Temporary local stubs and types to match external helpers and incoming webhook shapes.

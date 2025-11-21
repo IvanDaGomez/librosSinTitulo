@@ -1,18 +1,21 @@
 // import { crearCollage } from '../../utils/createCollage.js'
-import { validateCollection, validatePartialCollection } from '@/utils/validate'
-import { replaceDashesWithSpaces } from '@/utils/parseSpaces'
+import {
+  validateCollection,
+  validatePartialCollection
+} from '@/utils/validate.js'
+import { replaceDashesWithSpaces } from '@/utils/parseSpaces.js'
 
 import express from 'express'
 import { ID, ImageType, ISOString } from '@/shared/types'
-import { CollectionType } from '@/domain/entities/collection'
-import { BookType } from '@/domain/entities/book'
-import BookCategories from '@/domain/valueObjects/bookCategories'
-import { AuthToken } from '@/domain/entities/authToken'
-import { CollectionInterface } from '@/domain/interfaces/collection'
-import { BookInterface } from '@/domain/interfaces/book'
-import { BookService } from '@/application/services/books/bookService'
-import { CollectionService } from '@/application/services/collections/collectionService'
-import { ApiResponse } from '@/domain/valueObjects/apiResponse'
+import { CollectionType } from '@/domain/entities/collection.js'
+import { BookType } from '@/domain/entities/book.js'
+import BookCategories from '@/domain/valueObjects/bookCategories.js'
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { CollectionInterface } from '@/domain/interfaces/collection.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { BookService } from '@/application/services/books/bookService.js'
+import { CollectionService } from '@/application/services/collections/collectionService.js'
+import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
 class CollectionsController {
   collectionService: CollectionInterface
   bookService: BookInterface

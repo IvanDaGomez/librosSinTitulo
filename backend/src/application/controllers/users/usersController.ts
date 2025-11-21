@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { validateUser, validatePartialUser } from '@/utils/validate'
+import { validateUser, validatePartialUser } from '@/utils/validate.js'
 import jwt from 'jsonwebtoken'
 import { sendEmail } from '@/utils/email/sendEmail.js'
 import { createEmail } from '@/utils/email/htmlEmails.js'
@@ -15,7 +15,7 @@ import {
   updateUserFavorites
 } from '../../handlers/helperFunctions.js'
 import express from 'express'
-import { replaceDashesWithSpaces } from '@/utils/parseSpaces'
+import { replaceDashesWithSpaces } from '@/utils/parseSpaces.js'
 import { PartialUserType, UserType } from '@/domain/entities/user.js'
 import { ID, ImageType, ISOString } from '@/shared/types'
 
@@ -28,7 +28,6 @@ import { createUser } from '@/domain/mappers/createUser.js'
 import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
 import { UserService } from '@/application/services/users/userService.js'
 import { BookService } from '@/application/services/books/bookService.js'
-import { A } from '@upstash/redis/zmscore-CjoCv9kz.js'
 import { TransactionService } from '@/application/services/transactions/transactionService.js'
 const SECRET_KEY: string = process.env.JWT_SECRET ?? ''
 export class UsersController {

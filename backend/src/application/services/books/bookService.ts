@@ -1,12 +1,13 @@
-import { AuthToken } from '@/domain/entities/authToken'
-import { BookToReviewType, BookType } from '@/domain/entities/book'
-import { CollectionType } from '@/domain/entities/collection'
-import { UserType } from '@/domain/entities/user'
-import { ServiceError } from '@/domain/exceptions/serviceError'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { BookToReviewType, BookType } from '@/domain/entities/book.js'
+import { CollectionType } from '@/domain/entities/collection.js'
+import { UserType } from '@/domain/entities/user.js'
+import { ServiceError } from '@/domain/exceptions/serviceError.js'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 import { ID } from '@/shared/types'
-import { UserInterface } from '@/domain/interfaces/user'
-import { BookInterface } from '@/domain/interfaces/book'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { updateData } from '@/application/handlers/updateData.js'
 
 export class BookService implements BookInterface {
   private booksModel: BookInterface
@@ -46,13 +47,27 @@ export class BookService implements BookInterface {
   getBooksByQuery (
     query: string,
     l: number,
-    books?: BookType[]
+    user?: AuthToken,
+    books?: BookType[],
+    userService?: UserInterface
   ): Promise<Partial<BookType>[]> {
     if (l < 1) l = 10
-    return this.handle(
-      () => this.booksModel.getBooksByQuery(query, l, books),
-      `Error getting books by query: ${query}`
-    )
+    return this.handle(async () => {
+      const results = await this.booksModel.getBooksByQuery(
+        query,
+        l,
+        user,
+        books
+      )
+      // Si hay usuario en la sesión, actualiza las estadísticas de los libros
+      if (user && userService) {
+        for (const book of results.slice(0, 3)) {
+          const bookCopy: Partial<BookType> = JSON.parse(JSON.stringify(book))
+          await updateData(user, bookCopy, 'query', userService)
+        }
+      }
+      return results
+    }, `Error getting books by query: ${query}`)
   }
 
   getBooksByQueryWithFilters (
@@ -141,8 +156,8 @@ export class BookService implements BookInterface {
     )
   }
 
-  getBooksByIdList (list: ID[], l?: number): Promise<Partial<BookType>[]> {
-    if (l !== undefined && l < 1) l = 10
+  getBooksByIdList (list: ID[]): Promise<Partial<BookType>[]> {
+    const l = list.length
     return this.handle(
       () => this.booksModel.getBooksByIdList(list, l),
       'Error getting books by id list'

@@ -1,9 +1,9 @@
-import { CollectionType } from '@/domain/entities/collection'
+import { CollectionType } from '@/domain/entities/collection.js'
 import { ID } from '@/shared/types'
-import { AuthToken } from '@/domain/entities/authToken'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
-import { ServiceError } from '@/domain/exceptions/serviceError'
-import { CollectionInterface } from '@/domain/interfaces/collection'
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
+import { ServiceError } from '@/domain/exceptions/serviceError.js'
+import { CollectionInterface } from '@/domain/interfaces/collection.js'
 
 export class CollectionService implements CollectionInterface {
   private collectionsModel: CollectionInterface

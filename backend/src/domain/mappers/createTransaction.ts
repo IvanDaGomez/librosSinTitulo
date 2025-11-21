@@ -1,7 +1,7 @@
 import { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes'
 import { ID, ISOString } from '@/shared/types'
-import { ShippingDetailsType } from '@/domain/entities/shippingDetails'
-import { TransactionType } from '@/domain/entities/transaction'
+import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
+import { TransactionType } from '@/domain/entities/transaction.js'
 
 // TODO: Revisar si es necesario desglosar más el objeto response para evitar exponer datos innecesarios
 const createTransaction = (data: any): any => {

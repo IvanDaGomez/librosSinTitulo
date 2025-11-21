@@ -1,10 +1,10 @@
-import { TransactionType } from '@/domain/entities/transaction'
+import { TransactionType } from '@/domain/entities/transaction.js'
 import { ID } from '@/shared/types'
-import { BookType } from '@/domain/entities/book'
-import { WithdrawMoneyType } from '@/domain/entities/withdrawMoney'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
-import { ServiceError } from '@/domain/exceptions/serviceError'
-import { TransactionInterface } from '@/domain/interfaces/transaction'
+import { BookType } from '@/domain/entities/book.js'
+import { WithdrawMoneyType } from '@/domain/entities/withdrawMoney.js'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
+import { ServiceError } from '@/domain/exceptions/serviceError.js'
+import { TransactionInterface } from '@/domain/interfaces/transaction.js'
 
 export class TransactionService implements TransactionInterface {
   transactionsModel: TransactionInterface

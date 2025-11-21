@@ -6,18 +6,21 @@ import { sendNotification } from '@/utils/notifications/sendNotification.js'
 import { createNotification } from '@/utils/notifications/createNotification.js'
 import { extractImageUrlsFromFiles } from '@/application/handlers/prepare.js'
 import { updateData } from '../../handlers/updateData.js'
-import { BookInterface } from '@/domain/interfaces/book'
-import { BookToReviewType, BookType } from '@/domain/entities/book'
-import { UserInterface } from '@/domain/interfaces/user'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { BookToReviewType, BookType } from '@/domain/entities/book.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
 import express, { RequestHandler } from 'express'
 import { ParsedQs } from 'qs'
 import { ID, ISOString } from '@/shared/types'
-import { AuthToken } from '@/domain/entities/authToken'
-import { CollectionType } from '@/domain/entities/collection'
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { CollectionType } from '@/domain/entities/collection.js'
 import { BookService } from '@/application/services/books/bookService.js'
 import { UserService } from '@/application/services/users/userService.js'
 import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
 import { createBook, createBookToReview } from '@/domain/mappers/createBook.js'
+import { ControllerError } from '@/domain/exceptions/controllerError.js'
+import { ServiceError } from '@/domain/exceptions/serviceError.js'
+import { ModelError } from '@/domain/exceptions/modelError.js'
 
 // import { helperImg } from '../../assets/helperImg.js'
 
@@ -63,8 +66,7 @@ export class BooksController {
       const update = req.headers.update === book.id
       const user = req.session.user as AuthToken | undefined
       if (update && user) {
-        const bookCopy = JSON.parse(JSON.stringify(book)) // aseguro que es limpio y plano
-        await updateData(user, bookCopy, 'openedBook', this.userService)
+        await updateData(user, book, 'openedBook', this.userService)
       }
       return res.json(ApiResponse.success(book))
     } catch (err) {
@@ -85,18 +87,13 @@ export class BooksController {
 
       const idsArray = ids.split(',').map(id => id.trim()) as ID[]
       if (!ids || ids.length === 0) {
-        return res
-          .status(400)
-          .json(ApiResponse.error('No se proporcionaron IDs', 400))
+        throw new ControllerError('No se proporcionaron IDs de libros', 400)
       }
 
-      const books = await this.bookService.getBooksByIdList(
-        idsArray,
-        idsArray.length
-      )
-      return res.json(books)
-    } catch (err) {
-      next(err)
+      const books = await this.bookService.getBooksByIdList(idsArray)
+      return res.json(ApiResponse.success(books))
+    } catch (err: Error | ServiceError | ModelError | any) {
+      next(new ControllerError(err.message, err.statusCode))
     }
   }
   getBookByQuery = async (
@@ -111,31 +108,28 @@ export class BooksController {
     */
 
     try {
-      let { q, l } = req.query as { q: string; l: string | ParsedQs | number }
+      let { q, l } = req.query as {
+        q: string | undefined
+        l: string | undefined
+      }
+
       // Validación de la query
-      if (q) {
-        q = replaceDashesWithSpaces(q)
-      } else {
-        return res
-          .status(400)
-          .json(
-            ApiResponse.error('El parámetro de consulta "q" es requerido', 400)
-          )
+      if (!q) {
+        throw new ControllerError(
+          'El parámetro de consulta "q" es requerido',
+          400
+        )
       }
-      if (l) l = Number(l)
-      else l = 24
-      // Consigue los libros del modelo
-
-      const books = await this.bookService.getBooksByQuery(q, l)
-
-      // Si hay usuario en la sesión, actualiza las estadísticas de los libros
+      const lParsed = parseInt(l || '10', 10) || 10
       const user = req.session.user as AuthToken | undefined
-      if (user) {
-        for (const book of books.slice(0, 3)) {
-          const bookCopy: Partial<BookType> = JSON.parse(JSON.stringify(book))
-          await updateData(user, bookCopy, 'query', this.userService)
-        }
-      }
+      const books = await this.bookService.getBooksByQuery(
+        q,
+        lParsed,
+        user ?? undefined,
+        undefined,
+        this.userService
+      )
+
       return res.json(ApiResponse.success(books))
     } catch (err) {
       next(err)

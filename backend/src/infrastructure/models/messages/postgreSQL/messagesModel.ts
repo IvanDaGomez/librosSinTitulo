@@ -4,11 +4,11 @@ import { MessageType } from '@/domain/entities/message.js'
 import { ID } from '@/shared/types'
 import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
 import { pool } from '@/utils/config.js'
-import { ModelError } from '@/domain/exceptions/modelError'
+import { ModelError } from '@/domain/exceptions/modelError.js'
 import {
   StatusResponse,
   StatusResponseType
-} from '@/domain/valueObjects/statusResponse'
+} from '@/domain/valueObjects/statusResponse.js'
 
 // __dirname is not available in ES modules, so we need to use import.meta.url
 

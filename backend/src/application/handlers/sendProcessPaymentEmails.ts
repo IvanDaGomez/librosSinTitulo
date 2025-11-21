@@ -6,7 +6,7 @@ import { BookType } from '@/domain/entities/book.js'
 import { ISOString } from '@/shared/types'
 import { TransactionType } from '@/domain/entities/transaction.js'
 import { PartialUserType } from '@/domain/entities/user.js'
-import { UserInterface } from '@/domain/interfaces/user'
+import { UserInterface } from '@/domain/interfaces/user.js'
 
 export async function sendProcessPaymentEmails (data: {
   user: PartialUserType

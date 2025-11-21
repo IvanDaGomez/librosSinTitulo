@@ -1,4 +1,4 @@
-import { ModelError } from '@/domain/exceptions/modelError'
+import { ModelError } from '@/domain/exceptions/modelError.js'
 import { Pool, QueryResult, QueryResultRow } from 'pg'
 
 const MAX_QUERY_RETRIES = 3

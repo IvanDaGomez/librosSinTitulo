@@ -1,5 +1,5 @@
 import { ID } from '@/shared/types'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 
 export interface EmailInterface {
   getAllEmails(): Promise<string[]>

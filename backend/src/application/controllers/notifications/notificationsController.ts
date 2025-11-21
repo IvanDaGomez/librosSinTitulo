@@ -1,11 +1,11 @@
-import { validateNotification } from '@/utils/validate'
+import { validateNotification } from '@/utils/validate.js'
 import express from 'express'
 import { ID } from '@/shared/types'
-import { NotificationType } from '@/domain/entities/notification'
-import { NotificationInterface } from '@/domain/interfaces/notification'
-import { UserInterface } from '@/domain/interfaces/user'
-import { NotificationService } from '@/application/services/notifications/notificationService'
-import { UserService } from '@/application/services/users/userService'
+import { NotificationType } from '@/domain/entities/notification.js'
+import { NotificationInterface } from '@/domain/interfaces/notification.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { NotificationService } from '@/application/services/notifications/notificationService.js'
+import { UserService } from '@/application/services/users/userService.js'
 export class NotificationsController {
   notificationService: NotificationInterface
   userService: UserInterface

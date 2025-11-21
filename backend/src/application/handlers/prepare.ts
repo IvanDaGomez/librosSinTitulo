@@ -1,4 +1,4 @@
-import { BookToReviewType, BookType } from '@/domain/entities/book'
+import { BookToReviewType, BookType } from '@/domain/entities/book.js'
 function extractImageUrlsFromFiles (
   data: Partial<BookType>,
   files: Express.MulterS3.File[]

@@ -1,6 +1,6 @@
-import { NotificationType } from '@/domain/entities/notification'
+import { NotificationType } from '@/domain/entities/notification.js'
 import { ID, ISOString } from '@/shared/types'
-import { parseValue } from '@/utils/parseValue'
+import { parseValue } from '@/utils/parseValue.js'
 
 const createNotification = (
   data: Partial<NotificationType>

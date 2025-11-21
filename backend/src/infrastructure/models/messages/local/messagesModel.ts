@@ -4,12 +4,12 @@ import { MessageType } from '@/domain/entities/message.js'
 import { ID } from '@/shared/types'
 import path from 'node:path'
 // __dirname is not available in ES modules, so we need to use import.meta.url
-import { __dirname } from '@/utils/config'
-import { ModelError } from '@/domain/exceptions/modelError'
+import { __dirname } from '@/utils/config.js'
+import { ModelError } from '@/domain/exceptions/modelError.js'
 import {
   StatusResponse,
   StatusResponseType
-} from '@/domain/valueObjects/statusResponse'
+} from '@/domain/valueObjects/statusResponse.js'
 const messagesPath = path.join(__dirname, 'data', 'messages.json')
 class MessagesModel {
   static async getAllMessages (): Promise<MessageType[]> {

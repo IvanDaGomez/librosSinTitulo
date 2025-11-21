@@ -1,8 +1,8 @@
-import { NotificationType } from '@/domain/entities/notification'
+import { NotificationType } from '@/domain/entities/notification.js'
 import { ID } from '@/shared/types'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
-import { ServiceError } from '@/domain/exceptions/serviceError'
-import { NotificationInterface } from '@/domain/interfaces/notification'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
+import { ServiceError } from '@/domain/exceptions/serviceError.js'
+import { NotificationInterface } from '@/domain/interfaces/notification.js'
 
 export class NotificationService implements NotificationInterface {
   private notificationsModel: NotificationInterface

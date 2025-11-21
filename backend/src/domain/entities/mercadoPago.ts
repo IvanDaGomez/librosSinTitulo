@@ -1,5 +1,5 @@
 import { ID, ISOString } from '@/shared/types'
-import { ShippingDetailsType } from '@/domain/entities/shippingDetails'
+import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
 
 export type MercadoPagoInput = {
   form_data: {

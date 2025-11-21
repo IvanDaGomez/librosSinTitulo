@@ -1,6 +1,6 @@
-import { ConversationType } from '@/domain/entities/conversation'
+import { ConversationType } from '@/domain/entities/conversation.js'
 import { ID, ISOString } from '@/shared/types'
-import { parseValue } from '@/utils/parseValue'
+import { parseValue } from '@/utils/parseValue.js'
 
 const createConversation = (
   data: Partial<ConversationType>

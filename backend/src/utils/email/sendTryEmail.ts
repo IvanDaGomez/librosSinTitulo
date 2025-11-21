@@ -1,4 +1,4 @@
-import { sendEmail } from '@/utils/email/sendEmail'
+import { sendEmail } from '@/utils/email/sendEmail.js'
 
 const accounts = ['info', 'support', 'billing', 'no-reply']
 const randomAccount = accounts[Math.floor(Math.random() * accounts.length)] as

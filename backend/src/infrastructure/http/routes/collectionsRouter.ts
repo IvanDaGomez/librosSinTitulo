@@ -1,8 +1,8 @@
 import Router, { RequestHandler } from 'express'
 import { CollectionsController } from '@/application/controllers/collections/collectionsController.js'
 import { upload } from '@/utils/config.js'
-import { CollectionInterface } from '@/domain/interfaces/collection'
-import { BookInterface } from '@/domain/interfaces/book'
+import { CollectionInterface } from '@/domain/interfaces/collection.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
 
 export const createCollectionsRouter = ({
   CollectionsModel,

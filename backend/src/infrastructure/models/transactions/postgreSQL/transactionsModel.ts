@@ -2,10 +2,10 @@ import { createTransaction } from '@/domain/mappers/createTransaction.js'
 import { ID } from '@/shared/types'
 import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
 import { PaymentResponse } from 'mercadopago/dist/clients/payment/commonTypes.js'
-import { TransactionType } from '@/domain/entities/transaction'
+import { TransactionType } from '@/domain/entities/transaction.js'
 import { WithdrawMoneyType } from '@/domain/entities/withdrawMoney.js'
-import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils'
-import { pool } from '@/utils/config'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
+import { pool } from '@/utils/config.js'
 class TransactionsModel {
   constructor () {}
   async getAllTransactions (): Promise<TransactionType[]> {

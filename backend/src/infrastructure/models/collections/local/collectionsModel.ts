@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises'
-import { createCollection } from '@/domain/mappers/createCollection'
-import { calculateMatchScore } from '@/utils/calculateMatchScore'
-import { CollectionType } from '@/domain/entities/collection'
+import { createCollection } from '@/domain/mappers/createCollection.js'
+import { calculateMatchScore } from '@/utils/calculateMatchScore.js'
+import { CollectionType } from '@/domain/entities/collection.js'
 import { ID } from '@/shared/types'
-import { changeToArray } from '@/utils/changeToArray'
+import { changeToArray } from '@/utils/changeToArray.js'
 import path from 'node:path'
-import { __dirname } from '@/utils/config'
-import { PartialUserType } from '@/domain/entities/user'
+import { __dirname } from '@/utils/config.js'
+import { PartialUserType } from '@/domain/entities/user.js'
 // __dirname is not available in ES modules, so we need to use import.meta.url
 
 const collectionPath = path.join(__dirname, 'data', 'collections.json')

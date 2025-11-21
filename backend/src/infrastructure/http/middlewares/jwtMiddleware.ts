@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { Request, Response, NextFunction } from 'express'
 import { SessionData } from 'express-session'
-import { AuthTokenType } from '@/domain/entities/authToken'
+import { AuthTokenType } from '@/domain/entities/authToken.js'
 interface UserSession {
   user: {} | null // Replace {} with a more specific type if needed
 }

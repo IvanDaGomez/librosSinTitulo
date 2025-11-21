@@ -1,8 +1,8 @@
 import { ID } from '@/shared/types'
-import { ConversationType } from '@/domain/entities/conversation'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
-import { ServiceError } from '@/domain/exceptions/serviceError'
-import { ConversationInterface } from '@/domain/interfaces/conversation'
+import { ConversationType } from '@/domain/entities/conversation.js'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
+import { ServiceError } from '@/domain/exceptions/serviceError.js'
+import { ConversationInterface } from '@/domain/interfaces/conversation.js'
 
 export class ConversationService implements ConversationInterface {
   private conversationsModel: ConversationInterface

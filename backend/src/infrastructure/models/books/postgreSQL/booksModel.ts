@@ -1,17 +1,17 @@
 import fs from 'node:fs/promises'
-import { changeToArray } from '@/utils/changeToArray'
-import { calculateMatchScore } from '@/utils/calculateMatchScore'
+import { changeToArray } from '@/utils/changeToArray.js'
+import { calculateMatchScore } from '@/utils/calculateMatchScore.js'
 import * as tf from '@tensorflow/tfjs'
 import { getBookKeyInfo } from '../local/getBookKeyInfo.js'
-import { getTrends } from '@/utils/getTrends'
-import { createBook, createBookToReview } from '@/domain/mappers/createBook'
+import { getTrends } from '@/utils/getTrends.js'
+import { createBook, createBookToReview } from '@/domain/mappers/createBook.js'
 import { ID, ISOString } from '@/shared/types'
-import { AuthToken } from '@/domain/entities/authToken'
-import { CollectionType } from '@/domain/entities/collection'
-import { Book, BookToReviewType, BookType } from '@/domain/entities/book'
-import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils'
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { CollectionType } from '@/domain/entities/collection.js'
+import { Book, BookToReviewType, BookType } from '@/domain/entities/book.js'
+import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
 import { filterBooksByFilters } from '../local/filterBooksByFilters.js'
-import { pool } from '@/utils/config'
+import { pool } from '@/utils/config.js'
 import { BookInterface } from '@/domain/interfaces/book.js'
 import { ModelError } from '@/domain/exceptions/modelError.js'
 import { UserInterface } from '@/domain/interfaces/user.js'
@@ -63,7 +63,9 @@ class BooksModel implements BookInterface {
   async getBooksByQuery (
     query: string,
     l: number = 24,
-    books: BookType[] = []
+    user?: AuthToken,
+    books: BookType[] = [],
+    userService?: UserInterface
   ): Promise<Partial<BookType>[]> {
     return this.handle(async () => {
       if (books.length === 0) {
@@ -152,7 +154,12 @@ class BooksModel implements BookInterface {
       })
       books = filterBooksByFilters(books, preparedFilters)
       // Perform search based on the query
-      const resultBooks = await this.getBooksByQuery(query, limit, books)
+      const resultBooks = await this.getBooksByQuery(
+        query,
+        limit,
+        undefined,
+        books
+      )
 
       return resultBooks
     }, `Error getting books by query with filters: ${query}`)

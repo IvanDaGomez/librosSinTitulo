@@ -4,10 +4,10 @@ import { ID } from '@/shared/types'
 import { MessageType } from '@/domain/entities/message.js'
 import { ConversationInterface } from '@/domain/interfaces/conversation.js'
 import { MessageInterface } from '@/domain/interfaces/message.js'
-import { MessageService } from '@/application/services/messages/messageService'
-import { ApiResponse } from '@/domain/valueObjects/apiResponse'
-import { createMessage } from '@/domain/mappers/createMessage'
-import { ConversationService } from '@/application/services/conversations/conversationService'
+import { MessageService } from '@/application/services/messages/messageService.js'
+import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
+import { createMessage } from '@/domain/mappers/createMessage.js'
+import { ConversationService } from '@/application/services/conversations/conversationService.js'
 export class MessagesController {
   messageService: MessageInterface
   conversationService: ConversationInterface

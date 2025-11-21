@@ -1,6 +1,6 @@
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 import { ID } from '@/shared/types'
-import { MessageType } from '@/domain/entities/message'
+import { MessageType } from '@/domain/entities/message.js'
 
 export interface MessageInterface {
   getAllMessages(): Promise<MessageType[]>

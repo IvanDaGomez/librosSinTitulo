@@ -1,6 +1,6 @@
 import express from 'express'
 import { sendOpenAIRequest } from '@/application/handlers/sendOpenAIRequest.js'
-import { __dirname, s3 } from '@/utils/config'
+import { __dirname, s3 } from '@/utils/config.js'
 import { deleteFileFromS3 } from '@/utils/aws-assets/deleteObject.js'
 export const AIMode = async (
   req: express.Request,

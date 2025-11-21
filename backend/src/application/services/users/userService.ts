@@ -1,8 +1,8 @@
-import { PartialUserType, UserType } from '@/domain/entities/user'
-import { ServiceError } from '@/domain/exceptions/serviceError'
-import { UserInterface } from '@/domain/interfaces/user'
+import { PartialUserType, UserType } from '@/domain/entities/user.js'
+import { ServiceError } from '@/domain/exceptions/serviceError.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
 import { ID, ImageType } from '@/shared/types'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 
 export class UserService implements UserInterface {
   private usersModel: UserInterface

@@ -15,20 +15,12 @@ import swaggerUI from 'swagger-ui-express'
 import { handleStats } from '@/infrastructure/http/middlewares/handleStats.js'
 import fs from 'node:fs'
 import path from 'node:path'
-import { PORT, __dirname, pool } from '@/utils/config'
+import { PORT, __dirname } from '@/utils/config.js'
 import { corsOptions } from '@/utils/corsOptions.js'
 import { statsHandler } from '@/infrastructure/http/middlewares/statsHandler.js'
 import { seeEmailTemplate } from '@/infrastructure/http/middlewares/seeEmailTemplate.js'
-import { BookInterface } from '@/domain/interfaces/book.js'
-import { UserInterface } from '@/domain/interfaces/user.js'
-import { MessageInterface } from '@/domain/interfaces/message.js'
-import { CollectionInterface } from '@/domain/interfaces/collection.js'
-import { ConversationInterface } from '@/domain/interfaces/conversation.js'
-import { NotificationInterface } from '@/domain/interfaces/notification.js'
-import { TransactionInterface } from '@/domain/interfaces/transaction.js'
-import { EmailInterface } from '@/domain/interfaces/email.js'
-import { ApiResponse } from './domain/valueObjects/apiResponse'
-import { ControllerError } from '@/domain/exceptions/controllerError'
+import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
+import { ControllerError } from '@/domain/exceptions/controllerError.js'
 
 //import { rateLimitter } from './middlewares/rateLimitter.js'
 
@@ -133,7 +125,10 @@ export const createApp = ({
 
   // Endpoint para la documentación de la API
   const swaggerDoc = JSON.parse(
-    fs.readFileSync(path.join(__dirname, 'data', 'swagger.json'), 'utf-8')
+    fs.readFileSync(
+      path.join(__dirname, 'backend', 'data', 'swagger.json'),
+      'utf-8'
+    )
   )
   app.use('/doc', swaggerUI.serve, swaggerUI.setup(swaggerDoc))
 

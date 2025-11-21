@@ -1,8 +1,8 @@
 import { ID } from '@/shared/types'
-import { StatusResponseType } from '@/domain/valueObjects/statusResponse'
-import { ServiceError } from '@/domain/exceptions/serviceError'
-import { MessageType } from '@/domain/entities/message'
-import { MessageInterface } from '@/domain/interfaces/message'
+import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
+import { ServiceError } from '@/domain/exceptions/serviceError.js'
+import { MessageType } from '@/domain/entities/message.js'
+import { MessageInterface } from '@/domain/interfaces/message.js'
 
 export class MessageService implements MessageInterface {
   private messagesModel: MessageInterface

@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises'
-import { pool } from '@/utils/config'
+import { pool } from '@/utils/config.js'
 export async function getTrends (
   n: number = 20,
   model = 'local'

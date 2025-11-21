@@ -1,7 +1,7 @@
-import { BookType } from '@/domain/entities/book'
-import { UserType } from '@/domain/entities/user'
-import { TransactionType } from '@/domain/entities/transaction'
-import { ShippingDetailsType } from '@/domain/entities/shippingDetails'
+import { BookType } from '@/domain/entities/book.js'
+import { UserType } from '@/domain/entities/user.js'
+import { TransactionType } from '@/domain/entities/transaction.js'
+import { ShippingDetailsType } from '@/domain/entities/shippingDetails.js'
 import { Barcode } from 'mercadopago/dist/clients/payment/commonTypes'
 const styles = `
                 :root{

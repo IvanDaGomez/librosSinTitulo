@@ -1,9 +1,9 @@
 import fs from 'node:fs/promises'
 import bcrypt from 'bcrypt'
-import { levenshteinDistance } from '@/utils/levenshteinDistance'
+import { levenshteinDistance } from '@/utils/levenshteinDistance.js'
 import crypto from 'node:crypto'
-import { createUser } from '@/domain/mappers/createUser'
-import { PartialUserType, UserType } from '@/domain/entities/user'
+import { createUser } from '@/domain/mappers/createUser.js'
+import { PartialUserType, UserType } from '@/domain/entities/user.js'
 import { ID, ImageType, ISOString } from '@/shared/types'
 import { calculateMatchScore } from '@/utils/calculateMatchScore.js'
 import { changeToArray } from '@/utils/changeToArray.js'
@@ -12,9 +12,9 @@ import { UserInterface } from '@/domain/interfaces/user.js'
 import {
   StatusResponse,
   StatusResponseType
-} from '@/domain/valueObjects/statusResponse'
-import { ModelError } from '@/domain/exceptions/modelError'
-import { pool, SALT_ROUNDS } from '@/utils/config'
+} from '@/domain/valueObjects/statusResponse.js'
+import { ModelError } from '@/domain/exceptions/modelError.js'
+import { pool, SALT_ROUNDS } from '@/utils/config.js'
 class UsersModel implements UserInterface {
   constructor () {}
   private getEssencialFields (): string[] {

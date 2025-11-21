@@ -1,5 +1,5 @@
 import { ID, ImageType, ISOString } from '@/shared/types'
-import UserCategories from '@/domain/valueObjects/userCategories'
+import UserCategories from '@/domain/valueObjects/userCategories.js'
 
 export type CollectionItem = {
   name: string

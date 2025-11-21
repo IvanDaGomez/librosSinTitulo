@@ -1,6 +1,6 @@
 import { RequestHandler, Router } from 'express'
-import { BooksController } from '@/application/controllers/books/booksController'
-import { upload } from '@/utils/config'
+import { BooksController } from '@/application/controllers/books/booksController.js'
+import { upload } from '@/utils/config.js'
 import { generateResponse } from '@/application/controllers/separated/generateResponse.js'
 import { AIMode } from '@/application/controllers/books/aiMode.js'
 import { BookInterface } from '@/domain/interfaces/book.js'

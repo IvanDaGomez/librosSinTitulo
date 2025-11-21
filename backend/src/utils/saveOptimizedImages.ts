@@ -1,6 +1,6 @@
 import path from 'node:path'
 import sharp from 'sharp'
-import { __dirname } from '@/utils/config'
+import { __dirname } from '@/utils/config.js'
 function optimizeImage (
   path: string,
   widthSize: number,

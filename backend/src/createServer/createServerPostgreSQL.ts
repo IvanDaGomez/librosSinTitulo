@@ -7,9 +7,9 @@ import { NotificationsModel } from '@/infrastructure/models/notifications/postgr
 import { TransactionsModel } from '@/infrastructure/models/transactions/postgreSQL/transactionsModel.js'
 import { EmailsModel } from '@/infrastructure/models/emails/postgreSQL/emailsModel.js'
 import { CollectionsModel } from '@/infrastructure/models/collections/postgreSQL/collectionsModel.js'
-import { pool } from '@/utils/config'
-import { BookInterface } from '@/domain/interfaces/book'
-import { UserInterface } from '@/domain/interfaces/user'
+import { pool } from '@/utils/config.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
 
 // Maximum number of connection retries
 const MAX_RETRIES = 5

@@ -1,11 +1,11 @@
 import express from 'express'
 import { ID } from '@/shared/types'
-import { ConversationType } from '@/domain/entities/conversation'
-import { ConversationInterface } from '@/domain/interfaces/conversation'
-import { UserInterface } from '@/domain/interfaces/user'
-import { ConversationService } from '@/application/services/conversations/conversationService'
-import { UserService } from '@/application/services/users/userService'
-import { ApiResponse } from '@/domain/valueObjects/apiResponse'
+import { ConversationType } from '@/domain/entities/conversation.js'
+import { ConversationInterface } from '@/domain/interfaces/conversation.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { ConversationService } from '@/application/services/conversations/conversationService.js'
+import { UserService } from '@/application/services/users/userService.js'
+import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
 export class ConversationsController {
   conversationService: ConversationInterface
   userService: UserInterface

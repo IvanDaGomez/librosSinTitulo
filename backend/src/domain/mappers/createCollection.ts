@@ -1,6 +1,6 @@
-import { CollectionType } from '@/domain/entities/collection'
+import { CollectionType } from '@/domain/entities/collection.js'
 import { ISOString } from '@/shared/types'
-import { parseValue } from '@/utils/parseValue'
+import { parseValue } from '@/utils/parseValue.js'
 
 const createCollection = (data: Partial<CollectionType>): CollectionType => {
   return {

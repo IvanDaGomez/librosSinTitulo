@@ -1,4 +1,4 @@
-import { BookType } from '@/domain/entities/book'
+import { BookType } from '@/domain/entities/book.js'
 import { getBookKeyInfo } from './getBookKeyInfo.js'
 
 export function filterBooksByFilters (

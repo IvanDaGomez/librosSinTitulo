@@ -1,8 +1,8 @@
 import { RequestHandler, Router } from 'express'
 // import { upload } from '../../assets/config.js'
-import { MessagesController } from '@/application/controllers/messages/messagesController'
-import { MessageInterface } from '@/domain/interfaces/message'
-import { ConversationInterface } from '@/domain/interfaces/conversation'
+import { MessagesController } from '@/application/controllers/messages/messagesController.js'
+import { MessageInterface } from '@/domain/interfaces/message.js'
+import { ConversationInterface } from '@/domain/interfaces/conversation.js'
 export const createMessagesRouter = ({
   MessagesModel,
   ConversationsModel

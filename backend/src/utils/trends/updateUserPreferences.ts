@@ -1,9 +1,10 @@
 import { getBookKeyInfo } from '@/infrastructure/models/books/local/getBookKeyInfo.js'
-import { AuthToken } from '@/domain/entities/authToken'
-import { BookType } from '@/domain/entities/book'
-import { UserInterface } from '@/domain/interfaces/user'
+import { AuthToken } from '@/domain/entities/authToken.js'
+import { BookType } from '@/domain/entities/book.js'
+import { UserInterface } from '@/domain/interfaces/user.js'
+import { UserType } from '@/domain/entities/user.js'
 export async function updateUserPreferences (
-  userObj: AuthToken,
+  user: UserType,
   book: Partial<BookType>,
   action: 'query' | 'openedBook',
   userService: UserInterface
@@ -28,8 +29,6 @@ export async function updateUserPreferences (
   const openedBookIncrement: number = 4
   const decrement: number = 1
 
-  const userId = userObj.id
-  const user = await userService.getUserById(userId)
   const bookKeyInfo = getBookKeyInfo(book)
   const userPreferences = user?.preferences || {}
 
@@ -49,5 +48,5 @@ export async function updateUserPreferences (
     )
   }
 
-  await userService.updateUser(userId, { preferences: userPreferences })
+  await userService.updateUser(user.id, { preferences: userPreferences })
 }
