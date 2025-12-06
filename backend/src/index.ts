@@ -21,6 +21,8 @@ import { statsHandler } from '@/infrastructure/http/middlewares/statsHandler.js'
 import { seeEmailTemplate } from '@/infrastructure/http/middlewares/seeEmailTemplate.js'
 import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
 import { ControllerError } from '@/domain/exceptions/controllerError.js'
+import { ServiceError } from './domain/exceptions/serviceError'
+import { ModelError } from './domain/exceptions/modelError'
 
 //import { rateLimitter } from './middlewares/rateLimitter.js'
 
@@ -133,29 +135,59 @@ export const createApp = ({
   app.use('/doc', swaggerUI.serve, swaggerUI.setup(swaggerDoc))
 
   // Middleware para manejar errores
-  app.use(
-    (
-      err: ControllerError,
-      req: express.Request,
-      res: express.Response,
-      next: express.NextFunction
-    ): void => {
-      if (!res.headersSent) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error:', err.message)
-        }
-        res.status(err.statusCode ?? 500).json(
-          ApiResponse.error('An error occurred', err.statusCode ?? 500, {
-            error:
-              process.env.NODE_ENV === 'production'
-                ? 'Internal Server Error'
-                : err.message,
-            stack: process.env.NODE_ENV === 'production' ? undefined : err.stack // Include stack trace in development
-          })
-        )
-      }
+  const errorHandler: express.ErrorRequestHandler = (err, req, res, next) => {
+    if (res.headersSent) return
+
+    const isProd = process.env.NODE_ENV === 'production'
+    if (isProd) {
+      console.error('[ERROR]', err)
     }
-  )
+    // ControllerError → 4xx client problems
+    if (err instanceof ControllerError) {
+      res.status(err.statusCode).json(
+        ApiResponse.error(err.message, err.statusCode, {
+          error: isProd ? undefined : err.message,
+          stack: isProd ? undefined : err.stack
+        })
+      )
+      return
+    }
+
+    // ServiceError → business logic or service failures
+    if (err instanceof ServiceError) {
+      res.status(err.statusCode).json(
+        ApiResponse.error(err.message, err.statusCode, {
+          error: isProd ? undefined : err.message,
+          stack: isProd ? undefined : err.stack
+        })
+      )
+      return
+    }
+
+    // ModelError → database failures
+    if (err instanceof ModelError) {
+      res.status(500).json(
+        ApiResponse.error('Database Error', 500, {
+          error: isProd ? undefined : err.message,
+          stack: isProd ? undefined : err.stack
+        })
+      )
+      return
+    }
+
+    // Unknown errors
+    console.error('[UNHANDLED ERROR]', err)
+
+    res.status(500).json(
+      ApiResponse.error('Internal Server Error', 500, {
+        error: isProd ? undefined : err.message,
+        stack: isProd ? undefined : err.stack
+      })
+    )
+    return
+  }
+
+  app.use(errorHandler)
   // if (process.env.NODE_ENV !== 'development') {
   //   // Serve the frontend build files in production
   //   const frontendBuildPath = path.join(__dirname, '..', 'frontend', 'dist');

@@ -5,39 +5,57 @@ import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 export interface UserInterface {
   getAllUsers(): Promise<UserType[]>
   getAllUsersSafe(): Promise<PartialUserType[]>
-  getUserById(id: ID): Promise<UserType>
-  getPhotoAndNameUser(id: ID): Promise<{
+  getUserById({ id }: { id: ID }): Promise<UserType>
+  getPhotoAndNameUser({ id }: { id: ID }): Promise<{
     id: ID
     profile_picture: ImageType
     name: string
   }>
-  getEmailById(id: ID): Promise<{ email: string; name: string }>
+  getEmailById({ id }: { id: ID }): Promise<{ email: string; name: string }>
   getUserByQuery(query: string): Promise<PartialUserType[]>
   login(data: { email: string; password: string }): Promise<PartialUserType>
-  getPassword(id: ID): Promise<string>
-  googleLogin(data: {
+  getPassword({ id }: { id: ID }): Promise<string>
+  googleLogin({
+    name,
+    email,
+    profile_picture
+  }: {
     name: string
     email: string
     profile_picture: ImageType
   }): Promise<PartialUserType>
-  facebookLogin(data: {
+  facebookLogin({
+    name,
+    email,
+    profile_picture
+  }: {
     name: string
     email: string
     profile_picture: ImageType
   }): Promise<PartialUserType>
-  getUserByEmail(email: string): Promise<UserType>
-  getUsersByIdList(list: ID[], l: number): Promise<UserType[]>
-  banUser(value: ID): Promise<StatusResponseType>
-  createUser(data: {
+  getUserByEmail({ email }: { email: string }): Promise<UserType>
+  getUsersByIdList({ list, l }: { list: ID[]; l?: number }): Promise<UserType[]>
+  banUser({ value }: { value: ID | string }): Promise<StatusResponseType> // ID o email
+  createUser({
+    name,
+    email,
+    password
+  }: {
     name: string
     email: string
     password: string
   }): Promise<UserType>
-  updateUser(id: ID, data: Partial<UserType>): Promise<UserType>
-  deleteUser(id: ID): Promise<StatusResponseType>
-  getBalance(id: ID): Promise<{
-    pending: number
-    available: number
-    incoming: number
+  updateUser({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<UserType>
+  }): Promise<UserType>
+  deleteUser({ id }: { id: ID }): Promise<StatusResponseType>
+  getBalance({ id }: { id: ID }): Promise<{
+    pending?: number
+    available?: number
+    incoming?: number
   }>
 }

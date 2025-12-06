@@ -56,7 +56,7 @@ export class UsersController {
     try {
       const users = await this.userService.getAllUsers()
 
-      res.json(ApiResponse.success(users))
+      res.json(users)
     } catch (err) {
       next(err)
     }
@@ -70,7 +70,7 @@ export class UsersController {
     try {
       const users = await this.userService.getAllUsersSafe()
 
-      res.json(ApiResponse.success(users))
+      res.json(users)
     } catch (err) {
       next(err)
     }
@@ -94,11 +94,11 @@ export class UsersController {
           .status(400)
           .json(ApiResponse.error('No se proporcionaron IDs', 400))
       }
-      const users = await this.userService.getUsersByIdList(
-        idsArray,
-        idsArray.length
-      )
-      return res.json(ApiResponse.success(users))
+      const users = await this.userService.getUsersByIdList({
+        list: idsArray,
+        l: idsArray.length
+      })
+      return res.json(users)
     } catch (err) {
       next(err)
     }
@@ -110,9 +110,9 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const user = await this.userService.getUserById(userId)
+      const user = await this.userService.getUserById({ id: userId })
 
-      res.json(ApiResponse.success(user))
+      res.json(user)
     } catch (err) {
       next(err)
     }
@@ -125,8 +125,8 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const user = await this.userService.getPhotoAndNameUser(userId)
-      res.json(ApiResponse.success(user))
+      const user = await this.userService.getPhotoAndNameUser({ id: userId })
+      res.json(user)
     } catch (err) {
       next(err)
     }
@@ -139,9 +139,9 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const email = await this.userService.getEmailById(userId)
+      const email = await this.userService.getEmailById({ id: userId })
 
-      res.json(ApiResponse.success(email))
+      res.json(email)
     } catch (err) {
       next(err)
     }
@@ -163,7 +163,7 @@ export class UsersController {
 
       const users = await this.userService.getUserByQuery(q) // Asegurarse de implementar este método en this.userService
 
-      res.json(ApiResponse.success(users))
+      res.json(users)
     } catch (err) {
       next(err)
     }
@@ -190,7 +190,7 @@ export class UsersController {
 
       jwtPipeline(user, res)
 
-      res.json(ApiResponse.success(user))
+      res.json(user)
     } catch (err) {
       next(err)
     }
@@ -211,7 +211,7 @@ export class UsersController {
       const user = await this.userService.googleLogin(data)
 
       jwtPipeline(user, res)
-      res.json(ApiResponse.success(user))
+      res.json(user)
     } catch (err) {
       next(err)
     }
@@ -238,7 +238,7 @@ export class UsersController {
       })
 
       jwtPipeline(user, res)
-      res.json(ApiResponse.success(user))
+      res.json(user)
     } catch (err) {
       next(err)
     }
@@ -285,7 +285,7 @@ export class UsersController {
       )
       // Si todo es exitoso, devolver el usuario creado
       jwtPipeline(user, res)
-      res.json(ApiResponse.success(user))
+      res.json(user)
     } catch (err) {
       next(err)
     }
@@ -298,7 +298,7 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     try {
       const userId = req.params.user_id as ID
-      const result = await this.userService.deleteUser(userId)
+      const result = await this.userService.deleteUser({ id: userId })
       res.json(ApiResponse.success(result))
     } catch (err) {
       next(err)
@@ -331,11 +331,14 @@ export class UsersController {
 
       // Actualizar usuario
       console.log('Updating user...')
-      const user = await this.userService.updateUser(userId, updatedData)
+      const user = await this.userService.updateUser({
+        id: userId,
+        data: updatedData
+      })
 
       jwtPipeline(user, res)
       // Enviar el nuevo token en la cookie
-      res.json(ApiResponse.success(user))
+      res.json(user)
     } catch (err) {
       next(err)
     }
@@ -364,10 +367,13 @@ export class UsersController {
         this.userService
       )
       console.log('Updated favorites:', updatedFavorites)
-      await this.userService.updateUser(userId, {
-        favorites: updatedFavorites
+      await this.userService.updateUser({
+        id: userId,
+        data: {
+          favorites: updatedFavorites
+        }
       })
-      res.json(ApiResponse.success(updatedFavorites))
+      res.json(updatedFavorites)
     } catch (err) {
       next(err)
     }
@@ -379,7 +385,7 @@ export class UsersController {
   ): Promise<express.Response | void> => {
     res
       .clearCookie('access_token')
-      .json(ApiResponse.success({ message: 'Se cerró exitosamente la sesión' }))
+      .json({ message: 'Se cerró exitosamente la sesión' })
   }
 
   userData = async (
@@ -394,7 +400,7 @@ export class UsersController {
         if (user.account_status === 'Suspendido') {
           return res.status(403).json(ApiResponse.error('Usuario baneado', 403))
         }
-        return res.json(ApiResponse.success(user))
+        return res.json(user)
       } else {
         res.status(401).json(ApiResponse.error('No autenticado', 401))
       }
@@ -465,14 +471,12 @@ export class UsersController {
         'no-reply'
       )
 
-      res.json(
-        ApiResponse.success({
-          ok: true,
-          status: 'Validation email sent successfully',
-          token,
-          code: validation_code
-        })
-      )
+      res.json({
+        ok: true,
+        status: 'Validation email sent successfully',
+        token,
+        code: validation_code
+      })
     } catch (err) {
       next(err)
     }
@@ -494,8 +498,8 @@ export class UsersController {
       const data = jwt.verify(token, SECRET_KEY) as AuthToken
 
       // Retrieve the user and their email
-      const user = await this.userService.getUserById(data.id)
-      const correo = await this.userService.getEmailById(data.id)
+      const user = await this.userService.getUserById({ id: data.id })
+      const correo = await this.userService.getEmailById({ id: data.id })
 
       // Verify that the email matches
       if (data.name !== correo.name) {
@@ -508,8 +512,11 @@ export class UsersController {
       // }
 
       // Update the user's validation status
-      await this.userService.updateUser(data.id, {
-        validated: true
+      await this.userService.updateUser({
+        id: data.id,
+        data: {
+          validated: true
+        }
       })
 
       jwtPipeline(user, res)
@@ -535,7 +542,7 @@ export class UsersController {
       }
 
       // Verificar existencia del correo
-      const user = await this.userService.getUserByEmail(email)
+      const user = await this.userService.getUserByEmail({ email })
 
       // Generar token
       const tokenPayload = { id: user.id } // No incluir información sensible
@@ -585,7 +592,7 @@ export class UsersController {
       const decodedToken = jwt.verify(token, SECRET_KEY) as AuthToken
 
       const id = decodedToken.id
-      const lastPassword = await this.userService.getPassword(id)
+      const lastPassword = await this.userService.getPassword({ id })
 
       const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
       const isSamePassword = await bcrypt.compare(password, lastPassword)
@@ -600,7 +607,10 @@ export class UsersController {
           )
       }
       // Actualizar la contraseña (el hash se realiza en el modelo)
-      await this.userService.updateUser(id, { password: hashedPassword })
+      await this.userService.updateUser({
+        id,
+        data: { password: hashedPassword }
+      })
 
       return res.json(
         ApiResponse.success({
@@ -627,8 +637,8 @@ export class UsersController {
       }
       // Es necesario conseguir el usuario para saber que otros seguidores tenía
       const [follower, user] = await Promise.all([
-        this.userService.getUserById(follower_id),
-        this.userService.getUserById(user_id)
+        this.userService.getUserById({ id: follower_id }),
+        this.userService.getUserById({ id: user_id })
       ])
 
       let action
@@ -651,8 +661,8 @@ export class UsersController {
         }
       }
       await Promise.all([
-        this.userService.updateUser(follower_id, follower),
-        this.userService.updateUser(user_id, user)
+        this.userService.updateUser({ id: follower_id, data: follower }),
+        this.userService.updateUser({ id: user_id, data: user })
       ])
 
       // Notificación de nuevo seguidor
@@ -680,7 +690,7 @@ export class UsersController {
           .status(404)
           .json(ApiResponse.error('No se proporcionó id de usuario', 404))
 
-      const balance = await this.userService.getBalance(userId)
+      const balance = await this.userService.getBalance({ id: userId })
 
       res.json(ApiResponse.success({ balance }))
     } catch (err) {
@@ -704,14 +714,17 @@ export class UsersController {
           .json(ApiResponse.error('No se entregaron todos los campos', 400))
       }
 
-      const user = await this.userService.getUserById(user_id)
+      const user = await this.userService.getUserById({ id: user_id })
 
       // Agregar la nueva colección
-      const updated = await this.userService.updateUser(user_id, {
-        collections_ids: [
-          ...(user.collections_ids || []),
-          { name: collection_name, books_ids: [] }
-        ]
+      const updated = await this.userService.updateUser({
+        id: user_id,
+        data: {
+          collections_ids: [
+            ...(user.collections_ids || []),
+            { name: collection_name, books_ids: [] }
+          ]
+        }
       })
 
       jwtPipeline(user, res)
@@ -755,16 +768,19 @@ export class UsersController {
       }
 
       // Actualizar colección
-      await this.userService.updateUser(userId, {
-        collections_ids: [
-          ...(user.collections_ids ?? []).filter(
-            coleccion => coleccion.name !== collectionName
-          ),
-          {
-            name: collection.name,
-            books_ids: [...collection.books_ids, bookId]
-          }
-        ]
+      await this.userService.updateUser({
+        id: userId,
+        data: {
+          collections_ids: [
+            ...(user.collections_ids ?? []).filter(
+              coleccion => coleccion.name !== collectionName
+            ),
+            {
+              name: collection.name,
+              books_ids: [...collection.books_ids, bookId]
+            }
+          ]
+        }
       })
 
       res.json(

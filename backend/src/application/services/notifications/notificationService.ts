@@ -23,57 +23,66 @@ export class NotificationService implements NotificationInterface {
     }
   }
 
-  getAllNotifications (l?: number): Promise<NotificationType[]> {
-    if (l !== undefined && l < 1) l = 10
+  getAllNotifications ({ l }: { l?: number }): Promise<NotificationType[]> {
+    if (!l || l < 1) l = 10
     return this.handle(
-      () => this.notificationsModel.getAllNotifications(l),
+      () => this.notificationsModel.getAllNotifications({ l }),
       'Error getting all notifications'
     )
   }
 
-  getAllNotificationsByUserId (user_id: ID): Promise<NotificationType[]> {
+  getAllNotificationsByUserId ({
+    user_id
+  }: {
+    user_id: ID
+  }): Promise<NotificationType[]> {
     return this.handle(
-      () => this.notificationsModel.getAllNotificationsByUserId(user_id),
+      () => this.notificationsModel.getAllNotificationsByUserId({ user_id }),
       `Error getting notifications for user id: ${user_id}`
     )
   }
 
-  getNotificationById (id: ID): Promise<NotificationType> {
+  getNotificationById ({ id }: { id: ID }): Promise<NotificationType> {
     return this.handle(
-      () => this.notificationsModel.getNotificationById(id),
+      () => this.notificationsModel.getNotificationById({ id }),
       `Error getting notification with id: ${id}`
     )
   }
 
-  createNotification (
+  createNotification ({
+    data
+  }: {
     data: Partial<NotificationType>
-  ): Promise<NotificationType> {
+  }): Promise<NotificationType> {
     return this.handle(
-      () => this.notificationsModel.createNotification(data),
+      () => this.notificationsModel.createNotification({ data }),
       'Error creating notification'
     )
   }
 
-  updateNotification (
-    id: ID,
+  updateNotification ({
+    id,
+    data
+  }: {
+    id: ID
     data: Partial<NotificationType>
-  ): Promise<NotificationType> {
+  }): Promise<NotificationType> {
     return this.handle(
-      () => this.notificationsModel.updateNotification(id, data),
+      () => this.notificationsModel.updateNotification({ id, data }),
       `Error updating notification with id: ${id}`
     )
   }
 
-  deleteNotification (id: ID): Promise<StatusResponseType> {
+  deleteNotification ({ id }: { id: ID }): Promise<StatusResponseType> {
     return this.handle(
-      () => this.notificationsModel.deleteNotification(id),
+      () => this.notificationsModel.deleteNotification({ id }),
       `Error deleting notification with id: ${id}`
     )
   }
 
-  markNotificationAsRead (id: ID): Promise<NotificationType> {
+  markNotificationAsRead ({ id }: { id: ID }): Promise<NotificationType> {
     return this.handle(
-      () => this.notificationsModel.markNotificationAsRead(id),
+      () => this.notificationsModel.markNotificationAsRead({ id }),
       `Error marking notification as read with id: ${id}`
     )
   }

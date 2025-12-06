@@ -36,5 +36,8 @@ export async function updateUserSearchHistory (
     )
   }
   // Guardar los cambios en la base de datos
-  await userService.updateUser(user.id, { search_history: userPreferences })
+  await userService.updateUser({
+    id: user.id,
+    data: { search_history: userPreferences }
+  })
 }

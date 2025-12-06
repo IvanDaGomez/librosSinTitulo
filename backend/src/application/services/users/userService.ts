@@ -3,12 +3,21 @@ import { ServiceError } from '@/domain/exceptions/serviceError.js'
 import { UserInterface } from '@/domain/interfaces/user.js'
 import { ID, ImageType } from '@/shared/types'
 import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
+import { BookInterface } from '@/domain/interfaces/book'
 
 export class UserService implements UserInterface {
   private usersModel: UserInterface
+  private bookService: BookInterface
 
-  constructor (usersModel: UserInterface) {
+  constructor ({
+    usersModel,
+    bookService
+  }: {
+    usersModel: UserInterface
+    bookService: BookInterface
+  }) {
     this.usersModel = usersModel
+    this.bookService = bookService
   }
   /**
    * Wrapper to avoid repeating try/catch everywhere.
@@ -39,27 +48,31 @@ export class UserService implements UserInterface {
     )
   }
 
-  async getUserById (id: ID): Promise<UserType> {
+  async getUserById ({ id }: { id: ID }): Promise<UserType> {
     return this.handle(
-      () => this.usersModel.getUserById(id),
+      () => this.usersModel.getUserById({ id }),
       `Error getting user with id: ${id}`
     )
   }
 
-  async getPhotoAndNameUser (id: ID): Promise<{
+  async getPhotoAndNameUser ({ id }: { id: ID }): Promise<{
     id: ID
     profile_picture: ImageType
     name: string
   }> {
     return this.handle(
-      () => this.usersModel.getPhotoAndNameUser(id),
+      () => this.usersModel.getPhotoAndNameUser({ id }),
       `Error getting photo and name for user with id: ${id}`
     )
   }
 
-  async getEmailById (id: ID): Promise<{ email: string; name: string }> {
+  async getEmailById ({
+    id
+  }: {
+    id: ID
+  }): Promise<{ email: string; name: string }> {
     return this.handle(
-      () => this.usersModel.getEmailById(id),
+      () => this.usersModel.getEmailById({ id }),
       `Error getting email for user with id: ${id}`
     )
   }
@@ -81,9 +94,9 @@ export class UserService implements UserInterface {
     )
   }
 
-  async getPassword (id: ID): Promise<string> {
+  async getPassword ({ id }: { id: ID }): Promise<string> {
     return this.handle(
-      () => this.usersModel.getPassword(id),
+      () => this.usersModel.getPassword({ id }),
       `Error getting password for user with id: ${id}`
     )
   }
@@ -110,23 +123,29 @@ export class UserService implements UserInterface {
     )
   }
 
-  async getUserByEmail (email: string): Promise<UserType> {
+  async getUserByEmail ({ email }: { email: string }): Promise<UserType> {
     return this.handle(
-      () => this.usersModel.getUserByEmail(email),
+      () => this.usersModel.getUserByEmail({ email }),
       `Error getting user by email: ${email}`
     )
   }
 
-  async getUsersByIdList (list: ID[], l: number): Promise<UserType[]> {
+  async getUsersByIdList ({
+    list,
+    l
+  }: {
+    list: ID[]
+    l: number
+  }): Promise<UserType[]> {
     return this.handle(
-      () => this.usersModel.getUsersByIdList(list, l),
+      () => this.usersModel.getUsersByIdList({ list, l }),
       `Error getting users by id list`
     )
   }
 
-  async banUser (value: ID): Promise<StatusResponseType> {
+  async banUser ({ value }: { value: ID }): Promise<StatusResponseType> {
     return this.handle(
-      () => this.usersModel.banUser(value),
+      () => this.usersModel.banUser({ value }),
       `Error banning user with id: ${value}`
     )
   }
@@ -142,27 +161,33 @@ export class UserService implements UserInterface {
     )
   }
 
-  async updateUser (id: ID, data: Partial<UserType>): Promise<UserType> {
+  async updateUser ({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<UserType>
+  }): Promise<UserType> {
     return this.handle(
-      () => this.usersModel.updateUser(id, data),
+      () => this.usersModel.updateUser({ id, data }),
       `Error updating user with id: ${id}`
     )
   }
 
-  async deleteUser (id: ID): Promise<StatusResponseType> {
+  async deleteUser ({ id }: { id: ID }): Promise<StatusResponseType> {
     return this.handle(
-      () => this.usersModel.deleteUser(id),
+      () => this.usersModel.deleteUser({ id }),
       `Error deleting user with id: ${id}`
     )
   }
 
-  async getBalance (id: ID): Promise<{
-    pending: number
-    available: number
-    incoming: number
+  async getBalance ({ id }: { id: ID }): Promise<{
+    pending?: number
+    available?: number
+    incoming?: number
   }> {
     return this.handle(
-      () => this.usersModel.getBalance(id),
+      () => this.usersModel.getBalance({ id }),
       `Error getting balance for user with id: ${id}`
     )
   }

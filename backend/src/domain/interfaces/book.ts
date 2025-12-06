@@ -8,38 +8,110 @@ import { UserInterface } from './user.js'
 
 export interface BookInterface {
   getAllBooks(): Promise<BookType[]>
-  getBookById(id: ID): Promise<BookType>
-  getBooksByQuery(
-    query: string,
-    l: number,
-    user?: AuthToken,
-    books?: BookType[],
+  getBookById({
+    id,
+    userService
+  }: {
+    id: ID
     userService?: UserInterface
-  ): Promise<Partial<BookType>[]>
-  getBooksByQueryWithFilters(
-    query: string,
-    filters: object,
+  }): Promise<BookType>
+  getBooksByQuery({
+    query,
+    l,
+    user,
+    books,
+    userService
+  }: {
+    query: string
     l: number
-  ): Promise<Partial<BookType>[]>
-  getBooksByUserId(userId: ID): Promise<BookType[]>
-  createBook(data: BookType): Promise<BookType>
-  updateBook(id: ID, data: Partial<BookType>): Promise<BookType>
-  deleteBook(id: ID): Promise<StatusResponseType>
+    user?: AuthToken
+    books?: BookType[]
+    userService?: UserInterface
+  }): Promise<Partial<BookType>[]>
+  getBooksByQueryWithFilters({
+    query,
+    filters,
+    l
+  }: {
+    query: string
+    filters: object
+    l: number
+  }): Promise<Partial<BookType>[]>
+  getBooksByUserId({ userId }: { userId: ID }): Promise<BookType[]>
+  questionBook?({
+    data
+  }: {
+    data: {
+      answer?: string
+      question: string
+      type: 'pregunta' | 'respuesta'
+      sender_id: ID
+      book_id: ID
+    }
+  }): Promise<BookType>
+  createBook({
+    data,
+    userService
+  }: {
+    data: BookType
+    userService?: UserInterface
+  }): Promise<BookType>
+  updateBook({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<BookType>
+  }): Promise<BookType>
+  deleteBook({ id }: { id: ID }): Promise<StatusResponseType>
+  // questionBook({
+  //   data
+  // }: {
+  //   data: {
+  //     question: string
+  //     type: string
+  //     sender_id: ID
+  //     book_id: ID
+  //   }
+  // }): Promise<StatusResponseType>
   getAllReviewBooks(): Promise<BookToReviewType[]>
-  createReviewBook(data: Partial<BookToReviewType>): Promise<BookToReviewType>
-  updateReviewBook(
-    id: ID,
+  createReviewBook({
+    data
+  }: {
     data: Partial<BookToReviewType>
-  ): Promise<BookToReviewType>
-  deleteReviewBook(id: ID): Promise<StatusResponseType>
-  forYouPage(
-    userKeyInfo: AuthToken | undefined,
-    sampleSize: number | undefined,
+  }): Promise<BookToReviewType>
+  updateReviewBook({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<BookToReviewType>
+  }): Promise<BookToReviewType>
+  deleteReviewBook({ id }: { id: ID }): Promise<StatusResponseType>
+  forYouPage({
+    userKeyInfo,
+    sampleSize,
+    userService
+  }: {
+    userKeyInfo: AuthToken | undefined
+    sampleSize: number | undefined
     userService: UserInterface
-  ): Promise<Partial<BookType>[]>
-  getBooksByIdList(list: ID[], l?: number): Promise<Partial<BookType>[]>
-  predictInfo(
+  }): Promise<Partial<BookType>[]>
+  getBooksByIdList({
+    list,
+    l
+  }: {
+    list: ID[]
+    l?: number
+  }): Promise<Partial<BookType>[]>
+  predictInfo({
+    file
+  }: {
     file: Express.Multer.File
-  ): Promise<{ title: string; author: string }>
-  getBooksByCollection(collection: CollectionType): Promise<BookType[]>
+  }): Promise<{ title: string; author: string }>
+  getBooksByCollection({
+    collection
+  }: {
+    collection: CollectionType
+  }): Promise<BookType[]>
 }

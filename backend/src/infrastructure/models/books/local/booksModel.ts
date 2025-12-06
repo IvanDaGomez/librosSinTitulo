@@ -38,7 +38,7 @@ class BooksModel implements BookInterface {
     return books.map(book => createBook(book, true)) as BookType[]
   }
 
-  async getBookById (id: ID): Promise<BookType> {
+  async getBookById ({ id }: { id: ID }): Promise<BookType> {
     const books = await this.getAllBooks()
     const book = books.find(book => book.id === id)
     if (!book) {
@@ -48,12 +48,16 @@ class BooksModel implements BookInterface {
     return createBook(book, true)
   }
 
-  async getBooksByQuery (
-    query: string,
-    l: number,
-    user?: AuthToken,
-    books: BookType[] = []
-  ): Promise<Partial<BookType>[]> {
+  async getBooksByQuery ({
+    query,
+    l,
+    books = []
+  }: {
+    query: string
+    l: number
+
+    books: BookType[]
+  }): Promise<Partial<BookType>[]> {
     if (books.length === 0) {
       books = await this.getAllBooks()
     }
@@ -90,11 +94,15 @@ class BooksModel implements BookInterface {
     return bookToReturn
   }
 
-  async getBooksByQueryWithFilters (
-    query: string,
-    filters: Partial<Record<keyof BookType, any>>,
-    limit: number
-  ): Promise<Partial<BookType>[]> {
+  async getBooksByQueryWithFilters ({
+    query,
+    filters,
+    l
+  }: {
+    query: string
+    filters: Partial<Record<keyof BookType, any>>
+    l: number
+  }): Promise<Partial<BookType>[]> {
     let books = await this.getAllBooks() // Fetch all books (local data)
     if (Object.keys(filters).length === 0) return []
 
@@ -128,12 +136,11 @@ class BooksModel implements BookInterface {
     })
     books = filterBooksByFilters(books, preparedFilters)
     // Perform search based on the query
-    const resultBooks: Partial<BookType>[] = await this.getBooksByQuery(
+    const resultBooks: Partial<BookType>[] = await this.getBooksByQuery({
       query,
-      limit,
-      undefined,
+      l: l * 5, // Fetch more to account for filtering
       books
-    )
+    })
 
     const bookToReturn = resultBooks.filter(
       book => book.availability === 'Disponible'
@@ -142,7 +149,7 @@ class BooksModel implements BookInterface {
     return bookToReturn
   }
 
-  async createBook (data: BookType): Promise<BookType> {
+  async createBook ({ data }: { data: BookType }): Promise<BookType> {
     const books = await this.getAllBooks()
     const bookToAdd = createBook(data, true)
     books.push(bookToAdd)
@@ -150,7 +157,13 @@ class BooksModel implements BookInterface {
     return bookToAdd
   }
 
-  async updateBook (id: ID, data: Partial<BookType>): Promise<BookType> {
+  async updateBook ({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<BookType>
+  }): Promise<BookType> {
     const books = await this.getAllBooks()
 
     const bookIndex = books.findIndex(book => book.id === id)
@@ -169,7 +182,7 @@ class BooksModel implements BookInterface {
     return createBook(books[bookIndex], true)
   }
 
-  async deleteBook (id: ID): Promise<StatusResponseType> {
+  async deleteBook ({ id }: { id: ID }): Promise<StatusResponseType> {
     const books = await this.getAllBooks()
     const bookIndex = books.findIndex(book => book.id === id)
     if (bookIndex === -1) {
@@ -186,9 +199,11 @@ class BooksModel implements BookInterface {
     return books
   }
 
-  async createReviewBook (
+  async createReviewBook ({
+    data
+  }: {
     data: Partial<BookToReviewType>
-  ): Promise<BookToReviewType> {
+  }): Promise<BookToReviewType> {
     const books = await this.getAllReviewBooks()
     const bookToAdd = createBookToReview(data)
     books.push(bookToAdd)
@@ -196,7 +211,7 @@ class BooksModel implements BookInterface {
     return createBookToReview(bookToAdd)
   }
 
-  async deleteReviewBook (id: ID): Promise<StatusResponseType> {
+  async deleteReviewBook ({ id }: { id: ID }): Promise<StatusResponseType> {
     const books = await this.getAllReviewBooks()
     const bookIndex = books.findIndex(book => book.id === id)
 
@@ -209,11 +224,14 @@ class BooksModel implements BookInterface {
     return StatusResponse.success('Book deleted successfully') // Mensaje de éxito
   }
 
-  async updateReviewBook (
-    id: ID,
+  async updateReviewBook ({
+    id,
+    data
+  }: {
+    id: ID
     data: Partial<BookToReviewType>
-  ): Promise<BookToReviewType> {
-    const book = await this.getBookById(id)
+  }): Promise<BookToReviewType> {
+    const book = await this.getBookById({ id })
 
     const reviewBooks = await this.getAllReviewBooks()
     const bookToAdd = createBookToReview(book)
@@ -226,10 +244,13 @@ class BooksModel implements BookInterface {
     return createBookToReview(book)
   }
 
-  async forYouPage (
-    userKeyInfo: AuthToken | undefined,
-    sampleSize: number = 100
-  ): Promise<Partial<BookType>[]> {
+  async forYouPage ({
+    userKeyInfo,
+    sampleSize = 20
+  }: {
+    userKeyInfo: AuthToken | undefined
+    sampleSize: number | undefined
+  }): Promise<Partial<BookType>[]> {
     const books = await this.getAllBooks()
     const randomIndexes: number[] = randomIntArrayInRange(
       0,
@@ -249,13 +270,16 @@ class BooksModel implements BookInterface {
     let preferences: string[] = []
     let likes: ID[] = []
     if (userKeyInfo?.id) {
-      const user = await this.usersModel.getUserById(userKeyInfo.id)
+      const user = await this.usersModel.getUserById({ id: userKeyInfo.id })
       preferences = Object.keys(user?.preferences || {})
       historial = Object.keys(user?.search_history || {})
       likes = user.favorites ?? []
       // Si el usuario tiene libros favoritos, entonces los agrego a las querywords
       if (likes.length > 0) {
-        const booksFavorites = await this.getBooksByIdList(likes, 10)
+        const booksFavorites = await this.getBooksByIdList({
+          list: likes,
+          l: 10
+        })
         preferences = [
           ...preferences,
           ...booksFavorites.map(book => book.title ?? '')
@@ -293,7 +317,13 @@ class BooksModel implements BookInterface {
     return elements
   }
 
-  async getBooksByIdList (list: ID[], l: number): Promise<Partial<BookType>[]> {
+  async getBooksByIdList ({
+    list,
+    l
+  }: {
+    list: ID[]
+    l: number
+  }): Promise<Partial<BookType>[]> {
     const books = await this.getAllBooks()
     const filteredBooks = books
       .filter(book => {
@@ -308,9 +338,11 @@ class BooksModel implements BookInterface {
     return filteredBooks.map(book => createBook(book, false))
   }
 
-  async predictInfo (
+  async predictInfo ({
+    file
+  }: {
     file: Express.Multer.File
-  ): Promise<{ title: string; author: string }> {
+  }): Promise<{ title: string; author: string }> {
     // Read the file buffer
     const imageBuffer = await fs.readFile(file.path)
     const tensor = tf.tensor([0, 0, 0])
@@ -333,7 +365,11 @@ class BooksModel implements BookInterface {
       author: 'soy'
     }
   }
-  async getBooksByCollection (collection: CollectionType): Promise<BookType[]> {
+  async getBooksByCollection ({
+    collection
+  }: {
+    collection: CollectionType
+  }): Promise<BookType[]> {
     // Esta función devuelve todos los libros de una colección específica
     try {
       // Obtener todos los libros
@@ -354,7 +390,7 @@ class BooksModel implements BookInterface {
     }
   }
 
-  async getBooksByUserId (userId: ID): Promise<BookType[]> {
+  async getBooksByUserId ({ userId }: { userId: ID }): Promise<BookType[]> {
     const books = await this.getAllBooks()
     const filteredBooks = books.filter(book => book.seller_id === userId)
     return filteredBooks

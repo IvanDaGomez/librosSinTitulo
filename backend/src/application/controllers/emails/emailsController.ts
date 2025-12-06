@@ -30,7 +30,7 @@ export class EmailsController {
       if (!emailId) {
         return res.status(400).json({ error: 'ID de correo requerido' })
       }
-      const email = await this.EmailsModel.getEmailById(emailId)
+      const email = await this.EmailsModel.getEmailById({ id: emailId })
 
       res.json(email)
     } catch (err) {
@@ -70,7 +70,7 @@ export class EmailsController {
         return res.status(400).json({ error: 'ID de correo requerido' })
       }
 
-      await this.EmailsModel.deleteEmail(email)
+      await this.EmailsModel.deleteEmail({ email })
 
       res.status(200).json({ message: 'Correo eliminado con éxito' })
     } catch (err) {

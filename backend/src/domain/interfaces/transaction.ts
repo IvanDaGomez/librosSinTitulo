@@ -6,18 +6,25 @@ import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 
 export interface TransactionInterface {
   getAllTransactions(): Promise<TransactionType[]>
-  getAllTransactionsByUser(id: ID): Promise<TransactionType[]>
-  getTransactionById(id: number): Promise<TransactionType>
+  getAllTransactionsByUser({ id }: { id: string }): Promise<TransactionType[]>
+  getTransactionById({ id }: { id: string }): Promise<TransactionType>
   createTransaction(data: Partial<TransactionType>): Promise<TransactionType>
-  deleteTransaction(id: number): Promise<StatusResponseType>
-  updateTransaction(
-    id: number,
+  deleteTransaction({ id }: { id: string }): Promise<StatusResponseType>
+  updateTransaction({
+    id,
+    data
+  }: {
+    id: string
     data: Partial<TransactionType>
-  ): Promise<TransactionType>
-  getBookByTransactionId(id: string): Promise<BookType>
+  }): Promise<TransactionType>
+  getBookByTransactionId({ id }: { id: string }): Promise<BookType>
   createWithdrawTransaction(
     data: WithdrawMoneyType
   ): Promise<StatusResponseType>
   getAllWithdrawTransactions(): Promise<WithdrawMoneyType[]>
-  markWithdrawTransaction(user_id: string): Promise<StatusResponseType>
+  markWithdrawTransaction({
+    user_id
+  }: {
+    user_id: ID
+  }): Promise<StatusResponseType>
 }

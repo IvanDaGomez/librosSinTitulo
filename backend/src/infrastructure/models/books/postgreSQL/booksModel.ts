@@ -8,7 +8,7 @@ import { createBook, createBookToReview } from '@/domain/mappers/createBook.js'
 import { ID, ISOString } from '@/shared/types'
 import { AuthToken } from '@/domain/entities/authToken.js'
 import { CollectionType } from '@/domain/entities/collection.js'
-import { Book, BookToReviewType, BookType } from '@/domain/entities/book.js'
+import { BookToReviewType, BookType } from '@/domain/entities/book.js'
 import { executeQuery, executeSingleResultQuery } from '@/utils/dbUtils.js'
 import { filterBooksByFilters } from '../local/filterBooksByFilters.js'
 import { pool } from '@/utils/config.js'
@@ -27,9 +27,10 @@ class BooksModel implements BookInterface {
   private async handle<T> (fn: () => Promise<T>, message: string): Promise<T> {
     try {
       return await fn()
-    } catch (error) {
+    } catch (error: Error | any) {
       throw new ModelError(
         message,
+        error.statusCode || 500,
         error instanceof Error ? error.stack : undefined
       )
     }
@@ -46,7 +47,7 @@ class BooksModel implements BookInterface {
     }, 'Error retrieving all books')
   }
 
-  async getBookById (id: ID): Promise<BookType> {
+  async getBookById ({ id }: { id: ID }): Promise<BookType> {
     return this.handle(async () => {
       const data = await executeSingleResultQuery<BookType>(
         pool,
@@ -60,13 +61,15 @@ class BooksModel implements BookInterface {
     }, `Error retrieving book with ID ${id}`)
   }
 
-  async getBooksByQuery (
-    query: string,
-    l: number = 24,
-    user?: AuthToken,
-    books: BookType[] = [],
-    userService?: UserInterface
-  ): Promise<Partial<BookType>[]> {
+  async getBooksByQuery ({
+    query,
+    l = 24,
+    books = []
+  }: {
+    query: string
+    l: number
+    books: BookType[]
+  }): Promise<Partial<BookType>[]> {
     return this.handle(async () => {
       if (books.length === 0) {
         books = await executeQuery(
@@ -108,11 +111,15 @@ class BooksModel implements BookInterface {
     }, `Error getting books by query: ${query}`)
   }
 
-  async getBooksByQueryWithFilters (
-    query: string,
-    filters: Partial<Record<keyof BookType, any>>,
-    limit: number
-  ): Promise<Partial<BookType>[]> {
+  async getBooksByQueryWithFilters ({
+    query,
+    filters,
+    l
+  }: {
+    query: string
+    filters: Partial<Record<keyof BookType, any>>
+    l: number
+  }): Promise<Partial<BookType>[]> {
     // TODO: Implementar la función en la base de datos como tal
     return this.handle(async () => {
       let books = await executeQuery(
@@ -154,18 +161,17 @@ class BooksModel implements BookInterface {
       })
       books = filterBooksByFilters(books, preparedFilters)
       // Perform search based on the query
-      const resultBooks = await this.getBooksByQuery(
+      const resultBooks = await this.getBooksByQuery({
         query,
-        limit,
-        undefined,
+        l,
         books
-      )
+      })
 
       return resultBooks
     }, `Error getting books by query with filters: ${query}`)
   }
 
-  async createBook (data: BookType): Promise<BookType> {
+  async createBook ({ data }: { data: BookType }): Promise<BookType> {
     return this.handle(async () => {
       const book = createBook(data, true)
       await executeQuery(
@@ -211,7 +217,13 @@ class BooksModel implements BookInterface {
     }, 'Error creating new book')
   }
 
-  async updateBook (id: ID, data: Partial<BookType>): Promise<BookType> {
+  async updateBook ({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<BookType>
+  }): Promise<BookType> {
     return this.handle(async () => {
       data.updated_at = new Date().toISOString() as ISOString
       const keys = Object.keys(data)
@@ -241,15 +253,15 @@ class BooksModel implements BookInterface {
     }, `Error updating book with ID ${id}`)
   }
 
-  async deleteBook (id: ID): Promise<StatusResponseType> {
+  async deleteBook ({ id }: { id: ID }): Promise<StatusResponseType> {
     return this.handle(async () => {
       // Check if the book exists
-      const result = await executeSingleResultQuery(
+      const result = await executeSingleResultQuery<BookType>(
         pool,
         () => pool.query('SELECT * FROM books WHERE id = $1;', [id]),
         'Failed to find book to delete'
       )
-      if (!result) throw new Error('Book not found')
+      if (!result) throw new ModelError('Book not found')
       await executeQuery(
         pool,
         () => pool.query('DELETE FROM books WHERE id = $1;', [id]),
@@ -269,9 +281,11 @@ class BooksModel implements BookInterface {
     }, 'Error retrieving all review books')
   }
 
-  async createReviewBook (
+  async createReviewBook ({
+    data
+  }: {
     data: Partial<BookToReviewType>
-  ): Promise<BookToReviewType> {
+  }): Promise<BookToReviewType> {
     return this.handle(async () => {
       let book = createBookToReview(data)
       const response = await executeSingleResultQuery<BookToReviewType>(
@@ -320,7 +334,7 @@ class BooksModel implements BookInterface {
     }, 'Error creating review book')
   }
 
-  async deleteReviewBook (id: ID): Promise<StatusResponseType> {
+  async deleteReviewBook ({ id }: { id: ID }): Promise<StatusResponseType> {
     return this.handle(async () => {
       await executeQuery(
         pool,
@@ -331,10 +345,13 @@ class BooksModel implements BookInterface {
     }, `Error deleting review book with ID ${id}`)
   }
 
-  async updateReviewBook (
-    id: ID,
+  async updateReviewBook ({
+    id,
+    data
+  }: {
+    id: ID
     data: Partial<BookToReviewType>
-  ): Promise<BookToReviewType> {
+  }): Promise<BookToReviewType> {
     return this.handle(async () => {
       const [keys, values] = Object.entries(data)
       const updateString = keys.reduce((last, key, index) => {
@@ -361,11 +378,15 @@ class BooksModel implements BookInterface {
     }, `Error updating review book with ID ${id}`)
   }
 
-  async forYouPage (
-    userKeyInfo: AuthToken | undefined,
-    sampleSize: number = 1000,
+  async forYouPage ({
+    userKeyInfo,
+    sampleSize = 20,
+    userService
+  }: {
+    userKeyInfo: AuthToken | undefined
+    sampleSize: number
     userService: UserInterface
-  ): Promise<Partial<BookType>[]> {
+  }): Promise<Partial<BookType>[]> {
     return this.handle(async () => {
       const books = await executeQuery<Partial<BookType>>(
         pool,
@@ -387,7 +408,7 @@ class BooksModel implements BookInterface {
       let preferences: string[] = []
       let likes: ID[] = []
       if (userKeyInfo?.id) {
-        const user = await userService.getUserById(userKeyInfo.id)
+        const user = await userService.getUserById({ id: userKeyInfo.id })
         preferences = Object.keys(user?.preferences || {})
         historial = Object.keys(user?.search_history || {})
         likes = user.favorites ?? []
@@ -395,7 +416,7 @@ class BooksModel implements BookInterface {
         // Si el usuario tiene libros favoritos, entonces los agrego a las querywords
 
         if (likes.length > 0) {
-          const booksFavorites = await this.getBooksByIdList(likes)
+          const booksFavorites = await this.getBooksByIdList({ list: likes })
 
           preferences = [
             ...preferences,
@@ -434,7 +455,7 @@ class BooksModel implements BookInterface {
     }, 'Error generating For You page recommendations')
   }
 
-  async getBooksByIdList (list: ID[]): Promise<BookType[]> {
+  async getBooksByIdList ({ list }: { list: ID[] }): Promise<BookType[]> {
     return this.handle(async () => {
       if (!list || list.length === 0) return []
 
@@ -457,7 +478,7 @@ class BooksModel implements BookInterface {
       return ordered
     }, 'Error fetching favorite books by user')
   }
-  async getBooksByUserId (userId: ID): Promise<BookType[]> {
+  async getBooksByUserId ({ userId }: { userId: ID }): Promise<BookType[]> {
     return this.handle(async () => {
       const books = await executeQuery<BookType>(
         pool,
@@ -471,9 +492,11 @@ class BooksModel implements BookInterface {
       return books
     }, `Error getting books with userId:${userId}`)
   }
-  async predictInfo (
+  async predictInfo ({
+    file
+  }: {
     file: Express.Multer.File
-  ): Promise<{ title: string; author: string }> {
+  }): Promise<{ title: string; author: string }> {
     return this.handle(async () => {
       // Read the file buffer
       const imageBuffer = await fs.readFile(file.path)
@@ -498,10 +521,14 @@ class BooksModel implements BookInterface {
       }
     }, 'Error predicting book info from image')
   }
-  async getBooksByCollection (collection: CollectionType): Promise<BookType[]> {
+  async getBooksByCollection ({
+    collection
+  }: {
+    collection: CollectionType
+  }): Promise<BookType[]> {
     return this.handle(async () => {
       const ids = collection.books_ids
-      return this.getBooksByIdList(ids)
+      return this.getBooksByIdList({ list: ids })
     }, `Error getting books for collection with ID ${collection.id}`)
   }
 }

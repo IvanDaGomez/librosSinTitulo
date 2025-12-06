@@ -11,7 +11,7 @@ export async function updateData (
   action: 'query' | 'openedBook',
   userService: UserInterface
 ) {
-  const user = await userService.getUserById(userToken.id)
+  const user = await userService.getUserById({ id: userToken.id })
   await updateUserPreferences(user, bookCopy, action, userService)
   await updateUserSearchHistory(user, bookCopy, action, userService)
   await updateTrends(bookCopy, action)

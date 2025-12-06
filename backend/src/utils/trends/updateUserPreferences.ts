@@ -48,5 +48,8 @@ export async function updateUserPreferences (
     )
   }
 
-  await userService.updateUser(user.id, { preferences: userPreferences })
+  await userService.updateUser({
+    id: user.id,
+    data: { preferences: userPreferences }
+  })
 }

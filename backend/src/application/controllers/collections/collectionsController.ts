@@ -37,7 +37,7 @@ class CollectionsController {
   ) => {
     try {
       const collections = await this.collectionService.getAllCollections()
-      res.json(ApiResponse.success(collections))
+      res.json(collections)
     } catch (err) {
       next(err)
     }
@@ -50,10 +50,10 @@ class CollectionsController {
   ) => {
     try {
       const collectionId = req.params.collection_id as ID
-      const collection = await this.collectionService.getCollectionById(
-        collectionId
-      )
-      res.json(ApiResponse.success(collection))
+      const collection = await this.collectionService.getCollectionById({
+        id: collectionId
+      })
+      res.json(collection)
     } catch (err) {
       next(err)
     }
@@ -67,11 +67,11 @@ class CollectionsController {
     try {
       const userId = req.params.user_id as ID
 
-      const collections = await this.collectionService.getCollectionsByUser(
-        userId
-      )
+      const collections = await this.collectionService.getCollectionsByUser({
+        id: userId
+      })
 
-      res.json(ApiResponse.success(collections))
+      res.json(collections)
     } catch (err) {
       next(err)
     }
@@ -89,15 +89,15 @@ class CollectionsController {
           .status(400)
           .json(ApiResponse.error('No se proporcionó el collectionId', 400))
       }
-      const collection = await this.collectionService.getCollectionById(
-        collectionId
-      )
-      const books = await this.bookService.getBooksByIdList(
-        collection.books_ids,
-        24
-      )
+      const collection = await this.collectionService.getCollectionById({
+        id: collectionId
+      })
+      const books = await this.bookService.getBooksByIdList({
+        list: collection.books_ids,
+        l: 24
+      })
 
-      res.json(ApiResponse.success(books))
+      res.json(books)
     } catch (err) {
       next(err)
     }
@@ -130,9 +130,9 @@ class CollectionsController {
       }
 
       // Crear la colección en la base de datos
-      const collection = await this.collectionService.createCollection(data)
+      const collection = await this.collectionService.createCollection({ data })
       // Si todo es exitoso, devolver el colección creado
-      res.json(ApiResponse.success(collection))
+      res.json(collection)
     } catch (err) {
       next(err)
     }
@@ -146,9 +146,11 @@ class CollectionsController {
     try {
       const collectionId = req.params.collection_id as ID
 
-      const result = await this.collectionService.deleteCollection(collectionId)
+      const result = await this.collectionService.deleteCollection({
+        id: collectionId
+      })
 
-      res.json(ApiResponse.success(result))
+      res.json(result)
     } catch (err) {
       next(err)
     }
@@ -172,12 +174,12 @@ class CollectionsController {
       if (!valid) {
         return res.status(404).json(ApiResponse.error('No válido', 404))
       }
-      const updated = await this.collectionService.updateCollection(
-        collectionId,
+      const updated = await this.collectionService.updateCollection({
+        id: collectionId,
         data
-      )
+      })
 
-      res.json(ApiResponse.success(updated))
+      res.json(updated)
     } catch (err) {
       next(err)
     }
@@ -206,10 +208,13 @@ class CollectionsController {
       const booksList = booksIds.split(',').map(id => id.trim()) as ID[]
 
       // Fetch books and the collection
-      let books = await this.bookService.getBooksByIdList(booksList, 24)
-      const collection = await this.collectionService.getCollectionById(
-        collectionId
-      )
+      let books = await this.bookService.getBooksByIdList({
+        list: booksList,
+        l: 24
+      })
+      const collection = await this.collectionService.getCollectionById({
+        id: collectionId
+      })
 
       // Filter books to ensure they're not already in the collection
       books = books.filter(
@@ -225,23 +230,27 @@ class CollectionsController {
 
       // Update collection and books
       await Promise.all([
-        this.collectionService.updateCollection(collectionId, {
-          books_ids: newCollectionList as ID[]
+        this.collectionService.updateCollection({
+          id: collectionId,
+          data: {
+            books_ids: newCollectionList as ID[]
+          }
         }),
         ...books.map(b => {
           b.collections_ids = Array.from(
             new Set([...(b.collections_ids ?? []), collectionId])
           )
           console.log('b.collections_ids', b.collections_ids)
-          this.bookService.updateBook(b.id as ID, {
-            collections_ids: b.collections_ids as ID[]
+          this.bookService.updateBook({
+            id: b.id as ID,
+            data: {
+              collections_ids: b.collections_ids as ID[]
+            }
           })
         })
       ])
       // Send response
-      res.json(
-        ApiResponse.success({ message: 'Colección actualizada correctamente.' })
-      )
+      res.json({ message: 'Colección actualizada correctamente.' })
     } catch (err) {
       next(err)
     }
@@ -265,12 +274,12 @@ class CollectionsController {
           .json({ error: 'El parámetro de consulta "q" es requerido' })
       }
 
-      const collections = await this.collectionService.getCollectionByQuery(
-        q,
-        lParsed
-      ) // Asegurarse de implementar este método en BooksModel
+      const collections = await this.collectionService.getCollectionByQuery({
+        query: q,
+        l: lParsed
+      }) // Asegurarse de implementar este método en BooksModel
 
-      res.json(ApiResponse.success(collections))
+      res.json(collections)
     } catch (err) {
       next(err)
     }
@@ -367,7 +376,7 @@ class CollectionsController {
             )
           )
       }
-      return res.json(ApiResponse.success(collections))
+      return res.json(collections)
     } catch (err) {
       next(err)
     }
@@ -388,11 +397,11 @@ class CollectionsController {
           .status(401)
           .json(ApiResponse.error('No se proporcionaron todos los datos', 401))
       }
-      const collection = await this.collectionService.getCollectionSaga(
+      const collection = await this.collectionService.getCollectionSaga({
         book_id,
         user_id
-      )
-      res.json(ApiResponse.success(collection))
+      })
+      res.json(collection)
     } catch (err) {
       next(err)
     }
@@ -410,12 +419,12 @@ class CollectionsController {
       const l = req.query.l as string
       const lParsed = parseInt(l, 10) || 24
       const user = req.session.user as AuthToken | undefined
-      const results = await this.collectionService.forYouPageCollections(
-        user,
-        lParsed
-      )
+      const results = await this.collectionService.forYouPageCollections({
+        userKeyInfo: user,
+        sampleSize: lParsed
+      })
 
-      return res.json(ApiResponse.success(results))
+      return res.json(results)
     } catch (err) {
       next(err)
     }

@@ -29,11 +29,11 @@ export class ConversationsController {
     try {
       const { l } = req.query
       const lParsed = parseInt(l as string, 10) ?? 0 // If 0 no limit is set
-      const conversations = await this.conversationService.getAllConversations(
-        lParsed
-      )
+      const conversations = await this.conversationService.getAllConversations({
+        l: lParsed
+      })
 
-      res.json(ApiResponse.success(conversations))
+      res.json(conversations)
     } catch (err) {
       next(err)
     }
@@ -47,13 +47,13 @@ export class ConversationsController {
     try {
       const userId = req.params.user_id as ID
 
-      const user = await this.userService.getUserById(userId)
+      const user = await this.userService.getUserById({ id: userId })
       const conversations =
-        await this.conversationService.getConversationsByList(
-          user.conversations_ids
-        )
+        await this.conversationService.getConversationsByList({
+          ids: user.conversations_ids
+        })
 
-      res.json(ApiResponse.success(conversations))
+      res.json(conversations)
     } catch (err) {
       next(err)
     }
@@ -66,10 +66,10 @@ export class ConversationsController {
   ): Promise<express.Response | void> => {
     try {
       const conversationId = req.params.conversation_id as ID
-      const conversation = await this.conversationService.getConversationById(
-        conversationId
-      )
-      res.json(ApiResponse.success(conversation))
+      const conversation = await this.conversationService.getConversationById({
+        id: conversationId
+      })
+      res.json(conversation)
     } catch (err) {
       next(err)
     }
@@ -92,7 +92,9 @@ export class ConversationsController {
       }
 
       // Check if conversation already exists
-      const conversations = await this.conversationService.getAllConversations()
+      const conversations = await this.conversationService.getAllConversations(
+        {}
+      )
       if (
         conversations.some(
           conversation =>
@@ -106,19 +108,19 @@ export class ConversationsController {
       }
 
       // Create conversation in the database first
-      const conversation = await this.conversationService.createConversation(
+      const conversation = await this.conversationService.createConversation({
         data
-      )
+      })
 
       // Only update users' conversation IDs after successful creation
       for (const userId of data.participants) {
-        const user = await this.userService.getUserById(userId)
+        const user = await this.userService.getUserById({ id: userId })
 
         user.conversations_ids = [...user.conversations_ids, conversation.id]
-        await this.userService.updateUser(user.id, user)
+        await this.userService.updateUser({ id: user.id, data: user })
       }
 
-      return res.json(ApiResponse.success(conversation))
+      return res.json(conversation)
     } catch (err) {
       next(err)
     }
@@ -133,27 +135,24 @@ export class ConversationsController {
       const conversationId = req.params.conversation_id as ID
 
       // Obtener los detalles de la conversación para encontrar al vendedor Eliminar conversacionesIds
-      const conversation = await this.conversationService.getConversationById(
-        conversationId
-      )
+      const conversation = await this.conversationService.getConversationById({
+        id: conversationId
+      })
 
       // Necesario actualizar el usuario en la que la conversación se elimina
       // Iterate through users with a for...of loop for async handling
       for (const userId of conversation.participants) {
-        const user = await this.userService.getUserById(userId)
+        const user = await this.userService.getUserById({ id: userId })
         // Assign conversation ID to user's conversationsIds
         user.conversations_ids = user.conversations_ids.filter(
           id => id !== conversationId
         )
-        await this.userService.updateUser(user.id, user)
+        await this.userService.updateUser({ id: user.id, data: user })
       }
 
       // Eliminar el mensaje de la base de datos
-      await this.conversationService.deleteConversation(conversationId)
-
-      res.json(
-        ApiResponse.success({ message: 'Conversación eliminada con éxito' })
-      )
+      await this.conversationService.deleteConversation({ id: conversationId })
+      res.json({ message: 'Conversación eliminada con éxito' })
     } catch (err) {
       next(err)
     }

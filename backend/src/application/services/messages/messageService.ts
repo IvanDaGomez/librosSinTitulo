@@ -30,44 +30,50 @@ export class MessageService implements MessageInterface {
     )
   }
 
-  getAllMessagesByConversation (id: ID): Promise<MessageType[]> {
+  getAllMessagesByConversation ({ id }: { id: ID }): Promise<MessageType[]> {
     return this.handle(
-      () => this.messagesModel.getAllMessagesByConversation(id),
+      () => this.messagesModel.getAllMessagesByConversation({ id }),
       `Error getting messages for conversation with id: ${id}`
     )
   }
 
-  getMessageById (id: ID): Promise<MessageType> {
+  getMessageById ({ id }: { id: ID }): Promise<MessageType> {
     return this.handle(
-      () => this.messagesModel.getMessageById(id),
+      () => this.messagesModel.getMessageById({ id }),
       `Error getting message with id: ${id}`
     )
   }
 
-  sendMessage (data: Partial<MessageType>): Promise<MessageType> {
+  sendMessage ({ data }: { data: Partial<MessageType> }): Promise<MessageType> {
     return this.handle(
-      () => this.messagesModel.sendMessage(data),
+      () => this.messagesModel.sendMessage({ data }),
       'Error sending message'
     )
   }
 
-  deleteMessage (id: ID): Promise<StatusResponseType> {
+  deleteMessage ({ id }: { id: ID }): Promise<StatusResponseType> {
     return this.handle(
-      () => this.messagesModel.deleteMessage(id),
+      () => this.messagesModel.deleteMessage({ id }),
       `Error deleting message with id: ${id}`
     )
   }
 
-  updateMessage (id: ID, data: Partial<MessageType>): Promise<MessageType> {
+  updateMessage ({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<MessageType>
+  }): Promise<MessageType> {
     return this.handle(
-      () => this.messagesModel.updateMessage(id, data),
+      () => this.messagesModel.updateMessage({ id, data }),
       `Error updating message with id: ${id}`
     )
   }
 
-  getMessagesByQuery (query: string): Promise<MessageType[]> {
+  getMessagesByQuery ({ query }: { query: string }): Promise<MessageType[]> {
     return this.handle(
-      () => this.messagesModel.getMessagesByQuery(query),
+      () => this.messagesModel.getMessagesByQuery({ query }),
       `Error getting messages by query: ${query}`
     )
   }

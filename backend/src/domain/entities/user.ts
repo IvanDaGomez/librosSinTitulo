@@ -69,9 +69,9 @@ export type UserType = {
     [key: string]: number
   }
   balance: {
-    available: number
-    incoming: number
-    pending: number
+    available?: number
+    incoming?: number
+    pending?: number
   }
 }
 

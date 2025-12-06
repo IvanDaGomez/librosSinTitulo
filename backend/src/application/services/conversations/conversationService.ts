@@ -23,50 +23,54 @@ export class ConversationService implements ConversationInterface {
     }
   }
 
-  getAllConversations (l?: number): Promise<ConversationType[]> {
-    if (l !== undefined && l < 1) l = 10
+  getAllConversations ({ l = 10 }: { l?: number }): Promise<ConversationType[]> {
     return this.handle(
-      () => this.conversationsModel.getAllConversations(l),
+      () => this.conversationsModel.getAllConversations({ l }),
       'Error getting all conversations'
     )
   }
 
-  getConversationsByList (conversationsIds: ID[]): Promise<ConversationType[]> {
+  getConversationsByList ({ ids }: { ids: ID[] }): Promise<ConversationType[]> {
     return this.handle(
-      () => this.conversationsModel.getConversationsByList(conversationsIds),
+      () => this.conversationsModel.getConversationsByList({ ids }),
       'Error getting conversations by list'
     )
   }
 
-  getConversationById (conversation_id: ID): Promise<ConversationType> {
+  getConversationById ({ id }: { id: ID }): Promise<ConversationType> {
     return this.handle(
-      () => this.conversationsModel.getConversationById(conversation_id),
-      `Error getting conversation with id: ${conversation_id}`
+      () => this.conversationsModel.getConversationById({ id }),
+      `Error getting conversation with id: ${id}`
     )
   }
 
-  createConversation (
+  createConversation ({
+    data
+  }: {
     data: Partial<ConversationType>
-  ): Promise<ConversationType> {
+  }): Promise<ConversationType> {
     return this.handle(
-      () => this.conversationsModel.createConversation(data),
+      () => this.conversationsModel.createConversation({ data }),
       'Error creating conversation'
     )
   }
 
-  updateConversation (
-    id: ID,
+  updateConversation ({
+    id,
+    data
+  }: {
+    id: ID
     data: Partial<ConversationType>
-  ): Promise<ConversationType> {
+  }): Promise<ConversationType> {
     return this.handle(
-      () => this.conversationsModel.updateConversation(id, data),
+      () => this.conversationsModel.updateConversation({ id, data }),
       `Error updating conversation with id: ${id}`
     )
   }
 
-  deleteConversation (id: ID): Promise<StatusResponseType> {
+  deleteConversation ({ id }: { id: ID }): Promise<StatusResponseType> {
     return this.handle(
-      () => this.conversationsModel.deleteConversation(id),
+      () => this.conversationsModel.deleteConversation({ id }),
       `Error deleting conversation with id: ${id}`
     )
   }

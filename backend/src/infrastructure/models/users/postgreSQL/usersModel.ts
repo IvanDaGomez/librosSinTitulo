@@ -43,7 +43,7 @@ class UsersModel implements UserInterface {
     return users
   }
 
-  async getUserById (id: ID): Promise<UserType> {
+  async getUserById ({ id }: { id: ID }): Promise<UserType> {
     // Esta función devuelve un usuario específico por su ID, pero sin información sensible como la contraseña
     const query = `SELECT ${this.getEssencialFields().join(
       ', '
@@ -65,7 +65,7 @@ class UsersModel implements UserInterface {
     }
     return createUser(user, true)
   }
-  async getUsersByIdList (list: ID[]): Promise<UserType[]> {
+  async getUsersByIdList ({ list }: { list: ID[] }): Promise<UserType[]> {
     const users: PartialUserType[] = await executeQuery(
       pool,
       () =>
@@ -80,7 +80,7 @@ class UsersModel implements UserInterface {
     return users.map(user => createUser(user, true))
   }
 
-  async getPhotoAndNameUser (id: ID): Promise<{
+  async getPhotoAndNameUser ({ id }: { id: ID }): Promise<{
     id: ID
     profile_picture: ImageType
     name: string
@@ -99,7 +99,11 @@ class UsersModel implements UserInterface {
     return user
   }
 
-  async getEmailById (id: ID): Promise<{ email: string; name: string }> {
+  async getEmailById ({
+    id
+  }: {
+    id: ID
+  }): Promise<{ email: string; name: string }> {
     const user = await executeSingleResultQuery(
       pool,
       () => pool.query(`SELECT email, name FROM users WHERE id = $1;`, [id]),
@@ -194,28 +198,36 @@ class UsersModel implements UserInterface {
       newUser.email = data.email
       // La validación es por defecto true si se hace este método
       newUser.validated = true
-      await this.createUser(newUser)
+      await this.createUser({
+        name: newUser.name,
+        email: newUser.email,
+        password: newUser.password
+      })
       return createUser(newUser, false)
     }
     return createUser(user, false)
   }
 
-  async facebookLogin (data: {
+  async facebookLogin ({
+    name,
+    email,
+    profile_picture
+  }: {
     name: string
     email: string
     profile_picture: ImageType
   }): Promise<PartialUserType> {
     const user = await executeSingleResultQuery<UserType>(
       pool,
-      () => pool.query(`SELECT * FROM users WHERE email = $1;`, [data.email]),
+      () => pool.query(`SELECT * FROM users WHERE email = $1;`, [email]),
       'Error getting user'
     )
     if (!user) {
       // Facebook sign-up flow
-      const newUser = createUser(data, true) // Ensure `createUser` sanitizes and structures the input
+      const newUser = createUser({ name, email, profile_picture }, true) // Ensure `createUser` sanitizes and structures the input
       newUser.login = 'Facebook' // Mark this as a Facebook user
       // createUser() elimina el email y la contraseña (que no hay)
-      newUser.email = data.email
+      newUser.email = email
       // La validación es por defecto true si se hace este método
       newUser.validated = true
       const result = await executeSingleResultQuery<PartialUserType>(
@@ -240,7 +252,7 @@ class UsersModel implements UserInterface {
     }
     return createUser(user, false)
   }
-  async getPassword (id: ID): Promise<string> {
+  async getPassword ({ id }: { id: ID }): Promise<string> {
     const user = await executeSingleResultQuery<{ password: string }>(
       pool,
       () =>
@@ -255,7 +267,7 @@ class UsersModel implements UserInterface {
     }
     return user.password
   }
-  async getUserByEmail (email: string): Promise<UserType> {
+  async getUserByEmail ({ email }: { email: string }): Promise<UserType> {
     const user = await executeSingleResultQuery(
       pool,
       () => pool.query(`SELECT * FROM users WHERE email = $1;`, [email]),
@@ -269,8 +281,16 @@ class UsersModel implements UserInterface {
     return user
   }
 
-  async createUser (data: Partial<UserType>): Promise<UserType> {
-    const newUser = createUser(data, true)
+  async createUser ({
+    name,
+    email,
+    password
+  }: {
+    name: string
+    email: string
+    password: string
+  }): Promise<UserType> {
+    const newUser = createUser({ name, email, password }, true)
     newUser.password = await bcrypt.hash(newUser.password, SALT_ROUNDS)
     await executeQuery(
       pool,
@@ -313,12 +333,18 @@ class UsersModel implements UserInterface {
     )
     return newUser
   }
-  async updateUser (id: ID, data: Partial<UserType>): Promise<UserType> {
+  async updateUser ({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<UserType>
+  }): Promise<UserType> {
     data.updated_at = new Date().toISOString()
 
     // 1. Validación de email
     if (data.email) {
-      const userWithSameEmail = await this.getUserByEmail(data.email)
+      const userWithSameEmail = await this.getUserByEmail({ email: data.email })
       if (userWithSameEmail && userWithSameEmail.id !== id) {
         throw new ModelError('El email ya está en uso')
       }
@@ -362,8 +388,8 @@ class UsersModel implements UserInterface {
     return result
   }
 
-  async deleteUser (id: ID): Promise<StatusResponseType> {
-    const user = await this.getUserById(id)
+  async deleteUser ({ id }: { id: ID }): Promise<StatusResponseType> {
+    const user = await this.getUserById({ id })
     if (!user) {
       throw new ModelError('Usuario no encontrado')
     }
@@ -375,18 +401,23 @@ class UsersModel implements UserInterface {
     return StatusResponse.success('Usuario eliminado con éxito')
   }
 
-  async getBalance (id: ID): Promise<{
-    pending: number
-    available: number
-    incoming: number
+  async getBalance ({ id }: { id: ID }): Promise<{
+    pending?: number
+    available?: number
+    incoming?: number
   }> {
-    const user = await this.getUserById(id)
+    const user = await this.getUserById({ id })
     return user.balance
   }
-  async banUser (value: ID): Promise<StatusResponseType> {
+  async banUser ({
+    value
+  }: {
+    value: ID | string
+  }): Promise<StatusResponseType> {
     // 1. Normalizar: obtener usuario por ID o por email
     const user =
-      (await this.getUserById(value)) || (await this.getUserByEmail(value))
+      (await this.getUserById({ id: value as ID })) ||
+      (await this.getUserByEmail({ email: value }))
 
     if (!user) {
       throw new ModelError('Usuario no encontrado')
@@ -400,7 +431,7 @@ class UsersModel implements UserInterface {
 
       // 2. Suspender usando el ID REAL
       await client.query(
-        `UPDATE users SET estado_cuenta = 'Suspendido' WHERE id = $1;`,
+        `UPDATE users SET account_status = 'Suspendido' WHERE id = $1;`,
         [userId]
       )
 

@@ -1,7 +1,8 @@
 import express from 'express'
 import { sendOpenAIRequest } from '@/application/handlers/sendOpenAIRequest.js'
 import { __dirname, s3 } from '@/utils/config.js'
-import { deleteFileFromS3 } from '@/utils/aws-assets/deleteObject.js'
+import { deleteFileFromS3 } from '@/utils/aws-assets/deleteFromS3.js'
+import { ControllerError } from '@/domain/exceptions/controllerError'
 export const AIMode = async (
   req: express.Request,
   res: express.Response,
@@ -19,7 +20,7 @@ export const AIMode = async (
 
     const file = req.file as Express.MulterS3.File | undefined
     if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' })
+      throw new ControllerError('No file uploaded', 400)
     }
     const path = file.filename || file.location
     const endpoint = path.split('amazonaws.com')[1] // Extract the path after the S3 bucket URL
@@ -27,11 +28,13 @@ export const AIMode = async (
     //const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${path}`
     const data = await sendOpenAIRequest(imagePath)
     if (!data) {
-      return res.status(500).json({ error: 'No data received from OpenAI' })
+      throw new ControllerError('No data received from OpenAI', 500)
     }
+
     // Delete the file after processing
     // Note: The file is stored in S3, so we need to delete it from there
     // if local file = __dirname + '/uploads/' + path
+
     await deleteFileFromS3(path)
     return res.json(data)
   } catch (err) {

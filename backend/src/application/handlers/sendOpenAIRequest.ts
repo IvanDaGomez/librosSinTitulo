@@ -1,6 +1,5 @@
 async function sendOpenAIRequest (imageUrl: string): Promise<object | null> {
   // Create the prompt
-  if (!imageUrl) return null
 
   const GPTContext =
     'Eres un asistente de IA que extrae información de portadas de libros. Tu tarea es analizar la imagen y extraer información relevante sobre el libro. Proporciona la información en formato JSON.'

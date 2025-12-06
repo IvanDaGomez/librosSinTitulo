@@ -29,7 +29,7 @@ export class MessagesController {
   ) => {
     try {
       const messages = await this.messageService.getAllMessages()
-      res.json(ApiResponse.success(messages))
+      res.json(messages)
     } catch (err) {
       next(err)
     }
@@ -50,7 +50,7 @@ export class MessagesController {
       const message = await this.messageService.getAllMessagesByConversation(
         conversationId
       )
-      res.json(ApiResponse.success(message))
+      res.json(message)
     } catch (err) {
       next(err)
     }
@@ -69,7 +69,7 @@ export class MessagesController {
           .json(ApiResponse.error('ID de mensaje no proporcionado', 400))
       }
       const message = await this.messageService.getMessageById(messageId)
-      res.json(ApiResponse.success(message))
+      res.json(message)
     } catch (err) {
       next(err)
     }
@@ -115,7 +115,7 @@ export class MessagesController {
 
       const message = await this.messageService.sendMessage(data)
 
-      res.json(ApiResponse.success(message))
+      res.json(message)
     } catch (err) {
       next(err)
     }
@@ -136,7 +136,7 @@ export class MessagesController {
       // Eliminar el mensaje de la base de datos
       await this.messageService.deleteMessage(messageId)
 
-      res.json(ApiResponse.success({ message: 'Mensaje eliminado con éxito' }))
+      res.json({ message: 'Mensaje eliminado con éxito' })
     } catch (err) {
       next(err)
     }
@@ -157,9 +157,7 @@ export class MessagesController {
 
       await this.messageService.updateMessage(messageId, { read: true })
 
-      res.json(
-        ApiResponse.success({ message: 'Mensaje actualizado con éxito' })
-      )
+      res.json({ message: 'Mensaje actualizado con éxito' })
     } catch (err) {
       next(err)
     }
@@ -177,7 +175,7 @@ export class MessagesController {
           .json(ApiResponse.error('Consulta no proporcionada', 400))
       }
       const messages = await this.messageService.getMessagesByQuery(query)
-      res.json(ApiResponse.success(messages))
+      res.json(messages)
     } catch (err) {
       next(err)
     }

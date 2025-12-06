@@ -11,7 +11,7 @@ import { createUser } from '@/domain/mappers/createUser.js'
 import { UserInterface } from '@/domain/interfaces/user.js'
 
 async function checkEmailExists (email: string, UsersModel: UserInterface) {
-  const correo = await UsersModel.getUserByEmail(email)
+  const correo = await UsersModel.getUserByEmail({ email })
 
   if (correo?.email) {
     throw new Error('El correo ya existe')
@@ -58,7 +58,7 @@ async function updateUserFavorites (
   accion: string,
   UsersModel: UserInterface
 ): Promise<ID[]> {
-  const user = await UsersModel.getUserById(userId)
+  const user = await UsersModel.getUserById({ id: userId })
   console.log('User found:', user)
   if (!user) throw new Error('Usuario no encontrado')
 

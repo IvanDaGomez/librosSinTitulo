@@ -32,16 +32,16 @@ export class TransactionService implements TransactionInterface {
     )
   }
 
-  getAllTransactionsByUser (id: ID): Promise<TransactionType[]> {
+  getAllTransactionsByUser ({ id }: { id: ID }): Promise<TransactionType[]> {
     return this.handle(
-      () => this.transactionsModel.getAllTransactionsByUser(id),
+      () => this.transactionsModel.getAllTransactionsByUser({ id }),
       `Error getting transactions for user id: ${id}`
     )
   }
 
-  getTransactionById (id: number): Promise<TransactionType> {
+  getTransactionById ({ id }: { id: string }): Promise<TransactionType> {
     return this.handle(
-      () => this.transactionsModel.getTransactionById(id),
+      () => this.transactionsModel.getTransactionById({ id }),
       `Error getting transaction with id: ${id}`
     )
   }
@@ -53,26 +53,29 @@ export class TransactionService implements TransactionInterface {
     )
   }
 
-  deleteTransaction (id: number): Promise<StatusResponseType> {
+  deleteTransaction ({ id }: { id: string }): Promise<StatusResponseType> {
     return this.handle(
-      () => this.transactionsModel.deleteTransaction(id),
+      () => this.transactionsModel.deleteTransaction({ id }),
       `Error deleting transaction with id: ${id}`
     )
   }
 
-  updateTransaction (
-    id: number,
+  updateTransaction ({
+    id,
+    data
+  }: {
+    id: string
     data: Partial<TransactionType>
-  ): Promise<TransactionType> {
+  }): Promise<TransactionType> {
     return this.handle(
-      () => this.transactionsModel.updateTransaction(id, data),
+      () => this.transactionsModel.updateTransaction({ id, data }),
       `Error updating transaction with id: ${id}`
     )
   }
 
-  getBookByTransactionId (id: string): Promise<BookType> {
+  getBookByTransactionId ({ id }: { id: string }): Promise<BookType> {
     return this.handle(
-      () => this.transactionsModel.getBookByTransactionId(id),
+      () => this.transactionsModel.getBookByTransactionId({ id }),
       `Error getting book for transaction id: ${id}`
     )
   }
@@ -93,9 +96,13 @@ export class TransactionService implements TransactionInterface {
     )
   }
 
-  markWithdrawTransaction (user_id: string): Promise<StatusResponseType> {
+  markWithdrawTransaction ({
+    user_id
+  }: {
+    user_id: ID
+  }): Promise<StatusResponseType> {
     return this.handle(
-      () => this.transactionsModel.markWithdrawTransaction(user_id),
+      () => this.transactionsModel.markWithdrawTransaction({ user_id }),
       `Error marking withdraw transaction for user id: ${user_id}`
     )
   }

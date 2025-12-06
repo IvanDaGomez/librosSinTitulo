@@ -6,14 +6,14 @@
   "type": "module",
   "scripts": {
     "watch": "tsc --watch && tsc-alias --watch",
-    "dev:nodaemon": "node --watch dist/createServer/createServerLocal.js",
+    "dev:nodaemon": "tsc --watch && tsc-alias --watch && node --watch dist/createServer/createServerLocal.js",
     "dev": "tsc --watch  & docker-compose -f docker/docker-compose.dev.yml down & docker-compose -f docker/docker-compose.dev.yml up -d --build",
     "dev:local": "tsc --watch & node --watch dist/createServer/createServerLocal.js",
     "dev:postgre": "tsc --watch & node --watch dist/createServer/createServerPostgreSQL.js",
     "dev:ec2:postgre": "node --watch dist/createServer/createServerPostgreSQL.js",
     "dev:ec2:local": "node --watch dist/createServer/createServerLocal.js",
-    "updateDataBase": "tsc && node dist/assets/updateDB.ts",
-    "document": "node src/assets/swagger.js",
+    "updateDataBase": "tsc && node dist/utils/updateDB.ts",
+    "document": "node src/utils/swagger.js",
     "build": "tsc && tsc-alias",
     "start": "node dist/createServer/createServerPostgreSQL.js",
     "deploy": "tsc && docker build --platform=linux/amd64 -t meridian:1.0 . && docker tag meridian:1.0 571152876653.dkr.ecr.sa-east-1.amazonaws.com/meridian:1.0 && docker push 571152876653.dkr.ecr.sa-east-1.amazonaws.com/meridian:1.0 && docker tag meridian:1.0 571152876653.dkr.ecr.sa-east-1.amazonaws.com/meridian:1.0 && docker push 571152876653.dkr.ecr.sa-east-1.amazonaws.com/meridian:1.0 && rsync -avz -e 'ssh -i ~/Documents/Ivan/claves/bookstore-backend-ivan.pem' ./docker/docker-compose.yml ./docker/.env ./docker/Caddyfile ubuntu@ec2-54-94-3-107.sa-east-1.compute.amazonaws.com:~/app/ && ssh -i ~/Documents/Ivan/claves/bookstore-backend-ivan.pem ubuntu@ec2-54-94-3-107.sa-east-1.compute.amazonaws.com 'cd ~/app/ && sudo docker-compose pull && docker-compose up -d'",
@@ -22,8 +22,8 @@
     "docker:fix-root": "sudo mkdir -p /root/.docker && sudo cp ~/.docker/config.json /root/.docker/config.json",
     "loginAWS": "aws ecr get-login-password --region sa-east-1 | docker login --username AWS --password-stdin 571152876653.dkr.ecr.sa-east-1.amazonaws.com",
     "connect": "ssh -i 'bookstore-backend-ivan.pem' ubuntu@ec2-54-94-3-107.sa-east-1.compute.amazonaws.com",
-    "seed": "node dist/assets/seed.js",
-    "testEmail": "tsc && node dist/assets/email/sendTryEmail.js",
+    "seed": "node dist/utils/seed.js",
+    "testEmail": "tsc && node dist/utils/sendTryEmail.js",
     "sendExistingImages": "aws s3 sync ./exclude/uploads/ s3://www.meridianlib.com/uploads/ && aws s3 sync ./exclude/optimized/ s3://www.meridianlib.com/optimized/"
   },
   "author": "Ivan Gomez",
@@ -78,6 +78,6 @@
     "extends": "standard"
   },
   "_moduleAliases": {
-    "@assets": "src/assets"
+    "@utils": "src/utils"
   }
 }

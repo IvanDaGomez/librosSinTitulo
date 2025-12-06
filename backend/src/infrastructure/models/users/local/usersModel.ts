@@ -28,7 +28,13 @@ class UsersModel implements UserInterface {
     const users: UserType[] = JSON.parse(data)
     return users.map(user => createUser(user, true))
   }
-  async getUsersByIdList (list: ID[], l: number): Promise<UserType[]> {
+  async getUsersByIdList ({
+    list,
+    l
+  }: {
+    list: ID[]
+    l: number
+  }): Promise<UserType[]> {
     const users = await this.getAllUsers()
     return users.filter(user => list.includes(user.id)).slice(0, l)
   }
@@ -42,7 +48,7 @@ class UsersModel implements UserInterface {
     return users.map(user => createUser(user, false))
   }
 
-  async getUserById (id: ID): Promise<UserType> {
+  async getUserById ({ id }: { id: ID }): Promise<UserType> {
     // Esta función devuelve un usuario específico por su ID, pero sin información sensible como la contraseña
     const users = await this.getAllUsersSafe()
     const user = users.find(user => user.id === id)
@@ -52,7 +58,7 @@ class UsersModel implements UserInterface {
     return createUser(user, true)
   }
 
-  async getPhotoAndNameUser (id: ID): Promise<{
+  async getPhotoAndNameUser ({ id }: { id: ID }): Promise<{
     id: ID
     profile_picture: ImageType
     name: string
@@ -70,7 +76,11 @@ class UsersModel implements UserInterface {
     }
   }
 
-  async getEmailById (id: ID): Promise<{ email: string; name: string }> {
+  async getEmailById ({
+    id
+  }: {
+    id: ID
+  }): Promise<{ email: string; name: string }> {
     const users = await this.getAllUsers()
     const user = users.find(user => user.id === id)
     if (!user) {
@@ -186,7 +196,7 @@ class UsersModel implements UserInterface {
     return createUser(user, false)
   }
 
-  async getUserByEmail (email: string): Promise<UserType> {
+  async getUserByEmail ({ email }: { email: string }): Promise<UserType> {
     const users = await this.getAllUsers()
     const user = users.find(usuario => usuario.email === email)
     if (!user) {
@@ -210,7 +220,13 @@ class UsersModel implements UserInterface {
     return newUser
   }
 
-  async updateUser (id: ID, data: Partial<UserType>): Promise<UserType> {
+  async updateUser ({
+    id,
+    data
+  }: {
+    id: ID
+    data: Partial<UserType>
+  }): Promise<UserType> {
     const users = await this.getAllUsers()
     const userIndex = users.findIndex(
       user => user.id.toString() === id.toString()
@@ -238,7 +254,7 @@ class UsersModel implements UserInterface {
     return createUser(users[userIndex], true)
   }
 
-  async deleteUser (id: ID): Promise<StatusResponseType> {
+  async deleteUser ({ id }: { id: ID }): Promise<StatusResponseType> {
     const users = await this.getAllUsersSafe()
     const userIndex = users.findIndex(user => user.id === id)
     if (userIndex === -1) {
@@ -249,16 +265,16 @@ class UsersModel implements UserInterface {
     return StatusResponse.success('Usuario eliminado con éxito') // Mensaje de éxito
   }
 
-  async getBalance (id: ID): Promise<{
-    pending: number
-    available: number
-    incoming: number
+  async getBalance ({ id }: { id: ID }): Promise<{
+    pending?: number
+    available?: number
+    incoming?: number
   }> {
-    const user = await this.getUserById(id)
+    const user = await this.getUserById({ id })
     return user.balance
   }
 
-  async getPassword (id: ID): Promise<string> {
+  async getPassword ({ id }: { id: ID }): Promise<string> {
     const users = await this.getAllUsers()
     const user = users.find(usuario => usuario.id === id)
     if (!user) {
@@ -266,10 +282,12 @@ class UsersModel implements UserInterface {
     }
     return user.password
   }
-  async banUser (value: ID): Promise<StatusResponseType> {
+  async banUser ({ value }: { value: ID }): Promise<StatusResponseType> {
     const users = await this.getAllUsers()
     const userIndex = users.findIndex(
-      user => user.id.toString() === value.toString()
+      user =>
+        user.id.toString() === value.toString() ||
+        user.email === value.toString()
     )
     if (userIndex === -1) {
       throw new Error('Usuario no encontrado')
