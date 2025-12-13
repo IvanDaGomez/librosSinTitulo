@@ -9,15 +9,14 @@ import { sendNotification } from '@/utils/notifications/sendNotification.js'
 import bcrypt from 'bcrypt'
 import {
   checkEmailExists,
-  initializeDataCreateUser,
   jwtPipeline,
   processUserUpdate,
   updateUserFavorites
-} from '../../handlers/helperFunctions.js'
+} from '@/application/handlers/helperFunctions.js'
 import express from 'express'
 import { replaceDashesWithSpaces } from '@/utils/parseSpaces.js'
-import { PartialUserType, UserType } from '@/domain/entities/user.js'
-import { ID, ImageType, ISOString } from '@/shared/types'
+import { UserType } from '@/domain/entities/user.js'
+import { ID, ImageType } from '@/shared/types'
 
 import { AuthToken } from '@/domain/entities/authToken.js'
 import { SALT_ROUNDS } from '@/utils/config.js'
@@ -29,6 +28,7 @@ import { ApiResponse } from '@/domain/valueObjects/apiResponse.js'
 import { UserService } from '@/application/services/users/userService.js'
 import { BookService } from '@/application/services/books/bookService.js'
 import { TransactionService } from '@/application/services/transactions/transactionService.js'
+import { ControllerError } from '@/domain/exceptions/controllerError'
 const SECRET_KEY: string = process.env.JWT_SECRET ?? ''
 export class UsersController {
   private userService: UserInterface
@@ -43,9 +43,14 @@ export class UsersController {
     TransactionsModel: TransactionInterface
     BooksModel: BookInterface
   }) {
-    this.userService = new UserService(UsersModel)
-    this.transactionService = new TransactionService(TransactionsModel)
-    this.bookService = new BookService(BooksModel)
+    this.userService = new UserService({ usersModel: UsersModel })
+    this.transactionService = new TransactionService({
+      transactionsModel: TransactionsModel
+    })
+    this.bookService = new BookService({
+      bookModel: BooksModel,
+      userService: this.userService
+    })
   }
 
   getAllUsers = async (
@@ -53,6 +58,10 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract users from userService
+    2. Send users as JSON response
+    */
     try {
       const users = await this.userService.getAllUsers()
 
@@ -67,6 +76,10 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract users from userService
+    2. Send users as JSON response
+    */
     try {
       const users = await this.userService.getAllUsersSafe()
 
@@ -82,17 +95,16 @@ export class UsersController {
     next: express.NextFunction
   ): Promise<express.Response | void> => {
     /*
-      Aquí se obtiene libros específicos por su ID y se envía como respuesta.
-      Si no se encuentra el libro, se envía un error 404.
+    1. Extract list of IDs from req.params
+    2. Use userService to get users by list of IDs
+    3. Send users as JSON responsex
     */
     try {
       const ids = req.params.ids
 
       const idsArray = ids.split(',').map(id => id.trim()) as ID[]
       if (!ids || ids.length === 0) {
-        return res
-          .status(400)
-          .json(ApiResponse.error('No se proporcionaron IDs', 400))
+        throw new ControllerError('No se proporcionaron IDs', 400)
       }
       const users = await this.userService.getUsersByIdList({
         list: idsArray,
@@ -108,6 +120,11 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract user ID from req.params
+    2. Use userService to get user by ID
+    3. Send user as JSON response
+    */
     try {
       const userId = req.params.user_id as ID
       const user = await this.userService.getUserById({ id: userId })
@@ -123,6 +140,11 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract user ID from req.params
+    2. Use userService to get user photo and name by ID
+    3. Send user photo and name as JSON response
+    */
     try {
       const userId = req.params.user_id as ID
       const user = await this.userService.getPhotoAndNameUser({ id: userId })
@@ -137,6 +159,11 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract user ID from req.params
+    2. Use userService to get user email by ID
+    3. Send user email as JSON response
+    */
     try {
       const userId = req.params.user_id as ID
       const email = await this.userService.getEmailById({ id: userId })
@@ -152,16 +179,20 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract query from req.query
+    2. Use userService to get users by query
+    3. Send users as JSON response
+    */
     try {
-      let q = req.query.q as string | undefined // Obtener el valor del parámetro de consulta 'q'
-      q = replaceDashesWithSpaces(q)
-      if (!q) {
-        return res
-          .status(400)
-          .json({ error: 'El query parameter "q" es requerido' })
-      }
+      let q = req.query.q as string | undefined
 
-      const users = await this.userService.getUserByQuery(q) // Asegurarse de implementar este método en this.userService
+      if (!q) {
+        throw new ControllerError('El query parameter "q" es requerido', 400)
+      }
+      q = replaceDashesWithSpaces(q)
+
+      const users = await this.userService.getUserByQuery(q)
 
       res.json(users)
     } catch (err) {
@@ -174,13 +205,17 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract email and password from req.body
+    2. Use userService to login
+    3. Update JWT token in cookie
+    4. Send user as JSON response
+    */
     try {
       const { email, password }: { email: string; password: string } = req.body
 
       if (!email || !password) {
-        return res
-          .status(400)
-          .json(ApiResponse.error('Algunos espacios están en blanco', 400))
+        throw new ControllerError('Algunos espacios están en blanco', 400)
       }
 
       const user = await this.userService.login({
@@ -201,6 +236,10 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract name, email, and profile_picture from req.body
+    2. Use userService to login or create user
+    */
     try {
       const data = req.body as {
         email: string
@@ -222,6 +261,10 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract name, email, and profile_picture from req.body
+    2. Use userService to login or create user
+    */
     try {
       const { name, email, profile_picture } = req.body as {
         email: string | undefined
@@ -229,7 +272,7 @@ export class UsersController {
         profile_picture?: ImageType
       }
       if (!name || !email) {
-        return res.status(400).json(ApiResponse.error('Faltan datos', 400))
+        throw new ControllerError('Faltan datos', 400)
       }
       const user = await this.userService.facebookLogin({
         name,
@@ -249,41 +292,21 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ) => {
-    let data = req.body
-    const parsedData = createUser(data, true)
-
+    /*
+    1. Validate user data from req.body
+    2. Check if email already exists
+    3. Initialize user data
+    4. Create user using userService
+    */
     try {
-      // Validación
-
+      let data = req.body
       const validated = validateUser(data)
       if (!validated.success) {
-        return res
-          .status(400)
-          .json(ApiResponse.error(String(validated.error), 400))
+        throw new ControllerError(String(validated.error), 400)
       }
-      // Revisar si el correo ya está en uso
-      await checkEmailExists(data.email, this.userService)
-      // Inicializar los datos
-      data = initializeDataCreateUser(data)
-      // Crear usuario
+
       const user = await this.userService.createUser(data)
-      // Enviar correo de agradecimiento por unirse a meridian
-      await sendEmail(
-        `${data.nombre} ${data.correo}`,
-        'Bienvenido a Meridian!',
-        createEmail({ user }, 'thankEmail'),
-        'no-reply'
-      )
-      // Enviar notificación de bienvenida
-      await sendNotification(
-        createNotification(
-          {
-            id: user.id
-          },
-          'welcomeUser'
-        )
-      )
-      // Si todo es exitoso, devolver el usuario creado
+
       jwtPipeline(user, res)
       res.json(user)
     } catch (err) {
@@ -296,10 +319,15 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
+    /*
+    1. Extract user ID from req.params
+    2. Use userService to delete user by ID
+
+    */
     try {
       const userId = req.params.user_id as ID
       const result = await this.userService.deleteUser({ id: userId })
-      res.json(ApiResponse.success(result))
+      res.json(result)
     } catch (err) {
       next(err)
     }
@@ -316,12 +344,8 @@ export class UsersController {
       // Validar datos
       const validated = validatePartialUser(data)
       if (!validated.success) {
-        console.dir(validated.error.errors, { depth: null })
-        return res
-          .status(400)
-          .json(ApiResponse.error('Error validando usuario', 400))
+        throw new ControllerError(String(validated.error), 400)
       }
-
       const updatedData = await processUserUpdate(
         data,
         userId,
@@ -329,15 +353,12 @@ export class UsersController {
         this.userService
       )
 
-      // Actualizar usuario
-      console.log('Updating user...')
       const user = await this.userService.updateUser({
         id: userId,
         data: updatedData
       })
 
       jwtPipeline(user, res)
-      // Enviar el nuevo token en la cookie
       res.json(user)
     } catch (err) {
       next(err)
@@ -348,25 +369,27 @@ export class UsersController {
     res: express.Response,
     next: express.NextFunction
   ): Promise<express.Response | void> => {
-    console.log(req.body)
+    /*
+    1. Extract user ID from req.params
+    2. Extract book ID and action from req.body
+    3. Update user's favorites using userService
+    4. Send updated favorites as JSON response
+    */
     try {
       const userId = req.params.user_id as ID
 
       const { accion, book_id } = req.body as { accion: string; book_id: ID }
 
       if (!accion) {
-        return res
-          .status(400)
-          .json(ApiResponse.error('Acción no proporcionada', 400))
+        throw new ControllerError('Acción no proporcionada', 400)
       }
-      console.log('Updating favorites...')
+
       const updatedFavorites = await updateUserFavorites(
         userId,
         book_id,
         accion,
         this.userService
       )
-      console.log('Updated favorites:', updatedFavorites)
       await this.userService.updateUser({
         id: userId,
         data: {
@@ -432,7 +455,7 @@ export class UsersController {
     }
     if (data.validated === 'true') {
       // Si el usuario ya está validado, no se envía el correo
-      return res.json(ApiResponse.success({ verified: true }))
+      return res.json({ verified: true })
     }
     try {
       // Generate a token with user ID (or email) for validation
@@ -521,7 +544,7 @@ export class UsersController {
 
       jwtPipeline(user, res)
       // Set the new cookie
-      res.json(ApiResponse.success({ validated: true }))
+      res.json({ validated: true })
     } catch (err) {
       next(err)
     }
@@ -561,9 +584,7 @@ export class UsersController {
         'no-reply'
       )
 
-      return res.json(
-        ApiResponse.success({ ok: true, message: 'Correo enviado con éxito' })
-      )
+      return res.json({ ok: true, message: 'Correo enviado con éxito' })
     } catch (err) {
       next(err)
     }
@@ -612,12 +633,10 @@ export class UsersController {
         data: { password: hashedPassword }
       })
 
-      return res.json(
-        ApiResponse.success({
-          ok: true,
-          message: 'Contraseña actualizada con éxito'
-        })
-      )
+      return res.json({
+        ok: true,
+        message: 'Contraseña actualizada con éxito'
+      })
     } catch (err) {
       next(err)
     }
@@ -671,7 +690,7 @@ export class UsersController {
       }
 
       jwtPipeline(user, res)
-      res.json(ApiResponse.success({ ok: true, action, follower, user }))
+      res.json({ ok: true, action, follower, user })
     } catch (err) {
       next(err)
     }
@@ -692,7 +711,7 @@ export class UsersController {
 
       const balance = await this.userService.getBalance({ id: userId })
 
-      res.json(ApiResponse.success({ balance }))
+      res.json({ balance })
     } catch (err) {
       next(err)
     }
@@ -728,7 +747,7 @@ export class UsersController {
       })
 
       jwtPipeline(user, res)
-      res.json(ApiResponse.success(updated))
+      res.json(updated)
     } catch (err) {
       next(err)
     }
@@ -762,9 +781,7 @@ export class UsersController {
       if (collection.books_ids.includes(bookId)) {
         return res
           .status(200)
-          .json(
-            ApiResponse.success({ message: 'El libro ya está en la colección' })
-          )
+          .json({ message: 'El libro ya está en la colección' })
       }
 
       // Actualizar colección
@@ -783,9 +800,7 @@ export class UsersController {
         }
       })
 
-      res.json(
-        ApiResponse.success({ message: 'Libro agregado a la colección' })
-      )
+      res.json({ message: 'Libro agregado a la colección' })
     } catch (err) {
       next(err)
     }
@@ -798,7 +813,7 @@ export class UsersController {
     try {
       const { username } = req.body
       const result = await this.userService.banUser(username)
-      res.json(ApiResponse.success(result))
+      res.json(result)
     } catch (err) {
       next(err)
     }

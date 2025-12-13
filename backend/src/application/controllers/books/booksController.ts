@@ -27,11 +27,6 @@ export class BooksController {
     UsersModel: UserInterface
     BooksModel: BookInterface
   }) {
-    /*
-      Utilizamos este estilo de importación para hacer inyecciones de dependencias
-      en lugar de importar directamente los modelos en este archivo
-    */
-    // use local temporaries to avoid referencing class properties before assignment
     const tempBookService = new BookService({
       bookModel: BooksModel,
       userService: undefined as unknown as UserInterface
@@ -44,7 +39,6 @@ export class BooksController {
     this.bookService = tempBookService
     this.userService = tempUserService
 
-    // if BookService expects the userService to be set after construction, set it explicitly
     if (
       (this.bookService as any) &&
       typeof (this.bookService as any).userService === 'undefined'

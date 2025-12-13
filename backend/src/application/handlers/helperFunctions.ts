@@ -17,19 +17,7 @@ async function checkEmailExists (email: string, UsersModel: UserInterface) {
     throw new Error('El correo ya existe')
   }
 }
-function initializeDataCreateUser (data: UserType) {
-  const time = new Date().toISOString() as ISOString
-  data.created_at = time
-  data.updated_at = time
-  data.validated = false
-  data.id = crypto.randomUUID()
-  data.balance = {
-    available: 0,
-    pending: 0,
-    incoming: 0
-  }
-  return data
-}
+
 async function processUserUpdate (
   data: Partial<UserType> & { accion?: string },
   userId: ID,
@@ -116,10 +104,4 @@ function jwtPipeline (user: PartialUserType | UserType, res: express.Response) {
   }
   setAuthCookie(res, newToken)
 }
-export {
-  checkEmailExists,
-  initializeDataCreateUser,
-  processUserUpdate,
-  jwtPipeline,
-  updateUserFavorites
-}
+export { checkEmailExists, processUserUpdate, jwtPipeline, updateUserFavorites }

@@ -9,7 +9,11 @@ import { TransactionInterface } from '@/domain/interfaces/transaction.js'
 export class TransactionService implements TransactionInterface {
   transactionsModel: TransactionInterface
 
-  constructor (transactionsModel: TransactionInterface) {
+  constructor ({
+    transactionsModel
+  }: {
+    transactionsModel: TransactionInterface
+  }) {
     this.transactionsModel = transactionsModel
   }
 

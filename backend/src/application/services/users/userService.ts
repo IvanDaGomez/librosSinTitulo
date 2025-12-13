@@ -4,22 +4,20 @@ import { UserInterface } from '@/domain/interfaces/user.js'
 import { ID, ImageType } from '@/shared/types'
 import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 import { BookInterface } from '@/domain/interfaces/book'
+import { checkEmailExists } from '@/application/handlers/helperFunctions'
+import { createUser } from '@/domain/mappers/createUser'
+import { sendEmail } from '@/utils/email/sendEmail'
+import { createEmail } from '@/utils/email/htmlEmails'
+import { createNotification } from '@/domain/mappers/createNotification'
+import { sendNotification } from '@/utils/notifications/sendNotification'
 
 export class UserService implements UserInterface {
   private usersModel: UserInterface
-  private bookService: BookInterface
 
-  constructor ({
-    usersModel,
-    bookService
-  }: {
-    usersModel: UserInterface
-    bookService: BookInterface
-  }) {
+  constructor ({ usersModel }: { usersModel: UserInterface }) {
     this.usersModel = usersModel
-    this.bookService = bookService
   }
-  /**
+  /*
    * Wrapper to avoid repeating try/catch everywhere.
    */
   private async handle<T> (fn: () => Promise<T>, message: string): Promise<T> {
@@ -155,10 +153,28 @@ export class UserService implements UserInterface {
     email: string
     password: string
   }): Promise<UserType> {
-    return this.handle(
-      () => this.usersModel.createUser(data),
-      `Error creating user with email: ${data.email}`
-    )
+    return this.handle(async () => {
+      // Revisar si el correo ya está en uso
+      await checkEmailExists(data.email, this)
+
+      data = createUser(data, true)
+      const user = await this.usersModel.createUser(data)
+
+      await sendEmail(
+        `${user.name} ${user.email}`,
+        'Bienvenido a Meridian!',
+        createEmail({ user }, 'thankEmail'),
+        'no-reply'
+      )
+
+      await sendNotification(
+        createNotification({
+          id: user.id,
+          type: 'welcomeUser'
+        })
+      )
+      return user
+    }, `Error creating user with email: ${data.email}`)
   }
 
   async updateUser ({
@@ -168,6 +184,10 @@ export class UserService implements UserInterface {
     id: ID
     data: Partial<UserType>
   }): Promise<UserType> {
+    /*
+    1. Update updated_at field
+    2. Update user by ID
+    */
     return this.handle(
       () => this.usersModel.updateUser({ id, data }),
       `Error updating user with id: ${id}`
@@ -175,6 +195,11 @@ export class UserService implements UserInterface {
   }
 
   async deleteUser ({ id }: { id: ID }): Promise<StatusResponseType> {
+    /*
+    1.  Delete user by ID
+    2.  Delete all user's books
+    3.  Delete all user's notifications, collections, etc.
+    */
     return this.handle(
       () => this.usersModel.deleteUser({ id }),
       `Error deleting user with id: ${id}`
