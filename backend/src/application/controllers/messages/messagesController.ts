@@ -18,8 +18,13 @@ export class MessagesController {
     MessagesModel: MessageInterface
     ConversationsModel: ConversationInterface
   }) {
-    this.messageService = new MessageService(MessagesModel)
-    this.conversationService = new ConversationService(ConversationsModel)
+    this.conversationService = new ConversationService({
+      conversationsModel: ConversationsModel
+    })
+    this.messageService = new MessageService({
+      messagesModel: MessagesModel,
+      conversationService: this.conversationService
+    })
   }
 
   getAllMessages = async (
@@ -47,9 +52,9 @@ export class MessagesController {
           .status(400)
           .json(ApiResponse.error('ID de conversación no proporcionado', 400))
       }
-      const message = await this.messageService.getAllMessagesByConversation(
-        conversationId
-      )
+      const message = await this.messageService.getAllMessagesByConversation({
+        id: conversationId
+      })
       res.json(message)
     } catch (err) {
       next(err)
@@ -68,7 +73,9 @@ export class MessagesController {
           .status(400)
           .json(ApiResponse.error('ID de mensaje no proporcionado', 400))
       }
-      const message = await this.messageService.getMessageById(messageId)
+      const message = await this.messageService.getMessageById({
+        id: messageId
+      })
       res.json(message)
     } catch (err) {
       next(err)
@@ -92,28 +99,8 @@ export class MessagesController {
           .json(ApiResponse.error(String(validated.error), 400))
       }
 
-      // Necesario actualizar la conversación en la que el mensaje se envía
-      const conversation = await this.conversationService.getConversationById(
-        parsedData.conversation_id
-      )
-      // Validar el userId
-      if (!conversation.participants.includes(parsedData.sender_id)) {
-        return res
-          .status(404)
-          .json(
-            ApiResponse.error(
-              'El usuario no se encuentra en la conversación',
-              404
-            )
-          )
-      }
-      conversation.last_message = parsedData
-      await this.conversationService.updateConversation(
-        conversation.id,
-        conversation
-      )
-
-      const message = await this.messageService.sendMessage(data)
+      // Service handles conversation validation and update
+      const message = await this.messageService.sendMessage({ data: parsedData })
 
       res.json(message)
     } catch (err) {
@@ -134,7 +121,7 @@ export class MessagesController {
           .json(ApiResponse.error('ID de mensaje no proporcionado', 400))
       }
       // Eliminar el mensaje de la base de datos
-      await this.messageService.deleteMessage(messageId)
+      await this.messageService.deleteMessage({ id: messageId })
 
       res.json({ message: 'Mensaje eliminado con éxito' })
     } catch (err) {
@@ -155,7 +142,10 @@ export class MessagesController {
           .json(ApiResponse.error('ID de mensaje no proporcionado', 400))
       }
 
-      await this.messageService.updateMessage(messageId, { read: true })
+      await this.messageService.updateMessage({
+        id: messageId,
+        data: { read: true }
+      })
 
       res.json({ message: 'Mensaje actualizado con éxito' })
     } catch (err) {
@@ -174,7 +164,7 @@ export class MessagesController {
           .status(400)
           .json(ApiResponse.error('Consulta no proporcionada', 400))
       }
-      const messages = await this.messageService.getMessagesByQuery(query)
+      const messages = await this.messageService.getMessagesByQuery({ query })
       res.json(messages)
     } catch (err) {
       next(err)

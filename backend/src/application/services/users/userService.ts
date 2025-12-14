@@ -1,7 +1,7 @@
 import { PartialUserType, UserType } from '@/domain/entities/user.js'
 import { ServiceError } from '@/domain/exceptions/serviceError.js'
 import { UserInterface } from '@/domain/interfaces/user.js'
-import { ID, ImageType } from '@/shared/types'
+import { ID, ImageType, ISOString } from '@/shared/types'
 import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 import { BookInterface } from '@/domain/interfaces/book'
 import { checkEmailExists } from '@/application/handlers/helperFunctions'
@@ -10,6 +10,8 @@ import { sendEmail } from '@/utils/email/sendEmail'
 import { createEmail } from '@/utils/email/htmlEmails'
 import { createNotification } from '@/domain/mappers/createNotification'
 import { sendNotification } from '@/utils/notifications/sendNotification'
+import saveOptimizedImages from '@/utils/saveOptimizedImages.js'
+import express from 'express'
 
 export class UserService implements UserInterface {
   private usersModel: UserInterface
@@ -215,5 +217,77 @@ export class UserService implements UserInterface {
       () => this.usersModel.getBalance({ id }),
       `Error getting balance for user with id: ${id}`
     )
+  }
+
+  private filterAllowedFields (data: Partial<UserType>): Partial<UserType> {
+    const allowedFields: (keyof UserType)[] = Object.keys(
+      createUser({}, true)
+    ) as (keyof UserType)[]
+    const filteredData: Partial<UserType> = {}
+
+    allowedFields.forEach(key => {
+      if (data[key] !== undefined) filteredData[key] = data[key] as any
+    })
+
+    filteredData.updated_at = new Date().toISOString() as ISOString
+    return filteredData
+  }
+
+  async processUserUpdate ({
+    data,
+    userId,
+    req
+  }: {
+    data: Partial<UserType> & { accion?: string }
+    userId: ID
+    req: express.Request
+  }): Promise<Partial<UserType>> {
+    return this.handle(async () => {
+      const file: Express.MulterS3.File | undefined = req.file as
+        | Express.MulterS3.File
+        | undefined
+      if (file) {
+        data.profile_picture = file.location as ImageType
+        await saveOptimizedImages([data.profile_picture])
+      }
+
+      if (data.email) {
+        await checkEmailExists(data.email, this)
+        data.validated = false
+      }
+
+      return this.filterAllowedFields(data)
+    }, `Error processing user update for user id: ${userId}`)
+  }
+
+  async updateFavorites ({
+    userId,
+    bookId,
+    action
+  }: {
+    userId: ID
+    bookId: ID
+    action: string
+  }): Promise<ID[]> {
+    return this.handle(async () => {
+      const user = await this.usersModel.getUserById({ id: userId })
+      if (!user) throw new ServiceError('Usuario no encontrado', 404)
+
+      let updatedFavorites = user.favorites || []
+
+      if (action === 'agregar' && !updatedFavorites.includes(bookId)) {
+        updatedFavorites.push(bookId)
+      } else if (action === 'eliminar') {
+        updatedFavorites = updatedFavorites.filter(fav => fav !== bookId)
+      }
+
+      // Update user with new favorites
+      await this.usersModel.updateUser({
+        id: userId,
+        data: { favorites: updatedFavorites }
+      })
+
+      return updatedFavorites
+    }, `Error updating favorites for user id: ${userId}`)
   }
 }

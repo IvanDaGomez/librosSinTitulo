@@ -3,12 +3,21 @@ import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 import { ServiceError } from '@/domain/exceptions/serviceError.js'
 import { MessageType } from '@/domain/entities/message.js'
 import { MessageInterface } from '@/domain/interfaces/message.js'
+import { ConversationInterface } from '@/domain/interfaces/conversation.js'
 
 export class MessageService implements MessageInterface {
   private messagesModel: MessageInterface
+  private conversationService?: ConversationInterface
 
-  constructor (messagesModel: MessageInterface) {
+  constructor ({
+    messagesModel,
+    conversationService
+  }: {
+    messagesModel: MessageInterface
+    conversationService?: ConversationInterface
+  }) {
     this.messagesModel = messagesModel
+    this.conversationService = conversationService
   }
 
   private async handle<T> (fn: () => Promise<T>, message: string): Promise<T> {
@@ -44,11 +53,38 @@ export class MessageService implements MessageInterface {
     )
   }
 
-  sendMessage ({ data }: { data: Partial<MessageType> }): Promise<MessageType> {
-    return this.handle(
-      () => this.messagesModel.sendMessage({ data }),
-      'Error sending message'
-    )
+  async sendMessage ({
+    data
+  }: {
+    data: Partial<MessageType>
+  }): Promise<MessageType> {
+    return this.handle(async () => {
+      // If conversationService is available, validate and update conversation
+      if (this.conversationService && data.conversation_id && data.sender_id) {
+        const conversation = await this.conversationService.getConversationById({
+          id: data.conversation_id
+        })
+
+        // Validate that sender is a participant
+        if (!conversation.participants.includes(data.sender_id)) {
+          throw new ServiceError(
+            'El usuario no se encuentra en la conversación',
+            404
+          )
+        }
+
+        // Update conversation's last message
+        await this.conversationService.updateConversation({
+          id: conversation.id,
+          data: {
+            last_message: data as MessageType
+          }
+        })
+      }
+
+      // Send the message
+      return await this.messagesModel.sendMessage({ data })
+    }, 'Error sending message')
   }
 
   deleteMessage ({ id }: { id: ID }): Promise<StatusResponseType> {

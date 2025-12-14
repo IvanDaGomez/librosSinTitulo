@@ -26,8 +26,14 @@ class CollectionsController {
     CollectionsModel: CollectionInterface
     BooksModel: BookInterface
   }) {
-    this.collectionService = new CollectionService(CollectionsModel)
-    this.bookService = new BookService(BooksModel)
+    this.bookService = new BookService({
+      bookModel: BooksModel,
+      userService: undefined as any
+    })
+    this.collectionService = new CollectionService({
+      collectionsModel: CollectionsModel,
+      bookService: this.bookService
+    })
   }
 
   getAllCollections = async (
@@ -207,50 +213,13 @@ class CollectionsController {
       // Convert booksIds to an array of IDs
       const booksList = booksIds.split(',').map(id => id.trim()) as ID[]
 
-      // Fetch books and the collection
-      let books = await this.bookService.getBooksByIdList({
-        list: booksList,
-        l: 24
-      })
-      const collection = await this.collectionService.getCollectionById({
-        id: collectionId
+      // Service handles book fetching, filtering, and relationship updates
+      const result = await this.collectionService.addBooksToCollection({
+        booksIds: booksList,
+        collectionId
       })
 
-      // Filter books to ensure they're not already in the collection
-      books = books.filter(
-        b =>
-          !b.collections_ids?.includes(collectionId) &&
-          !collection.books_ids?.includes(b.id as ID)
-      )
-
-      // Ensure unique collections in the collection and book
-      const newCollectionList = [
-        ...new Set([...collection.books_ids, ...books.map(b => b.id)])
-      ]
-
-      // Update collection and books
-      await Promise.all([
-        this.collectionService.updateCollection({
-          id: collectionId,
-          data: {
-            books_ids: newCollectionList as ID[]
-          }
-        }),
-        ...books.map(b => {
-          b.collections_ids = Array.from(
-            new Set([...(b.collections_ids ?? []), collectionId])
-          )
-          console.log('b.collections_ids', b.collections_ids)
-          this.bookService.updateBook({
-            id: b.id as ID,
-            data: {
-              collections_ids: b.collections_ids as ID[]
-            }
-          })
-        })
-      ])
-      // Send response
-      res.json({ message: 'Colección actualizada correctamente.' })
+      res.json(result)
     } catch (err) {
       next(err)
     }

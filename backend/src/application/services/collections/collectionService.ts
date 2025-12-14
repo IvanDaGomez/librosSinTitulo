@@ -4,12 +4,22 @@ import { AuthToken } from '@/domain/entities/authToken.js'
 import { StatusResponseType } from '@/domain/valueObjects/statusResponse.js'
 import { ServiceError } from '@/domain/exceptions/serviceError.js'
 import { CollectionInterface } from '@/domain/interfaces/collection.js'
+import { BookInterface } from '@/domain/interfaces/book.js'
+import { BookType } from '@/domain/entities/book.js'
 
 export class CollectionService implements CollectionInterface {
   private collectionsModel: CollectionInterface
+  private bookService?: BookInterface
 
-  constructor (collectionsModel: CollectionInterface) {
+  constructor ({
+    collectionsModel,
+    bookService
+  }: {
+    collectionsModel: CollectionInterface
+    bookService?: BookInterface
+  }) {
     this.collectionsModel = collectionsModel
+    this.bookService = bookService
   }
 
   private async handle<T> (fn: () => Promise<T>, message: string): Promise<T> {
@@ -133,5 +143,69 @@ export class CollectionService implements CollectionInterface {
         }),
       'Error getting for you page collections'
     )
+  }
+
+  async addBooksToCollection ({
+    booksIds,
+    collectionId
+  }: {
+    booksIds: ID[]
+    collectionId: ID
+  }): Promise<StatusResponseType> {
+    return this.handle(async () => {
+      if (!this.bookService) {
+        throw new ServiceError(
+          'Book service not available for this operation',
+          500
+        )
+      }
+
+      // Fetch books and collection
+      let books = await this.bookService.getBooksByIdList({
+        list: booksIds,
+        l: 24
+      })
+      const collection = await this.collectionsModel.getCollectionById({
+        id: collectionId
+      })
+
+      // Filter books to ensure they're not already in the collection
+      books = books.filter(
+        b =>
+          !b.collections_ids?.includes(collectionId) &&
+          !collection.books_ids?.includes(b.id as ID)
+      ) as BookType[]
+
+      // Ensure unique IDs in the collection
+      const newCollectionList = [
+        ...new Set([...collection.books_ids, ...books.map(b => b.id as ID)])
+      ]
+
+      // Update collection and books
+      await Promise.all([
+        this.collectionsModel.updateCollection({
+          id: collectionId,
+          data: {
+            books_ids: newCollectionList as ID[]
+          }
+        }),
+        ...books.map(b => {
+          const updatedCollectionsIds = Array.from(
+            new Set([...(b.collections_ids ?? []), collectionId])
+          )
+          return this.bookService!.updateBook({
+            id: b.id as ID,
+            data: {
+              collections_ids: updatedCollectionsIds as ID[]
+            }
+          })
+        })
+      ])
+
+      return {
+        ok: true,
+        message: 'Colección actualizada correctamente.'
+      }
+    }, 'Error adding books to collection')
   }
 }

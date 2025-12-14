@@ -16,8 +16,11 @@ export class NotificationsController {
     NotificationsModel: NotificationInterface
     UsersModel: UserInterface
   }) {
-    this.notificationService = new NotificationService(NotificationsModel)
-    this.userService = new UserService(UsersModel)
+    this.userService = new UserService({ usersModel: UsersModel })
+    this.notificationService = new NotificationService({
+      notificationsModel: NotificationsModel,
+      userService: this.userService
+    })
   }
 
   getAllNotifications = async (
@@ -44,7 +47,9 @@ export class NotificationsController {
         return res.status(404).json({ error: 'Es necesario un usuario' })
       }
       const notifications =
-        await this.notificationService.getAllNotificationsByUserId(userId)
+        await this.notificationService.getAllNotificationsByUserId({
+          user_id: userId
+        })
       res.json(notifications)
     } catch (err) {
       next(err)
@@ -61,9 +66,9 @@ export class NotificationsController {
       if (!notificationId) {
         return res.status(404).json({ error: 'Es necesario un ID' })
       }
-      const notifications = await this.notificationService.getNotificationById(
-        notificationId
-      )
+      const notifications = await this.notificationService.getNotificationById({
+        id: notificationId
+      })
 
       res.json(notifications)
     } catch (err) {
@@ -81,7 +86,9 @@ export class NotificationsController {
       if (!notificationId) {
         return res.status(404).json({ error: 'No hay ID de notificación' })
       }
-      await this.notificationService.markNotificationAsRead(notificationId)
+      await this.notificationService.markNotificationAsRead({
+        id: notificationId
+      })
 
       res.json({ message: 'Notificación marcada como leída' })
     } catch (err) {
@@ -103,17 +110,9 @@ export class NotificationsController {
         return res.status(400).json({ error: validated.error })
       }
 
-      data.id = crypto.randomUUID()
-
-      // Obtener el usuario y crear la notificación en paralelo
-      const [user, notification] = await Promise.all([
-        this.userService.getUserById(data.user_id),
-        this.notificationService.createNotification(data)
-      ])
-
-      // Actualizar las notificaciones del usuario
-      await this.userService.updateUser(user.id, {
-        notifications_ids: [...user.notifications_ids, data.id]
+      // Service handles ID generation and user update
+      const notification = await this.notificationService.createNotification({
+        data
       })
 
       res.json(notification)
@@ -133,26 +132,8 @@ export class NotificationsController {
         return res.status(404).json({ error: 'Es necesario un ID' })
       }
 
-      // Obtener los detalles del notificacion para encontrar al vendedor (idVendedor)
-      const notification = await this.notificationService.getNotificationById(
-        notificationId
-      )
-
-      // Obtener el usuario asociado con el notificacion
-      const user = await this.userService.getUserById(notification.user_id)
-
-      // Eliminar el notificationId del array notificacionsIds del usuario
-      const updatedNotificationsIds = user.notifications_ids.filter(
-        id => id !== notificationId
-      )
-
-      // Actualizar el usuario con los nuevos notificacionsIds
-      await Promise.all([
-        this.userService.updateUser(user.id, {
-          notifications_ids: updatedNotificationsIds
-        }),
-        this.notificationService.deleteNotification(notificationId)
-      ])
+      // Service handles user notification_ids cleanup
+      await this.notificationService.deleteNotification({ id: notificationId })
 
       res.json({ message: 'Notificacion eliminada con éxito' })
     } catch (err) {

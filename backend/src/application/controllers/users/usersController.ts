@@ -7,12 +7,7 @@ import { createNotification } from '@/utils/notifications/createNotification.js'
 import { sendNotification } from '@/utils/notifications/sendNotification.js'
 // eslint-disable-next-line no-unused-vars
 import bcrypt from 'bcrypt'
-import {
-  checkEmailExists,
-  jwtPipeline,
-  processUserUpdate,
-  updateUserFavorites
-} from '@/application/handlers/helperFunctions.js'
+import { jwtPipeline } from '@/application/handlers/helperFunctions.js'
 import express from 'express'
 import { replaceDashesWithSpaces } from '@/utils/parseSpaces.js'
 import { UserType } from '@/domain/entities/user.js'
@@ -346,12 +341,12 @@ export class UsersController {
       if (!validated.success) {
         throw new ControllerError(String(validated.error), 400)
       }
-      const updatedData = await processUserUpdate(
+      // Service handles file processing and email validation
+      const updatedData = await this.userService.processUserUpdate({
         data,
         userId,
-        req,
-        this.userService
-      )
+        req
+      })
 
       const user = await this.userService.updateUser({
         id: userId,
@@ -384,18 +379,13 @@ export class UsersController {
         throw new ControllerError('Acción no proporcionada', 400)
       }
 
-      const updatedFavorites = await updateUserFavorites(
+      // Service handles fetching user and updating favorites
+      const updatedFavorites = await this.userService.updateFavorites({
         userId,
-        book_id,
-        accion,
-        this.userService
-      )
-      await this.userService.updateUser({
-        id: userId,
-        data: {
-          favorites: updatedFavorites
-        }
+        bookId: book_id,
+        action: accion
       })
+
       res.json(updatedFavorites)
     } catch (err) {
       next(err)
@@ -419,7 +409,9 @@ export class UsersController {
     try {
       if (req.session.user) {
         // Devolver los datos del usuario
-        const user = await this.userService.getUserById(req.session.user.id)
+        const user = await this.userService.getUserById({
+          id: req.session.user.id
+        })
         if (user.account_status === 'Suspendido') {
           return res.status(403).json(ApiResponse.error('Usuario baneado', 403))
         }
